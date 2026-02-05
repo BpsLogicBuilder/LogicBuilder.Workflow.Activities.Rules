@@ -195,7 +195,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             Assert.True(entity.GenericListOfDecimal.CurrentValue[0] == 1.45m);
         }
 
-        [Fact(Skip = "No remote for MinVer")]
+        [Fact]
         public void TestSerialization()
         {
             //Arrange
