@@ -1,3 +1,9 @@
 <Solution>
-  <Project Path="LogicBuilder.Workflow.Activities.Rules/LogicBuilder.Workflow.Activities.Rules.csproj" />
+  <Folder Name="/src/">
+    <Project Path="LogicBuilder.Workflow.Activities.Rules/LogicBuilder.Workflow.Activities.Rules.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="LogicBuilder.Workflow.Activities.Rules.Tests/LogicBuilder.Workflow.Activities.Rules.Tests.csproj" />
+    <Project Path="SampleFlow/SampleFlow.csproj" />
+  </Folder>
 </Solution>
