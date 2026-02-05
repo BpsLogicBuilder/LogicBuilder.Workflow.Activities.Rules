@@ -8,17 +8,18 @@ using System.Text.RegularExpressions;
 
 namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
 {
-    public class RulesTests
+    public partial class RulesTests
     {
         public RulesTests()
         {
             CreateRuleEngine();
         }
+
         [Fact]
         public void Test_Rule_with_equals_condition_and_setter_action()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 State = "CT"
             };
@@ -26,27 +27,27 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             //Act
             ruleEngine.Execute(entity);
             //Assert
-            Assert.True(entity.Discount == 100);
+            Assert.Equal(100, entity.Discount);
         }
 
         [Fact]
         public void Test_Rule_with_array_indexer_condition_and_setter_action()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity();
+            SampleFlow.FlowEntity entity = new();
             entity.StringList[1, 1] = "A";
 
             //Act
             ruleEngine.Execute(entity);
             //Assert
-            Assert.True(entity.Discount == 200);
+            Assert.Equal(200, entity.Discount);
         }
 
         [Fact]
         public void Test_Rule_with_method_condition()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 BoolText = "false"
             };
@@ -54,14 +55,14 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             //Act
             ruleEngine.Execute(entity);
             //Assert
-            Assert.True(entity.Discount == 300);
+            Assert.Equal(300, entity.Discount);
         }
 
         [Fact]
         public void Test_Rule_with_multiple_conditions()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 BoolText = "false",
                 State = "MD"
@@ -70,14 +71,14 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             //Act
             ruleEngine.Execute(entity);
             //Assert
-            Assert.True(entity.Discount == 400);
+            Assert.Equal(400, entity.Discount);
         }
 
         [Fact]
         public void Test_Rule_with_static_method_action()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 State = "MA"
             };
@@ -85,14 +86,14 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             //Act
             ruleEngine.Execute(entity);
             //Assert
-            Assert.True(SampleFlow.FlowEntity.DEFAULTSTATE == "NH");
+            Assert.Equal("NH", SampleFlow.FlowEntity.DEFAULTSTATE);
         }
 
         [Fact]
         public void Test_Rule_with_reference_method_action()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 State = "PA"
             };
@@ -107,7 +108,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
         public void Test_Rule_with_cast_object_expression_in_then_action()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 State = "VA"
             };
@@ -115,14 +116,14 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             //Act
             ruleEngine.Execute(entity);
             //Assert
-            Assert.True(((SampleFlow.ChildEntity)entity.DClass).Description == "This Description");
+            Assert.Equal("This Description", ((SampleFlow.ChildEntity)entity.DClass).Description);
         }
 
         [Fact]
         public void Test_Rule_with_simple_CodeObjectCreateExpression_calling_a_constructor_in_then_action()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 State = "NC"
             };
@@ -130,14 +131,14 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             //Act
             ruleEngine.Execute(entity);
             //Assert
-            Assert.True(entity.FirstValue == "AAA");
+            Assert.Equal("AAA", entity.FirstValue);
         }
 
         [Fact]
         public void Test_Rule_with_list_initialization()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 State = "SC"
             };
@@ -145,14 +146,14 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             //Act
             ruleEngine.Execute(entity);
             //Assert
-            Assert.True(entity.MyCollection.First().ToString() == "AValue");
+            Assert.Equal("AValue", entity.MyCollection.First().ToString());
         }
 
         [Fact]
         public void Test_Rule_with_child_and_granchild_reference()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 State = "GA"
             };
@@ -160,14 +161,14 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             //Act
             ruleEngine.Execute(entity);
             //Assert
-            Assert.True(entity.FirstClass.SecondClass.Property1 == "This Value");
+            Assert.Equal("This Value", entity.FirstClass.SecondClass.Property1);
         }
 
         [Fact]
         public void Test_Rule_with_generic_object_initialization()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 State = "TN"
             };
@@ -176,14 +177,14 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             ruleEngine.Execute(entity);
 
             //Assert
-            Assert.True(entity.GenericString.CurrentValue == "Stay");
+            Assert.Equal("Stay", entity.GenericString.CurrentValue);
         }
 
         [Fact]
         public void Test_Rule_with_generic_list_initialization()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 State = "AL"
             };
@@ -192,7 +193,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             ruleEngine.Execute(entity);
 
             //Assert
-            Assert.True(entity.GenericListOfDecimal.CurrentValue[0] == 1.45m);
+            Assert.Equal(1.45m, entity.GenericListOfDecimal.CurrentValue[0]);
         }
 
         [Fact]
@@ -201,7 +202,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             //Arrange
             const string existing = "<RuleSet ChainingBehavior=\"Full\" Description=\"{p1:Null}\" Name=\"MyRuleSet\" xmlns:p1=\"http://schemas.microsoft.com/winfx/2006/xaml\" xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/workflow\">\r\n\t<RuleSet.Rules>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule0\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">TX</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"DClass2\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"Parse\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">01/03/2017</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"InvariantCulture\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"System.Globalization.CultureInfo, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"DClass2\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"Parse\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"System.TimeSpan, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">12:3:5</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"InvariantCulture\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"System.Globalization.CultureInfo, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"DClass2\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"Parse\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"System.Guid, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">{}{7E75868B-CDBE-408C-BEA2-88F887ACD725}</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"DClass2\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Decimal xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">100.0012</ns1:Decimal>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"DClass2\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Decimal xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">100.0012</ns1:Decimal>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"DClass2\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Char xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">P</ns1:Char>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"DClass2\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Int32 xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">100</ns1:Int32>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"DClass2\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Single xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">100.01</ns1:Single>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"DClass2\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Single xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">100.0012</ns1:Single>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule1\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">CT</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"Discount\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Int32 xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">100</ns1:Int32>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule2\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodeArrayIndexerExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeArrayIndexerExpression.Indices>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:Int32 xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">1</ns1:Int32>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:Int32 xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">1</ns1:Int32>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeArrayIndexerExpression.Indices>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeArrayIndexerExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"StringList\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeArrayIndexerExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodeArrayIndexerExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">A</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"Discount\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Int32 xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">200</ns1:Int32>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule3\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"BoolMethod\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"Discount\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Int32 xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">300</ns1:Int32>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule4\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"BooleanAnd\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">MD</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"BoolMethod\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"Discount\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Int32 xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">400</ns1:Int32>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule5\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">MA</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeExpressionStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"SetDefaultState\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"SampleFlow.FlowEntity\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">NH</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t</ns0:CodeExpressionStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule6\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">PA</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"TheType\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"GetType\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule7\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">VA</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"Description\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeCastExpression TargetType=\"SampleFlow.ChildEntity\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeCastExpression.Expression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeFieldReferenceExpression FieldName=\"DClass\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeFieldReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeFieldReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeFieldReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeCastExpression.Expression>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeCastExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">This Description</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule8\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">NC</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeExpressionStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"SetFirstValue\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeObjectCreateExpression CreateType=\"SampleFlow.OtherEntity\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeObjectCreateExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">AAA</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">BBB</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeObjectCreateExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeObjectCreateExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t</ns0:CodeExpressionStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule9\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">SC</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeExpressionStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"SetCollection\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeObjectCreateExpression CreateType=\"System.Collections.ObjectModel.Collection`1[[System.Object, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeObjectCreateExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeArrayCreateExpression CreateType=\"System.Object, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\" Size=\"0\" SizeExpression=\"{p1:Null}\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeArrayCreateExpression.Initializers>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">AValue</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">BValue</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeArrayCreateExpression.Initializers>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeArrayCreateExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeObjectCreateExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeObjectCreateExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t</ns0:CodeExpressionStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule10\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">GA</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"Property1\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"SecondClass\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"FirstClass\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">This Value</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule11\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">TN</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeExpressionStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"SetGenericObject\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeObjectCreateExpression CreateType=\"SampleFlow.GenericClass`1[System.String]\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeObjectCreateExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:Int32 xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">7</ns1:Int32>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">VName</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">Stay</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">ObjectData</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeObjectCreateExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeObjectCreateExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t</ns0:CodeExpressionStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule12\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">AL</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeExpressionStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"SetGenericObject\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeObjectCreateExpression CreateType=\"SampleFlow.GenericClass`1[System.Collections.Generic.IList`1[System.Decimal]]\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeObjectCreateExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:Int32 xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">7</ns1:Int32>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">VName</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeObjectCreateExpression CreateType=\"System.Collections.Generic.List`1[[System.Decimal, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeObjectCreateExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeArrayCreateExpression CreateType=\"System.Decimal, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\" Size=\"0\" SizeExpression=\"{p1:Null}\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeArrayCreateExpression.Initializers>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:Decimal xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">1.45</ns1:Decimal>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:Decimal xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">2.35</ns1:Decimal>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeArrayCreateExpression.Initializers>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeArrayCreateExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeObjectCreateExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeObjectCreateExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">ObjectData</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeObjectCreateExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeObjectCreateExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t</ns0:CodeExpressionStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule13\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"State\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">AZ</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeAssignStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"MyArray\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"StaticMethod\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"SampleFlow.ListConverter`1[System.String]\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"MyList\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeAssignStatement.Right>\r\n\t\t\t\t\t\t</ns0:CodeAssignStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule14\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"GetDiscount\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"SampleFlow.StaticClass\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Decimal xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">101</ns1:Decimal>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeExpressionStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"SetState\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"SampleFlow.StaticClass\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">OR</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t</ns0:CodeExpressionStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule15\" Priority=\"100\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"GetState\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"SampleFlow.StaticClass\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">OR</ns1:String>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeExpressionStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"SetDiscount\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"SampleFlow.StaticClass\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:Decimal xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">102</ns1:Decimal>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t</ns0:CodeExpressionStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule16\" Priority=\"0\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"GetDiscount\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"SampleFlow.StaticClass\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t<ns1:Decimal xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">103</ns1:Decimal>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeExpressionStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"SetState\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"SampleFlow.StaticClass\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">WA</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t</ns0:CodeExpressionStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t\t<RuleUpdateAction Path=\"this/AlwaysTrue\" />\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t\t<Rule Active=\"True\" Description=\"{p1:Null}\" Name=\"Rule17\" Priority=\"100\" ReevaluationBehavior=\"Always\">\r\n\t\t\t<Rule.Condition>\r\n\t\t\t\t<RuleExpressionCondition Name=\"{p1:Null}\">\r\n\t\t\t\t\t<RuleExpressionCondition.Expression>\r\n\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"BooleanAnd\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"GetState\">\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"SampleFlow.StaticClass\" />\r\n\t\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:String xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">WA</ns1:String>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression Operator=\"ValueEquality\">\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression PropertyName=\"AlwaysTrue\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePropertyReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Left>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:Boolean xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">true</ns1:Boolean>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression.Right>\r\n\t\t\t\t\t\t</ns0:CodeBinaryOperatorExpression>\r\n\t\t\t\t\t</RuleExpressionCondition.Expression>\r\n\t\t\t\t</RuleExpressionCondition>\r\n\t\t\t</Rule.Condition>\r\n\t\t\t<Rule.ThenActions>\r\n\t\t\t\t<RuleStatementAction>\r\n\t\t\t\t\t<RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t\t\t<ns0:CodeExpressionStatement LinePragma=\"{p1:Null}\" xmlns:ns0=\"clr-namespace:System.CodeDom;Assembly=System.CodeDom, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51\">\r\n\t\t\t\t\t\t\t<ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression MethodName=\"SetDiscount\">\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns0:CodeTypeReferenceExpression Type=\"SampleFlow.StaticClass\" />\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression.TargetObject>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodeMethodReferenceExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Method>\r\n\t\t\t\t\t\t\t\t\t<ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodeThisReferenceExpression />\r\n\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t\t\t<ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<ns1:Decimal xmlns:ns1=\"clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\">104</ns1:Decimal>\r\n\t\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression.Value>\r\n\t\t\t\t\t\t\t\t\t\t</ns0:CodePrimitiveExpression>\r\n\t\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression.Parameters>\r\n\t\t\t\t\t\t\t\t</ns0:CodeMethodInvokeExpression>\r\n\t\t\t\t\t\t\t</ns0:CodeExpressionStatement.Expression>\r\n\t\t\t\t\t\t</ns0:CodeExpressionStatement>\r\n\t\t\t\t\t</RuleStatementAction.CodeDomStatement>\r\n\t\t\t\t</RuleStatementAction>\r\n\t\t\t</Rule.ThenActions>\r\n\t\t</Rule>\r\n\t</RuleSet.Rules>\r\n</RuleSet>";
             //Act
-            string rulesSetString = SerializeRules(ruleSet);
+            string rulesSetString = SerializeRules(ruleSet)!;
             //Assert
             Assert.Equal(existing, rulesSetString);
         }
@@ -210,7 +211,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
         public void Test_Rule_set_literals()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 State = "TX"
             };
@@ -219,14 +220,14 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             ruleEngine.Execute(entity);
 
             //Assert
-            Assert.True((float)entity.DClass2 == 100.0012f);
+            Assert.Equal(100.0012f, (float)entity.DClass2);
         }
 
         [Fact]
         public void Test_Rule_call_method_in_static_generic_class()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 State = "AZ"
             };
@@ -235,14 +236,14 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             ruleEngine.Execute(entity);
 
             //Assert
-            Assert.True(entity.MyArray[0] == "Apple");
+            Assert.Equal("Apple", entity.MyArray[0]);
         }
 
         [Fact]
         public void Test_Rule_reevaluation_WITHOUT_update_action_and_alwaysTrue_property()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 Discount = 101m
             };
@@ -251,15 +252,15 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             ruleEngine.Execute(entity);
 
             //Assert
-            Assert.True(entity.Discount == 101m);
-            Assert.True(entity.State == "OR");
+            Assert.Equal(101m, entity.Discount);
+            Assert.Equal("OR", entity.State);
         }
 
         [Fact]
         public void Test_Rule_reevaluation_WITH_update_action_and_alwaysTrue_property()
         {
             //Arrange
-            SampleFlow.FlowEntity entity = new SampleFlow.FlowEntity
+            SampleFlow.FlowEntity entity = new()
             {
                 Discount = 103m
             };
@@ -268,64 +269,61 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             ruleEngine.Execute(entity);
 
             //Assert
-            Assert.True(entity.Discount == 104m);
-            Assert.True(entity.State == "WA");
+            Assert.Equal(104m, entity.Discount);
+            Assert.Equal("WA", entity.State);
         }
 
         private static Rule Rule_set_literals()
         {
-            CodePropertyReferenceExpression invariantCultureReference = new CodePropertyReferenceExpression(new CodeTypeReferenceExpression(typeof(System.Globalization.CultureInfo)), "InvariantCulture");
+            CodePropertyReferenceExpression invariantCultureReference = new(new CodeTypeReferenceExpression(typeof(System.Globalization.CultureInfo)), "InvariantCulture");
 
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
                 Right = new CodePrimitiveExpression("TX")
             };
 
-            CodePropertyReferenceExpression dClassRef = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "DClass2");
+            CodePropertyReferenceExpression dClassRef = new(new CodeThisReferenceExpression(), "DClass2");
 
-            CodeAssignStatement dateAction = new CodeAssignStatement
-                (
+            CodeAssignStatement dateAction = new(
                     dClassRef,
                     new CodeMethodInvokeExpression
                         (
                             new CodeTypeReferenceExpression(typeof(System.DateTime)),
                             "Parse",
-                            new CodeExpression[] { new CodePrimitiveExpression("01/03/2017"), invariantCultureReference }
+                            [new CodePrimitiveExpression("01/03/2017"), invariantCultureReference]
                         )
                 );
 
-            CodeAssignStatement timeSpanAction = new CodeAssignStatement
-                (
+            CodeAssignStatement timeSpanAction = new(
                     dClassRef,
                     new CodeMethodInvokeExpression
                         (
                             new CodeTypeReferenceExpression(typeof(System.TimeSpan)),
                             "Parse",
-                            new CodeExpression[] { new CodePrimitiveExpression("12:3:5"), invariantCultureReference }
+                            [new CodePrimitiveExpression("12:3:5"), invariantCultureReference]
                         )
                 );
             //System.Guid.Parse()
-            CodeAssignStatement guidAction = new CodeAssignStatement
-                (
+            CodeAssignStatement guidAction = new                (
                     dClassRef,
                     new CodeMethodInvokeExpression
                         (
                             new CodeTypeReferenceExpression(typeof(System.Guid)),
                             "Parse",
-                            new CodeExpression[] { new CodePrimitiveExpression("{7E75868B-CDBE-408C-BEA2-88F887ACD725}") }
+                            [new CodePrimitiveExpression("{7E75868B-CDBE-408C-BEA2-88F887ACD725}")]
                         )
                 );
             //decimal d = decimal.Parse("100.0012M", System.Globalization.CultureInfo.InvariantCulture);
-            CodeAssignStatement decimalAction = new CodeAssignStatement(dClassRef, new CodePrimitiveExpression(100.0012m));
-            CodeAssignStatement decimalAction1 = new CodeAssignStatement(dClassRef, new CodePrimitiveExpression(decimal.Parse("100.0012", System.Globalization.CultureInfo.InvariantCulture)));
-            CodeAssignStatement charAction = new CodeAssignStatement(dClassRef, new CodePrimitiveExpression(char.Parse("P")));
-            CodeAssignStatement intAction = new CodeAssignStatement(dClassRef, new CodePrimitiveExpression(100));
-            CodeAssignStatement floatAction = new CodeAssignStatement(dClassRef, new CodePrimitiveExpression(100.01f));
-            CodeAssignStatement floatAction2 = new CodeAssignStatement(dClassRef, new CodePrimitiveExpression(float.Parse("100.0012")));
+            CodeAssignStatement decimalAction = new(dClassRef, new CodePrimitiveExpression(100.0012m));
+            CodeAssignStatement decimalAction1 = new(dClassRef, new CodePrimitiveExpression(decimal.Parse("100.0012", System.Globalization.CultureInfo.InvariantCulture)));
+            CodeAssignStatement charAction = new(dClassRef, new CodePrimitiveExpression(char.Parse("P")));
+            CodeAssignStatement intAction = new(dClassRef, new CodePrimitiveExpression(100));
+            CodeAssignStatement floatAction = new(dClassRef, new CodePrimitiveExpression(100.01f));
+            CodeAssignStatement floatAction2 = new(dClassRef, new CodePrimitiveExpression(float.Parse("100.0012")));
 
-            Rule rule0 = new Rule("Rule0")
+            Rule rule0 = new("Rule0")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest)
             };
@@ -343,10 +341,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             return rule0;
         }
 
-        private Rule Rule_with_equals_condition_and_setter_action()
+        private static Rule Rule_with_equals_condition_and_setter_action()
         {
             // define first predicate: this.State == "CT"
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
@@ -354,13 +352,12 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             };
 
             //discount action this.Discount = 100
-            CodeAssignStatement discountAction = new CodeAssignStatement
-                (
+            CodeAssignStatement discountAction = new                (
                     new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "Discount"),
                     new CodePrimitiveExpression(100)
                 );
 
-            Rule rule1 = new Rule("Rule1")
+            Rule rule1 = new("Rule1")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest)
             };
@@ -369,17 +366,16 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             return rule1;
         }
 
-        private Rule Rule_with_array_indexer_condition_and_setter_action()
+        private static Rule Rule_with_array_indexer_condition_and_setter_action()
         {
             //this.StringList[1, 1]
-            CodeArrayIndexerExpression indexerExpression = new CodeArrayIndexerExpression
-                (
+            CodeArrayIndexerExpression indexerExpression = new                (
                     new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "StringList"),
-                    new CodeExpression[] { new CodePrimitiveExpression(1), new CodePrimitiveExpression(1) }
+                    [new CodePrimitiveExpression(1), new CodePrimitiveExpression(1)]
                 );
 
             //this.StringList[1, 1] == "A"
-            CodeBinaryOperatorExpression stringIndexTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression stringIndexTest = new()
             {
                 Left = indexerExpression,
                 Operator = CodeBinaryOperatorType.ValueEquality,
@@ -387,13 +383,12 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             };
 
             //discount action this.Discount = 200
-            CodeAssignStatement discountAction = new CodeAssignStatement
-                (
+            CodeAssignStatement discountAction = new                (
                     new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "Discount"),
                     new CodePrimitiveExpression(200)
                 );
 
-            Rule rule2 = new Rule("Rule2")
+            Rule rule2 = new("Rule2")
             {
                 Condition = new RuleExpressionCondition(stringIndexTest)
             };
@@ -403,19 +398,18 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
         }
 
 
-        private Rule Rule_with_method_condition()
+        private static Rule Rule_with_method_condition()
         {
             //this.boolMethod()
-            CodeMethodInvokeExpression boolMethodInvoke = new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "BoolMethod", new CodeExpression[] { });
+            CodeMethodInvokeExpression boolMethodInvoke = new(new CodeThisReferenceExpression(), "BoolMethod", []);
 
             //discount action this.discount = 300
-            CodeAssignStatement discountAction = new CodeAssignStatement
-                (
+            CodeAssignStatement discountAction = new                (
                     new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "Discount"),
                     new CodePrimitiveExpression(300)
                 );
 
-            Rule rule3 = new Rule("Rule3")
+            Rule rule3 = new("Rule3")
             {
                 Condition = new RuleExpressionCondition(boolMethodInvoke)
             };
@@ -425,10 +419,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
         }
 
 
-        private Rule Rule_with_multiple_conditions()
+        private static Rule Rule_with_multiple_conditions()
         {
             // define first predicate: this.State == "MD"
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
@@ -436,10 +430,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             };
 
             //this.boolMethod()
-            CodeMethodInvokeExpression boolMethodInvoke = new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "BoolMethod", new CodeExpression[] { });
+            CodeMethodInvokeExpression boolMethodInvoke = new(new CodeThisReferenceExpression(), "BoolMethod", []);
 
             //combine both expressions this.state == "MD" && this.boolMethod()
-            CodeBinaryOperatorExpression codeBothExpression = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression codeBothExpression = new()
             {
                 Left = ruleStateTest,
                 Operator = CodeBinaryOperatorType.BooleanAnd,
@@ -447,13 +441,12 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             };
 
             //discount action this.Discount = 400
-            CodeAssignStatement discountAction = new CodeAssignStatement
-                (
+            CodeAssignStatement discountAction = new                (
                     new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "Discount"),
                     new CodePrimitiveExpression(400)
                 );
 
-            Rule rule4 = new Rule("Rule4")
+            Rule rule4 = new("Rule4")
             {
                 Condition = new RuleExpressionCondition(codeBothExpression)
             };
@@ -463,10 +456,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
         }
 
 
-        private Rule Rule_with_static_method_action()
+        private static Rule Rule_with_static_method_action()
         {
             // define first predicate: this.State == "MA"
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
@@ -474,14 +467,13 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             };
 
             //action SampleFlow.FlowEntity.SetDefaultState("NH")
-            CodeMethodInvokeExpression methodInvoke = new CodeMethodInvokeExpression
-                (
+            CodeMethodInvokeExpression methodInvoke = new                (
                     new CodeTypeReferenceExpression("SampleFlow.FlowEntity"),
                     "SetDefaultState",
-                    new CodeExpression[] { new CodePrimitiveExpression("NH") }
+                    [new CodePrimitiveExpression("NH")]
                 );
 
-            Rule rule5 = new Rule("Rule5")
+            Rule rule5 = new("Rule5")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest)
             };
@@ -491,10 +483,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
         }
 
 
-        private Rule Rule_with_reference_method_action()
+        private static Rule Rule_with_reference_method_action()
         {
             // define first predicate: this.State == "PA"
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
@@ -503,13 +495,12 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
 
 
             //action this.TheType = this.GetType
-            CodeAssignStatement setTypeAction = new CodeAssignStatement
-                (
+            CodeAssignStatement setTypeAction = new                (
                     new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "TheType"),
-                    new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "GetType", new CodeExpression[] { })
+                    new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "GetType", [])
                 );
 
-            Rule rule6 = new Rule("Rule6")
+            Rule rule6 = new("Rule6")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest)
             };
@@ -519,10 +510,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
         }
 
 
-        private Rule Rule_with_Cast_object_expression_in_then_action()
+        private static Rule Rule_with_Cast_object_expression_in_then_action()
         {
             // define first predicate: this.State == "VA"
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
@@ -530,21 +521,19 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             };
 
             //(SampleFlow.ChildEntity)this.DClass
-            CodeCastExpression castExpression = new CodeCastExpression
-                (
+            CodeCastExpression castExpression = new(
                 "SampleFlow.ChildEntity",
                  //this.DClass
                  new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), "DClass")
                  );
 
             //((SampleFlow.ChildEntity)this.DClass).Description = "This Description"
-            CodeAssignStatement assignmentAction = new CodeAssignStatement
-                (
+            CodeAssignStatement assignmentAction = new(
                     new CodePropertyReferenceExpression(castExpression, "Description"),
                     new CodePrimitiveExpression("This Description")
                 );
 
-            Rule rule7 = new Rule("Rule7")
+            Rule rule7 = new("Rule7")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest)
             };
@@ -554,10 +543,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
         }
 
 
-        private Rule Rule_with_simple_CodeObjectCreateExpression_calling_a_constructor_in_then_action()
+        private static Rule Rule_with_simple_CodeObjectCreateExpression_calling_a_constructor_in_then_action()
         {
             // define first predicate: this.State == "NC"
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
@@ -565,22 +554,20 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             };
 
             //this.DoNothing(new SampleFlow.OtherEntity("AAA", "BBB"))
-            CodeMethodInvokeExpression methodInvokeDoNothing = new CodeMethodInvokeExpression
-                (
+            CodeMethodInvokeExpression methodInvokeDoNothing = new(
                     new CodeThisReferenceExpression(),
                     "SetFirstValue",
                     new CodeObjectCreateExpression
                         (
                             new CodeTypeReference("SampleFlow.OtherEntity"),
-                            new CodeExpression[]
-                            {
+                            [
                                 new CodePrimitiveExpression("AAA"),
                                 new CodePrimitiveExpression("BBB")
-                            }
+                            ]
                         )
                 );
 
-            Rule rule8 = new Rule("Rule8")
+            Rule rule8 = new("Rule8")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest)
             };
@@ -589,10 +576,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             return rule8;
         }
 
-        private Rule Rule_with_list_initialization()
+        private static Rule Rule_with_list_initialization()
         {
             // define first predicate: this.State == "SC"
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
@@ -600,8 +587,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             };
 
             //this.SetCollection(new System.Collections.ObjectModel.Collection<object>(new object[] { "AValue", "BValue"}))
-            CodeMethodInvokeExpression methodInvokeSetCollection = new CodeMethodInvokeExpression
-                (
+            CodeMethodInvokeExpression methodInvokeSetCollection = new(
                     new CodeThisReferenceExpression(),
                     "SetCollection",
                     new CodeObjectCreateExpression
@@ -609,17 +595,17 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
                             new CodeTypeReference
                                 (
                                     "System.Collections.ObjectModel.Collection",
-                                    new CodeTypeReference[] { new CodeTypeReference("System.Object") }
+                                    [new CodeTypeReference("System.Object")]
                                 ),
                             new CodeArrayCreateExpression
                             (
                                 "System.Object",
-                                new CodeExpression[] { new CodePrimitiveExpression("AValue"), new CodePrimitiveExpression("BValue") }
+                                [new CodePrimitiveExpression("AValue"), new CodePrimitiveExpression("BValue")]
                             )
                         )
                 );
 
-            Rule rule9 = new Rule("Rule9")
+            Rule rule9 = new("Rule9")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest)
             };
@@ -628,10 +614,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             return rule9;
         }
 
-        private Rule Rule_with_child_and_granchild_reference()
+        private static Rule Rule_with_child_and_granchild_reference()
         {
             // define first predicate: this.State == "GA"
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
@@ -639,8 +625,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             };
 
             //this.FirstClass.SecondClass.Property1 = "This Value"
-            CodeAssignStatement setProperty1Action = new CodeAssignStatement
-                (
+            CodeAssignStatement setProperty1Action = new(
                     new CodePropertyReferenceExpression
                     (
                         new CodePropertyReferenceExpression
@@ -657,7 +642,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
                     new CodePrimitiveExpression("This Value")
                 );
 
-            Rule rule10 = new Rule("Rule10")
+            Rule rule10 = new("Rule10")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest)
             };
@@ -669,7 +654,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
         private static Rule Rule_with_generic_object_initialization()
         {
             // define first predicate: this.State == "TN"
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
@@ -677,8 +662,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             };
 
             //this.SetGenericObject(new SampleFlow.GenericClass<string>(7, "VName", "Stay", "ObjectData")
-            CodeMethodInvokeExpression methodInvokeSetGenericObject = new CodeMethodInvokeExpression
-                (
+            CodeMethodInvokeExpression methodInvokeSetGenericObject = new(
                     new CodeThisReferenceExpression(),
                     "SetGenericObject",
                     new CodeObjectCreateExpression
@@ -686,7 +670,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
                             new CodeTypeReference
                                 (
                                     "SampleFlow.GenericClass",
-                                    new CodeTypeReference[] { new CodeTypeReference("System.String") }
+                                    [new CodeTypeReference("System.String")]
                                 ),
                             new CodePrimitiveExpression(7),
                             new CodePrimitiveExpression("VName"),
@@ -695,7 +679,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
                         )
                 );
 
-            Rule rule11 = new Rule("Rule11")
+            Rule rule11 = new("Rule11")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest)
             };
@@ -707,7 +691,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
         private static Rule Rule_with_generic_list_initialization()
         {
             // define first predicate: this.State == "AL"
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
@@ -715,8 +699,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             };
 
             //this.SetGenericObject(new SampleFlow.GenericClass<string>(7, "VName", new List<decimal> { 1.45m, 2.35m }, "ObjectData")
-            CodeMethodInvokeExpression methodInvokeSetGenericList = new CodeMethodInvokeExpression
-                (
+            CodeMethodInvokeExpression methodInvokeSetGenericList = new(
                     new CodeThisReferenceExpression(),
                     "SetGenericObject",
                     new CodeObjectCreateExpression
@@ -724,7 +707,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
                             new CodeTypeReference
                                 (
                                     "SampleFlow.GenericClass",
-                                    new CodeTypeReference[] { new CodeTypeReference("System.Collections.Generic.IList`1[[System.Decimal]]") }
+                                    [new CodeTypeReference("System.Collections.Generic.IList`1[[System.Decimal]]")]
                                 ),
                             new CodePrimitiveExpression(7),
                             new CodePrimitiveExpression("VName"),
@@ -733,19 +716,19 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
                                 new CodeTypeReference
                                     (
                                         "System.Collections.Generic.List",
-                                        new CodeTypeReference[] { new CodeTypeReference("System.Decimal") }
+                                        [new CodeTypeReference("System.Decimal")]
                                     ),
                                 new CodeArrayCreateExpression
                                 (
                                     "System.Decimal",
-                                    new CodeExpression[] { new CodePrimitiveExpression(1.45m), new CodePrimitiveExpression(2.35m) }
+                                    [new CodePrimitiveExpression(1.45m), new CodePrimitiveExpression(2.35m)]
                                 )
                             ),
                             new CodePrimitiveExpression("ObjectData")
                         )
                 );
 
-            Rule rule12 = new Rule("Rule12")
+            Rule rule12 = new("Rule12")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest)
             };
@@ -756,32 +739,31 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
 
         private static Rule Rule_call_method_in_static_generic_class()
         {
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "State"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
                 Right = new CodePrimitiveExpression("AZ")
             };
 
-            CodePropertyReferenceExpression myArrayRef = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "MyArray");
-            CodePropertyReferenceExpression myListRef = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "MyList");
+            CodePropertyReferenceExpression myArrayRef = new(new CodeThisReferenceExpression(), "MyArray");
+            CodePropertyReferenceExpression myListRef = new(new CodeThisReferenceExpression(), "MyList");
 
-            CodeAssignStatement convertListToArray = new CodeAssignStatement
-                (
+            CodeAssignStatement convertListToArray = new(
                     myArrayRef,
                     new CodeMethodInvokeExpression
                         (
                             new CodeTypeReferenceExpression
                                 (
                                     new CodeTypeReference("SampleFlow.ListConverter",
-                                    new CodeTypeReference[] { new CodeTypeReference("System.String") })
+                                    [new CodeTypeReference("System.String")])
                                 ),
                             "StaticMethod",
                             myListRef
                         )
                 );
 
-            Rule rule13 = new Rule("Rule13")
+            Rule rule13 = new("Rule13")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest)
             };
@@ -793,16 +775,16 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
 
         private static Rule Rule_set_state_WITHOUT_update_action()
         {
-            CodeBinaryOperatorExpression ruleDiscountTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleDiscountTest = new()
             {
-                Left = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "GetDiscount", new CodeExpression[] { new CodeThisReferenceExpression() }),
+                Left = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "GetDiscount", [new CodeThisReferenceExpression()]),
                 Operator = CodeBinaryOperatorType.ValueEquality,
                 Right = new CodePrimitiveExpression(101m)
             };
 
-            CodeMethodInvokeExpression setState = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "SetState", new CodeExpression[] { new CodeThisReferenceExpression(), new CodePrimitiveExpression("OR") });
+            CodeMethodInvokeExpression setState = new(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "SetState", [new CodeThisReferenceExpression(), new CodePrimitiveExpression("OR")]);
 
-            Rule rule14 = new Rule("Rule14")
+            Rule rule14 = new("Rule14")
             {
                 Condition = new RuleExpressionCondition(ruleDiscountTest)
             };
@@ -814,16 +796,16 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
 
         private static Rule Rule_get_state_WITHOUT_AlwaysTrue_property_for_reevaluation()
         {
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
-                Left = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "GetState", new CodeExpression[] { new CodeThisReferenceExpression() }),
+                Left = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "GetState", [new CodeThisReferenceExpression()]),
                 Operator = CodeBinaryOperatorType.ValueEquality,
                 Right = new CodePrimitiveExpression("OR")
             };
 
-            CodeMethodInvokeExpression setDiscount = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "SetDiscount", new CodeExpression[] { new CodeThisReferenceExpression(), new CodePrimitiveExpression(102m) });
+            CodeMethodInvokeExpression setDiscount = new(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "SetDiscount", [new CodeThisReferenceExpression(), new CodePrimitiveExpression(102m)]);
 
-            Rule rule15 = new Rule("Rule15")
+            Rule rule15 = new("Rule15")
             {
                 Condition = new RuleExpressionCondition(ruleStateTest),
                 Priority = 100
@@ -836,16 +818,16 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
 
         private static Rule Rule_set_state_WITH_update_action_set_targeting_AlwaysTrue_property()
         {
-            CodeBinaryOperatorExpression ruleDiscountTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleDiscountTest = new()
             {
-                Left = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "GetDiscount", new CodeExpression[] { new CodeThisReferenceExpression() }),
+                Left = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "GetDiscount", [new CodeThisReferenceExpression()]),
                 Operator = CodeBinaryOperatorType.ValueEquality,
                 Right = new CodePrimitiveExpression(103m)
             };
 
-            CodeMethodInvokeExpression setState = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "SetState", new CodeExpression[] { new CodeThisReferenceExpression(), new CodePrimitiveExpression("WA") });
+            CodeMethodInvokeExpression setState = new(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "SetState", [new CodeThisReferenceExpression(), new CodePrimitiveExpression("WA")]);
 
-            Rule rule16 = new Rule("Rule16")
+            Rule rule16 = new("Rule16")
             {
                 Condition = new RuleExpressionCondition(ruleDiscountTest),
                 Priority = 0
@@ -859,30 +841,30 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
 
         private static Rule Rule_get_state_WITH_AlwaysTrue_property_to_reevaluate_update_action()
         {
-            CodeBinaryOperatorExpression ruleStateTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleStateTest = new()
             {
-                Left = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "GetState", new CodeExpression[] { new CodeThisReferenceExpression() }),
+                Left = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "GetState", [new CodeThisReferenceExpression()]),
                 Operator = CodeBinaryOperatorType.ValueEquality,
                 Right = new CodePrimitiveExpression("WA")
             };
 
-            CodeBinaryOperatorExpression ruleAlwaysTrueTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleAlwaysTrueTest = new()
             {
                 Left = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "AlwaysTrue"),
                 Operator = CodeBinaryOperatorType.ValueEquality,
                 Right = new CodePrimitiveExpression(true)
             };
 
-            CodeBinaryOperatorExpression ruleBothTest = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression ruleBothTest = new()
             {
                 Left = ruleStateTest,
                 Operator = CodeBinaryOperatorType.BooleanAnd,
                 Right = ruleAlwaysTrueTest
             };
 
-            CodeMethodInvokeExpression setDiscount = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "SetDiscount", new CodeExpression[] { new CodeThisReferenceExpression(), new CodePrimitiveExpression(104m) });
+            CodeMethodInvokeExpression setDiscount = new(new CodeTypeReferenceExpression("SampleFlow.StaticClass"), "SetDiscount", [new CodeThisReferenceExpression(), new CodePrimitiveExpression(104m)]);
 
-            Rule rule17 = new Rule("Rule17")
+            Rule rule17 = new("Rule17")
             {
                 Condition = new RuleExpressionCondition(ruleBothTest),
                 Priority = 100
@@ -893,6 +875,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             return rule17;
         }
 
+        [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(ruleSet), nameof(ruleEngine))]
         private void CreateRuleEngine()
         {
             ruleSet = new RuleSet
@@ -920,9 +903,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             ruleSet.Rules.Add(Rule_set_state_WITH_update_action_set_targeting_AlwaysTrue_property());
             ruleSet.Rules.Add(Rule_get_state_WITH_AlwaysTrue_property_to_reevaluate_update_action());
 
-            string ruleSetString = SerializeRules(ruleSet);
+            string? ruleSetString = SerializeRules(ruleSet) ?? throw new InvalidOperationException("Rule set serialization failed.");
 
-            ruleSet = DeserializeRuleSet(ruleSetString);
+            ruleSet = DeserializeRuleSet(ruleSetString) ?? throw new InvalidOperationException("Rule set deserialization failed.");
+
             RuleValidation ruleValidation = Helper.GetValidation(ruleSet, typeof(SampleFlow.FlowEntity));
             ruleEngine = new RuleEngine(ruleSet, ruleValidation);
         }
@@ -930,13 +914,13 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
         private RuleSet ruleSet;
         private RuleEngine ruleEngine;
 
-        private string SerializeRules(object drs)
+        private static string? SerializeRules(object drs)
         {
-            System.Text.StringBuilder ruleDefinition = new System.Text.StringBuilder();
-            WorkflowMarkupSerializer serializer = new WorkflowMarkupSerializer();
-            using (System.IO.StringWriter stringWriter = new System.IO.StringWriter(ruleDefinition, System.Globalization.CultureInfo.InvariantCulture))
+            System.Text.StringBuilder ruleDefinition = new();
+            WorkflowMarkupSerializer serializer = new();
+            using (System.IO.StringWriter stringWriter = new(ruleDefinition, System.Globalization.CultureInfo.InvariantCulture))
             {
-                using (System.Xml.XmlTextWriter writer = new System.Xml.XmlTextWriter(stringWriter))
+                using (System.Xml.XmlTextWriter writer = new(stringWriter))
                 {
                     serializer.Serialize(writer, drs);
                     writer.Flush();
@@ -947,35 +931,36 @@ namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
             return UpdateStrongNames(ruleDefinition.ToString());
         }
 
-        private static string UpdateStrongNames(string ruleSetXml)
+        private static string? UpdateStrongNames(string ruleSetXml)
         {
             if (ruleSetXml == null) return null;
 
-            ruleSetXml = Regex.Replace(ruleSetXml, AssemblyStrongNames.NETCORE_MATCH, AssemblyStrongNames.NETCORE);
-            ruleSetXml = Regex.Replace(ruleSetXml, AssemblyStrongNames.CODEDOM_NETCORE_MATCH, AssemblyStrongNames.CODEDOM_NETCORE);
+            ruleSetXml = NetCoreStrongNameRegex().Replace(ruleSetXml, AssemblyStrongNames.NETCORE);
+            ruleSetXml = CodeDomNetCoreStongNameRegex().Replace(ruleSetXml, AssemblyStrongNames.CODEDOM_NETCORE);
 
             return ruleSetXml;
         }
 
-        private RuleSet DeserializeRuleSet(string ruleSetXmlDefinition)
+        private static RuleSet? DeserializeRuleSet(string ruleSetXmlDefinition)
         {
 
-            WorkflowMarkupSerializer serializer = new WorkflowMarkupSerializer();
+            WorkflowMarkupSerializer serializer = new();
             if (!string.IsNullOrEmpty(ruleSetXmlDefinition))
             {
-                using (System.IO.StringReader stringReader = new System.IO.StringReader(ruleSetXmlDefinition))
-                {
-                    using (System.Xml.XmlTextReader reader = new System.Xml.XmlTextReader(stringReader))
-                    {
-                        return serializer.Deserialize(reader) as RuleSet;
-                    }
-                }
+                using System.IO.StringReader stringReader = new(ruleSetXmlDefinition);
+                using System.Xml.XmlTextReader reader = new(stringReader);
+                return serializer.Deserialize(reader) as RuleSet;
             }
             else
             {
                 return null;
             }
         }
+
+        [GeneratedRegex(AssemblyStrongNames.NETCORE_MATCH)]
+        private static partial Regex NetCoreStrongNameRegex();
+        [GeneratedRegex(AssemblyStrongNames.CODEDOM_NETCORE_MATCH)]
+        private static partial Regex CodeDomNetCoreStongNameRegex();
     }
 
     internal struct AssemblyStrongNames
