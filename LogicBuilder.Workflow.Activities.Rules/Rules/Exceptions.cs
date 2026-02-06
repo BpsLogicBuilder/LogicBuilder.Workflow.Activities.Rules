@@ -313,18 +313,18 @@ namespace LogicBuilder.Workflow.Activities.Rules
             m_errors = (ValidationErrorCollection)serializeInfo.GetValue("errors", typeof(ValidationErrorCollection));
         }
 
-        /// <summary>
-        /// Implements the ISerializable interface
-        /// </summary>
-        /// <param name="info">Reference to the object that holds the data needed to serialize/deserialize the exception</param>
-        /// <param name="context">Provides the means for serialiing the exception data</param>
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            if (info == null)
-                throw new ArgumentNullException("info");
-            base.GetObjectData(info, context);
-            info.AddValue("errors", m_errors);
-        }
+        ///// <summary>
+        ///// Implements the ISerializable interface
+        ///// </summary>
+        ///// <param name="info">Reference to the object that holds the data needed to serialize/deserialize the exception</param>
+        ///// <param name="context">Provides the means for serialiing the exception data</param>
+        //public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        //{
+        //    if (info == null)
+        //        throw new ArgumentNullException("info");
+        //    base.GetObjectData(info, context);
+        //    info.AddValue("errors", m_errors);
+        //}
     }
     #endregion
 }
