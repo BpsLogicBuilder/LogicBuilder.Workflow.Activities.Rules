@@ -94,10 +94,11 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Name_CanBeChanged()
         {
             // Arrange
-            var condition = new RuleExpressionCondition("InitialName");
-
-            // Act
-            condition.Name = "NewName";
+            var condition = new RuleExpressionCondition("InitialName")
+            {
+                // Act
+                Name = "NewName"
+            };
 
             // Assert
             Assert.Equal("NewName", condition.Name);

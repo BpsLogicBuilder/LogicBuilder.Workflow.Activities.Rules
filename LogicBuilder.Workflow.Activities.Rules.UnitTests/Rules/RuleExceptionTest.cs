@@ -90,7 +90,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var exception = new RuleException();
 
             // Assert
-            Assert.IsAssignableFrom<Exception>(exception);
+            Assert.IsType<Exception>(exception, exactMatch: false);
         }
 
         [Fact]
@@ -100,7 +100,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var exception = new RuleException();
 
             // Assert
-            Assert.IsAssignableFrom<ISerializable>(exception);
+            Assert.IsType<ISerializable>(exception, exactMatch: false);
         }
 
         #endregion
@@ -145,7 +145,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var message = "Test error message";
-            Exception? caughtException = null;
+            Exception? caughtException;
 
             // Act
             try
@@ -168,7 +168,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var message = "Test error message";
-            RuleException? caughtException = null;
+            RuleException? caughtException;
 
             // Act
             try
