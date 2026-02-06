@@ -4,6 +4,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="LogicBuilder.Workflow.Activities.Rules.IntegrationTests/LogicBuilder.Workflow.Activities.Rules.IntegrationTests.csproj" />
+    <Project Path="LogicBuilder.Workflow.Activities.Rules.UnitTests/LogicBuilder.Workflow.Activities.Rules.UnitTests.csproj" Id="26bfcd47-9d18-4d69-9eda-6fdac0ea5d0b" />
     <Project Path="SampleFlow/SampleFlow.csproj" />
   </Folder>
 </Solution>
