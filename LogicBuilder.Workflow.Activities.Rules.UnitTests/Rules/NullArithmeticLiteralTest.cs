@@ -33,8 +33,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var literal = new NullArithmeticLiteral(typeof(int?));
 
             // Act
-            var typeName = literal.GetType().GetProperty("TypeName", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            var typeName = literal.GetType()?.GetProperty("TypeName", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .GetValue(literal) as string;
 
             // Assert
@@ -1114,7 +1114,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var result = stringLiteral.Add(nullLiteral);
 
             // Assert
-            Assert.Equal(null, result);
+            Assert.Null(result);
         }
         #endregion
     }

@@ -434,7 +434,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var result = stringLiteral.Add(nullLiteral);
 
             // Assert
-            Assert.Equal(null, result);
+            Assert.Null(result);
         }
         #endregion
 
