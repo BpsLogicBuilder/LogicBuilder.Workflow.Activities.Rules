@@ -29,7 +29,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodeThisReferenceExpression();
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             
             // Act
             var result = InvokeValidate(expression, validation, false);
@@ -45,7 +45,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodeThisReferenceExpression();
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = InvokeValidate(expression, validation, true);
@@ -69,7 +69,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodeThisReferenceExpression();
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var analysis = new RuleAnalysis(validation, true);
 
             // Act
@@ -86,7 +86,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodeThisReferenceExpression();
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var analysis = new RuleAnalysis(validation, false);
 
             // Act
@@ -103,7 +103,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodeThisReferenceExpression();
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var analysis = new RuleAnalysis(validation, false);
             var qualifier = CreateRulePathQualifier("*", CreateRulePathQualifier("Property2", null!));
 
@@ -123,7 +123,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Arrange
             var expression = new CodeThisReferenceExpression();
             var testObject = new TestClass { Value = 42 };
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var execution = new RuleExecution(validation, testObject);
 
             // Act

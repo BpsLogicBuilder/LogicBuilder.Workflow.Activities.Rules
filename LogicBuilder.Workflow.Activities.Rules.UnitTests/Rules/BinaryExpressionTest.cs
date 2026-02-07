@@ -37,7 +37,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(5);
             var right = new CodePrimitiveExpression(10);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.Add, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -54,7 +54,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(10.5);
             var right = new CodePrimitiveExpression(5.5);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.Subtract, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -71,7 +71,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(3);
             var right = new CodePrimitiveExpression(7);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.Multiply, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -88,7 +88,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(10);
             var right = new CodePrimitiveExpression(2);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.Divide, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -105,7 +105,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(10);
             var right = new CodePrimitiveExpression(3);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.Modulus, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -126,7 +126,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(5);
             var right = new CodePrimitiveExpression(3);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.BitwiseAnd, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -143,7 +143,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(5);
             var right = new CodePrimitiveExpression(3);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.BitwiseOr, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -164,7 +164,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(5);
             var right = new CodePrimitiveExpression(10);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.LessThan, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -182,7 +182,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(5);
             var right = new CodePrimitiveExpression(10);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.LessThanOrEqual, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -200,7 +200,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(10);
             var right = new CodePrimitiveExpression(5);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.GreaterThan, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -218,7 +218,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(10);
             var right = new CodePrimitiveExpression(5);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.GreaterThanOrEqual, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -240,7 +240,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(10);
             var right = new CodePrimitiveExpression(10);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.ValueEquality, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -258,7 +258,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression("test");
             var right = new CodePrimitiveExpression("test");
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.IdentityEquality, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -276,7 +276,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression("test");
             var right = new CodePrimitiveExpression("other");
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.IdentityInequality, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -298,7 +298,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(true);
             var right = new CodePrimitiveExpression(false);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.BooleanAnd, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -316,7 +316,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(true);
             var right = new CodePrimitiveExpression(false);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.BooleanOr, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -334,7 +334,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(5);
             var right = new CodePrimitiveExpression(true);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.BooleanAnd, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -351,7 +351,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(true);
             var right = new CodePrimitiveExpression(5);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.BooleanAnd, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -372,7 +372,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(5);
             var right = new CodePrimitiveExpression(10);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.Add, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             _ = _binaryExpression.Validate(expression, validation, true);
@@ -388,7 +388,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Arrange
             var right = new CodePrimitiveExpression(10);
             var expression = new CodeBinaryOperatorExpression(null, CodeBinaryOperatorType.Add, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             _ = _binaryExpression.Validate(expression, validation, false);
@@ -404,7 +404,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Arrange
             var left = new CodePrimitiveExpression(10);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.Add, null);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             _ = _binaryExpression.Validate(expression, validation, false);
@@ -421,7 +421,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodeTypeReferenceExpression(typeof(int));
             var right = new CodePrimitiveExpression(10);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.Add, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -438,7 +438,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(10);
             var right = new CodeTypeReferenceExpression(typeof(int));
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.Add, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _binaryExpression.Validate(expression, validation, false);
@@ -881,7 +881,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(false);
             var right = new CodePrimitiveExpression(true);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.BooleanAnd, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             _binaryExpression.Validate(expression, validation, false);
             var execution = new RuleExecution(validation, new TestClass());
 
@@ -900,7 +900,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(true);
             var right = new CodePrimitiveExpression(false);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.BooleanOr, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             _binaryExpression.Validate(expression, validation, false);
             var execution = new RuleExecution(validation, new TestClass());
 
@@ -919,7 +919,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var left = new CodePrimitiveExpression(false);
             var right = new CodePrimitiveExpression(false);
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.BooleanOr, right);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             _binaryExpression.Validate(expression, validation, false);
             var execution = new RuleExecution(validation, new TestClass());
 

@@ -46,7 +46,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Arrange
             var targetObject = new CodeThisReferenceExpression();
             var expression = new CodeFieldReferenceExpression(targetObject, "PublicIntField");
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _fieldReferenceExpression.Validate(expression, validation, false);
@@ -63,7 +63,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Arrange
             var targetObject = new CodeTypeReferenceExpression(typeof(TestClass));
             var expression = new CodeFieldReferenceExpression(targetObject, "StaticPublicField");
-            var validation = new RuleValidation(typeof(TestRuleClass), null);
+            var validation = new RuleValidation(typeof(TestRuleClass));
 
             // Act
             var result = _fieldReferenceExpression.Validate(expression, validation, false);
@@ -79,7 +79,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodeFieldReferenceExpression(null, "PublicIntField");
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _fieldReferenceExpression.Validate(expression, validation, false);
@@ -96,7 +96,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Arrange
             var targetObject = new CodeThisReferenceExpression();
             var expression = new CodeFieldReferenceExpression(targetObject, "NonExistentField");
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _fieldReferenceExpression.Validate(expression, validation, false);
@@ -113,7 +113,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Arrange
             var targetObject = new CodeThisReferenceExpression();
             var expression = new CodeFieldReferenceExpression(targetObject, "PublicIntField");
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _fieldReferenceExpression.Validate(expression, validation, true);
@@ -130,7 +130,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Arrange
             var targetObject = new CodePrimitiveExpression(null);
             var expression = new CodeFieldReferenceExpression(targetObject, "PublicIntField");
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _fieldReferenceExpression.Validate(expression, validation, false);
@@ -269,7 +269,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var targetObject = new CodeThisReferenceExpression();
             var expression = new CodeFieldReferenceExpression(targetObject, "PublicIntField");
             
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var execution = new RuleExecution(validation, testInstance);
 
             // Act & Assert
@@ -531,7 +531,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var targetObject = new CodeThisReferenceExpression();
             var expression = new CodeFieldReferenceExpression(targetObject, "PublicIntField");
             
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             _fieldReferenceExpression.Validate(expression, validation, false);
             
             var analysis = new RuleAnalysis(validation, true);
@@ -550,7 +550,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var targetObject = new CodeThisReferenceExpression();
             var expression = new CodeFieldReferenceExpression(targetObject, "PublicIntField");
             
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             _fieldReferenceExpression.Validate(expression, validation, true);
             
             var analysis = new RuleAnalysis(validation, false);

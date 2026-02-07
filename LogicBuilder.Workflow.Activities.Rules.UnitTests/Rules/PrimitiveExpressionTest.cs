@@ -24,7 +24,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodePrimitiveExpression(42);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _primitiveExpression.Validate(expression, validation, true);
@@ -40,7 +40,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodePrimitiveExpression(42);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _primitiveExpression.Validate(expression, validation, false);
@@ -56,7 +56,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodePrimitiveExpression(null);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _primitiveExpression.Validate(expression, validation, false);
@@ -72,7 +72,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodePrimitiveExpression("test");
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _primitiveExpression.Validate(expression, validation, false);
@@ -88,7 +88,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodePrimitiveExpression(true);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _primitiveExpression.Validate(expression, validation, false);
@@ -104,7 +104,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodePrimitiveExpression(3.14);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = _primitiveExpression.Validate(expression, validation, false);
@@ -124,7 +124,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodePrimitiveExpression(42);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var analysis = new RuleAnalysis(validation, true);
 
             // Act & Assert - Should not throw
@@ -140,7 +140,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodePrimitiveExpression(42);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             _primitiveExpression.Validate(expression, validation, false);
             var execution = new RuleExecution(validation, new TestClass());
 
@@ -157,7 +157,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodePrimitiveExpression("test");
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             _primitiveExpression.Validate(expression, validation, false);
             var execution = new RuleExecution(validation, new TestClass());
 
@@ -174,7 +174,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodePrimitiveExpression(null);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             _primitiveExpression.Validate(expression, validation, false);
             var execution = new RuleExecution(validation, new TestClass());
 
@@ -191,7 +191,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var expression = new CodePrimitiveExpression(true);
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             _primitiveExpression.Validate(expression, validation, false);
             var execution = new RuleExecution(validation, new TestClass());
 
