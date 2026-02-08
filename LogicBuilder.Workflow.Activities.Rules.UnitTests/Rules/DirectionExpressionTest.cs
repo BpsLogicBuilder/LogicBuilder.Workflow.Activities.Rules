@@ -1,4 +1,3 @@
-using System;
 using System.CodeDom;
 using System.Text;
 
@@ -474,7 +473,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         private class TestClass
         {
             public int IntField;
-            public string? StringField;
             
             public int IntProperty { get; set; }
             public string? StringProperty { get; set; }
