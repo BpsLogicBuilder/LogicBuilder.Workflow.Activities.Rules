@@ -98,8 +98,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             // now make sure that the path is valid
-            string[] parts = path.Split('/');
-            if (parts[0] == "this")
+            string[] parts = path?.Split('/') ?? [];
+            if (parts.Length > 0 && parts[0] == "this")
             {
                 Type currentType = validator.ThisType;
                 for (int i = 1; i < parts.Length; ++i)
