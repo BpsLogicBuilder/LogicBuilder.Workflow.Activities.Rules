@@ -1,9 +1,7 @@
 ﻿using System;
 using System.CodeDom;
-using System.Collections.Generic;
-using System.Text;
 
-namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
+namespace LogicBuilder.Workflow.Activities.Rules.UnitTests
 {
     public class ParameterValidationTests
     {

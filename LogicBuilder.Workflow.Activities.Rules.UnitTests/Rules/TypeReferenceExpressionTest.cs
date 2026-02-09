@@ -16,7 +16,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var typeRefExpr = new CodeTypeReferenceExpression(typeof(string));
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = RuleExpressionWalker.Validate(validation, typeRefExpr, true);
@@ -33,7 +33,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var typeRefExpr = new CodeTypeReferenceExpression(typeof(int));
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = RuleExpressionWalker.Validate(validation, typeRefExpr, false);
@@ -49,7 +49,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var typeRefExpr = new CodeTypeReferenceExpression(typeof(string));
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = RuleExpressionWalker.Validate(validation, typeRefExpr, false);
@@ -65,7 +65,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var typeRefExpr = new CodeTypeReferenceExpression(typeof(TestClass));
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
 
             // Act
             var result = RuleExpressionWalker.Validate(validation, typeRefExpr, false);
@@ -85,7 +85,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var typeRefExpr = new CodeTypeReferenceExpression(typeof(int));
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             RuleExpressionWalker.Validate(validation, typeRefExpr, false);
             var analysis = new RuleAnalysis(validation, true);
 
@@ -101,7 +101,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var typeRefExpr = new CodeTypeReferenceExpression(typeof(string));
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             RuleExpressionWalker.Validate(validation, typeRefExpr, false);
             var analysis = new RuleAnalysis(validation, false);
 
@@ -121,7 +121,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var typeRefExpr = new CodeTypeReferenceExpression(typeof(int));
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             RuleExpressionWalker.Validate(validation, typeRefExpr, false);
             var execution = new RuleExecution(validation, new TestClass());
 
@@ -138,7 +138,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         {
             // Arrange
             var typeRefExpr = new CodeTypeReferenceExpression(typeof(string));
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             RuleExpressionWalker.Validate(validation, typeRefExpr, false);
             var execution = new RuleExecution(validation, new TestClass());
 
@@ -459,7 +459,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         private class TestClass
         {
             public int IntValue { get; set; }
-            public string StringValue { get; set; }
+            public string? StringValue { get; set; }
         }
 
         #endregion

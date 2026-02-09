@@ -107,7 +107,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_WithValueTypeAndNoParameters_ReturnsValidInfo()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(SimpleStruct), null);
+            var validation = new RuleValidation(typeof(SimpleStruct));
             var createExpr = new CodeObjectCreateExpression(typeof(SimpleStruct));
             var expressionInternal = GetObjectCreateExpression();
 
@@ -124,7 +124,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_WithAbstractType_ReturnsNullAndAddsError()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(AbstractClass), null);
+            var validation = new RuleValidation(typeof(AbstractClass));
             var createExpr = new CodeObjectCreateExpression(typeof(AbstractClass));
             var expressionInternal = GetObjectCreateExpression();
 
@@ -258,7 +258,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void AnalyzeUsage_WithFieldParameter_AddsSymbol()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var fieldRef = new CodeFieldReferenceExpression(
                 new CodeThisReferenceExpression(), "Value");
             var createExpr = new CodeObjectCreateExpression(
@@ -281,7 +281,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void AnalyzeUsage_WithMultipleParameters_AnalyzesAll()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var fieldRef1 = new CodeFieldReferenceExpression(
                 new CodeThisReferenceExpression(), "Value");
             var fieldRef2 = new CodeFieldReferenceExpression(

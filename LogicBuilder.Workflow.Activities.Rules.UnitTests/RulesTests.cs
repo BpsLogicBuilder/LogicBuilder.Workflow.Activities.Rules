@@ -1,12 +1,10 @@
 ﻿using LogicBuilder.Workflow.ComponentModel.Serialization;
 using System;
 using System.CodeDom;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
-namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
+namespace LogicBuilder.Workflow.Activities.Rules.UnitTests
 {
     public partial class RulesTests
     {

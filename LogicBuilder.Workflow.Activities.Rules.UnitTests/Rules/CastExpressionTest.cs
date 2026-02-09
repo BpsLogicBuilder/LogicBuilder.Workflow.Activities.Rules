@@ -11,7 +11,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_WrittenToExpression_ReturnsError()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(int), new CodePrimitiveExpression(5));
 
             // Act
@@ -27,7 +27,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_NullExpression_ReturnsError()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(int), null);
 
             // Act
@@ -42,7 +42,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_NullTargetType_ReturnsError()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression
             {
                 Expression = new CodePrimitiveExpression(5),
@@ -61,7 +61,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_ValidIntToLongCast_Succeeds()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(long), new CodePrimitiveExpression(5));
 
             // Act
@@ -77,7 +77,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_ValidDoubleToIntCast_Succeeds()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(int), new CodePrimitiveExpression(5.5));
 
             // Act
@@ -93,7 +93,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_CastNullToReferenceType_Succeeds()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(string), new CodePrimitiveExpression(null));
 
             // Act
@@ -109,7 +109,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_CastNullToValueType_ReturnsError()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(int), new CodePrimitiveExpression(null));
 
             // Act
@@ -124,7 +124,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_CastNullToNullableType_Succeeds()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(int?), new CodePrimitiveExpression(null));
 
             // Act
@@ -140,7 +140,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_IncompatibleCast_ReturnsError()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(DateTime), new CodePrimitiveExpression(5));
 
             // Act
@@ -155,7 +155,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_CastBetweenNumericTypes_Succeeds()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(byte), new CodePrimitiveExpression(5));
 
             // Act
@@ -171,7 +171,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_CastCharToInt_Succeeds()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(int), new CodePrimitiveExpression('A'));
 
             // Act
@@ -187,7 +187,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_CastIntToChar_Succeeds()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(char), new CodePrimitiveExpression(65));
 
             // Act
@@ -203,7 +203,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Validate_DownCastInheritanceHierarchy_Succeeds()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var thisRef = new CodeThisReferenceExpression();
             var castExpr = new CodeCastExpression(typeof(object), thisRef);
 
@@ -224,7 +224,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Evaluate_NotValidated_ThrowsException()
         {
             // Arrange
-            var execution = new RuleExecution(new RuleValidation(typeof(TestClass), null), new TestClass());
+            var execution = new RuleExecution(new RuleValidation(typeof(TestClass)), new TestClass());
             var castExpr = new CodeCastExpression(typeof(int), new CodePrimitiveExpression(5));
 
             // Act & Assert
@@ -237,7 +237,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Evaluate_IntToLong_ReturnsLong()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(long), new CodePrimitiveExpression(5));
             RuleExpressionWalker.Validate(validation, castExpr, false);
             var execution = new RuleExecution(validation, new TestClass());
@@ -255,7 +255,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Evaluate_DoubleToInt_ReturnsInt()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(int), new CodePrimitiveExpression(5.7));
             RuleExpressionWalker.Validate(validation, castExpr, false);
             var execution = new RuleExecution(validation, new TestClass());
@@ -273,7 +273,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Evaluate_NullToReferenceType_ReturnsNull()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(string), new CodePrimitiveExpression(null));
             RuleExpressionWalker.Validate(validation, castExpr, false);
             var execution = new RuleExecution(validation, new TestClass());
@@ -289,7 +289,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Evaluate_NullToNullableType_ReturnsNull()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(int?), new CodePrimitiveExpression(null));
             RuleExpressionWalker.Validate(validation, castExpr, false);
             var execution = new RuleExecution(validation, new TestClass());
@@ -305,7 +305,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Evaluate_CharToInt_ReturnsInt()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(int), new CodePrimitiveExpression('A'));
             RuleExpressionWalker.Validate(validation, castExpr, false);
             var execution = new RuleExecution(validation, new TestClass());
@@ -323,7 +323,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Evaluate_IntToChar_ReturnsChar()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(char), new CodePrimitiveExpression(65));
             RuleExpressionWalker.Validate(validation, castExpr, false);
             var execution = new RuleExecution(validation, new TestClass());
@@ -341,7 +341,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Evaluate_ByteToInt_ReturnsInt()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(int), new CodePrimitiveExpression((byte)255));
             RuleExpressionWalker.Validate(validation, castExpr, false);
             var execution = new RuleExecution(validation, new TestClass());
@@ -359,7 +359,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void Evaluate_LongToInt_ReturnsInt()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var castExpr = new CodeCastExpression(typeof(int), new CodePrimitiveExpression(100L));
             RuleExpressionWalker.Validate(validation, castExpr, false);
             var execution = new RuleExecution(validation, new TestClass());
@@ -608,7 +608,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         public void AnalyzeUsage_SimpleCast_AnalyzesChildExpression()
         {
             // Arrange
-            var validation = new RuleValidation(typeof(TestClass), null);
+            var validation = new RuleValidation(typeof(TestClass));
             var fieldRef = new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), "IntValue");
             var castExpr = new CodeCastExpression(typeof(long), fieldRef);
             
