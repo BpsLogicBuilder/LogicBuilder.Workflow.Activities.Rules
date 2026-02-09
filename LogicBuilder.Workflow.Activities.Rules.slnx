@@ -2,6 +2,7 @@
   <Folder Name="/Solution Items/">
     <File Path=".github/workflows/ci.yml" />
     <File Path="CI_Pack_Push.ps1" />
+    <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="LogicBuilder.Workflow.Activities.Rules/LogicBuilder.Workflow.Activities.Rules.csproj" />
