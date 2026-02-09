@@ -936,8 +936,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
             get
             {
                 // we never use this method, so add use of EventHandlers to keep compiler happy
-                TypesChanged.Invoke(this, null);
-                TypeLoadErrorsChanged.Invoke(this, null);
+                TypesChanged?.Invoke(this, null);
+                TypeLoadErrorsChanged?.Invoke(this, null);
                 return null;
             }
         }
