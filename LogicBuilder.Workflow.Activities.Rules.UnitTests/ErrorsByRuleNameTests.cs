@@ -1,6 +1,6 @@
 ﻿using System.CodeDom;
 
-namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
+namespace LogicBuilder.Workflow.Activities.Rules.UnitTests
 {
     public class ErrorsByRuleNameTests
     {

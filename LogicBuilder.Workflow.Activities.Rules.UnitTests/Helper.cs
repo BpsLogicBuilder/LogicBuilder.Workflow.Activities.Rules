@@ -1,10 +1,10 @@
-﻿using LogicBuilder.Workflow.Activities.Rules.IntegrationTests.Properties;
+﻿using LogicBuilder.Workflow.Activities.Rules.UnitTests.Properties;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace LogicBuilder.Workflow.Activities.Rules.IntegrationTests
+namespace LogicBuilder.Workflow.Activities.Rules.UnitTests
 {
     internal static class Helper
     {
