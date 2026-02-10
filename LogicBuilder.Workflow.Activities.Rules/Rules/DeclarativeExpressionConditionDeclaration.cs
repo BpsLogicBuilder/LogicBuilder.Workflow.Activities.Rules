@@ -37,7 +37,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         private string _name;
         private bool _runtimeInitialized;
         [NonSerialized]
-        private object _expressionLock = new object();
+        private readonly object _expressionLock = new();
 
         public override string Name
         {
@@ -132,7 +132,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             if (_expression != null)
             {
-                StringBuilder decompilation = new StringBuilder();
+                StringBuilder decompilation = new();
                 RuleExpressionWalker.Decompile(decompilation, _expression, null);
                 return decompilation.ToString();
             }
@@ -151,14 +151,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (validation == null)
                 throw new ArgumentNullException("validation");
 
-            bool valid = true;
-
+            bool valid;
             if (_expression == null)
             {
                 valid = false;
 
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.ConditionExpressionNull, typeof(CodePrimitiveExpression).ToString());
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_EmptyExpression);
+                ValidationError error = new(message, ErrorNumbers.Error_EmptyExpression);
                 error.UserData[RuleUserDataKeys.ErrorObject] = this;
                 validation.AddError(error);
 
@@ -181,7 +180,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override ICollection<string> GetDependencies(RuleValidation validation)
         {
-            RuleAnalysis analyzer = new RuleAnalysis(validation, false);
+            RuleAnalysis analyzer = new(validation, false);
             if (_expression != null)
                 RuleExpressionWalker.AnalyzeUsage(analyzer, _expression, true, false, null);
             return analyzer.GetSymbols();

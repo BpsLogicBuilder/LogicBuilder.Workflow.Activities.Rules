@@ -12,6 +12,7 @@ using System.Text;
 using LogicBuilder.Workflow.Activities.Common;
 using LogicBuilder.Workflow.ComponentModel.Compiler;
 using System;
+using System.Linq;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
@@ -20,7 +21,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
         RuleExpressionInfo Validate(RuleValidation validation, bool isWritten);
         RuleExpressionResult Evaluate(RuleExecution execution);
         void AnalyzeUsage(RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier);
-        [SuppressMessage("Microsoft.Naming", "CA1720:AvoidTypeNamesInParameters", MessageId = "0#")]
         void Decompile(StringBuilder stringBuilder, CodeExpression parentExpression);
         bool Match(CodeExpression expression);
         CodeExpression Clone();
@@ -47,7 +47,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (isWritten)
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeThisReferenceExpression).ToString());
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_InvalidAssignTarget);
+                ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = expression;
                 validation.Errors.Add(error);
                 return null;
@@ -63,7 +63,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             else if (!analysis.ForWrites && !isRead)   // ... and vice-versa
                 return;
 
-            StringBuilder sb = new StringBuilder("this/");
+            StringBuilder sb = new("this/");
             for (RulePathQualifier q = qualifier; q != null; q = q.Next)
             {
                 sb.Append(q.Name);
@@ -116,7 +116,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (isWritten)
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodePrimitiveExpression).ToString());
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_InvalidAssignTarget);
+                ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = expression;
                 validation.Errors.Add(error);
                 return null;
@@ -175,7 +175,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         #region Validate
 
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message;
@@ -362,11 +361,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     object[] attrs = method.GetCustomAttributes(typeof(RuleAttribute), true);
                     if (attrs != null && attrs.Length > 0)
                     {
-                        Stack<MemberInfo> methodStack = new Stack<MemberInfo>();
+                        Stack<MemberInfo> methodStack = new();
                         methodStack.Push(method);
 
                         bool allAttributesValid = true;
-                        foreach (RuleAttribute ruleAttr in attrs)
+                        foreach (RuleAttribute ruleAttr in attrs.OfType<RuleAttribute>())
                         {
                             if (!ruleAttr.Validate(validation, method, method.DeclaringType, method.GetParameters()))
                                 allAttributesValid = false;
@@ -389,7 +388,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
         /// <param name="type"></param>
         /// <param name="expression"></param>
         /// <returns></returns>
-        [SuppressMessage("Microsoft.Performance", "CA1800:DoNotCastUnnecessarily")]
         private static bool PromotionPossible(Type type, CodeExpression expression)
         {
             // C# 2.0, section 6.1.6, int/long constants can be promoted to ulong as long as in range
@@ -424,12 +422,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 MethodInfo method = expressionInfo.MethodInfo;
                 if (method != null)
                 {
-                    List<CodeExpression> attributedExprs = new List<CodeExpression>();
-                    CodeExpressionCollection arguments = new CodeExpressionCollection
-                    {
+                    List<CodeExpression> attributedExprs = [];
+                    CodeExpressionCollection arguments =
+                    [
                         binaryExpr.Left,
                         binaryExpr.Right
-                    };
+                    ];
                     CodeExpression targetObject = new CodeTypeReferenceExpression(method.DeclaringType);
                     analysis.AnalyzeRuleAttributes(method, targetObject, qualifier, arguments, method.GetParameters(), attributedExprs);
                 }
@@ -476,11 +474,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 object resultValue;
                 object rhsValue = RuleExpressionWalker.Evaluate(execution, binaryExpr.Right).Value;
-                RuleBinaryExpressionInfo expressionInfo = execution.Validation.ExpressionInfo(binaryExpr) as RuleBinaryExpressionInfo;
-                if (expressionInfo == null)  // Oops, someone forgot to validate.
+                if (execution.Validation.ExpressionInfo(binaryExpr) is not RuleBinaryExpressionInfo expressionInfo)  // Oops, someone forgot to validate.
                 {
                     string message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                    InvalidOperationException exception = new InvalidOperationException(message);
+                    InvalidOperationException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
                     throw exception;
                 }
@@ -494,9 +491,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     else
                     {
                         ParameterInfo[] existingParameters = methodInfo.GetParameters();
-                        object[] parameters = new object[2];
-                        parameters[0] = Executor.AdjustType(expressionInfo.LeftType, lhsValue, existingParameters[0].ParameterType);
-                        parameters[1] = Executor.AdjustType(expressionInfo.RightType, rhsValue, existingParameters[1].ParameterType);
+                        object[] parameters =
+                        [
+                            Executor.AdjustType(expressionInfo.LeftType, lhsValue, existingParameters[0].ParameterType),
+                            Executor.AdjustType(expressionInfo.RightType, rhsValue, existingParameters[1].ParameterType),
+                        ];
                         resultValue = methodInfo.Invoke(null, parameters);
                     }
                 }
@@ -508,7 +507,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private static object EvaluateBinaryOperation(CodeBinaryOperatorExpression binaryExpr, Type lhsType, object lhsValue, CodeBinaryOperatorType operation, Type rhsType, object rhsValue)
         {
             Literal leftLiteral;
@@ -646,23 +644,21 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         #region Decompile
 
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
-            bool mustParenthesize = false;
             CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)expression;
 
             if (binaryExpr.Left == null)
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.NullBinaryOpLHS, binaryExpr.Operator.ToString());
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
                 throw exception;
             }
             if (binaryExpr.Right == null)
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.NullBinaryOpRHS, binaryExpr.Operator.ToString());
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
                 throw exception;
             }
@@ -727,7 +723,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
                 default:
                     string message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, binaryExpr.Operator.ToString());
-                    NotSupportedException exception = new NotSupportedException(message);
+                    NotSupportedException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
                     throw exception;
             }
@@ -736,6 +732,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             CodeExpression rightExpr = binaryExpr.Right;
 
 
+            bool mustParenthesize;
             if (binaryExpr.Operator == CodeBinaryOperatorType.ValueEquality)
             {
                 // Look for special cases:
@@ -865,7 +862,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)expression;
 
-            CodeBinaryOperatorExpression newOp = new CodeBinaryOperatorExpression
+            CodeBinaryOperatorExpression newOp = new()
             {
                 Operator = binaryExpr.Operator,
                 Left = RuleExpressionWalker.Clone(binaryExpr.Left),
@@ -901,7 +898,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (fieldRefExpr.TargetObject == null)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.NullFieldTarget, fieldRefExpr.FieldName);
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
+                ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = fieldRefExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -925,7 +922,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (targetType == typeof(NullLiteral))
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.NullFieldTarget, fieldRefExpr.FieldName);
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_BindingTypeMissing);
+                ValidationError error = new(message, ErrorNumbers.Error_BindingTypeMissing);
                 error.UserData[RuleUserDataKeys.ErrorObject] = fieldRefExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -943,7 +940,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (fi == null)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.UnknownField, fieldRefExpr.FieldName, RuleDecompiler.DecompileType(targetType));
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_CannotResolveMember);
+                ValidationError error = new(message, ErrorNumbers.Error_CannotResolveMember);
                 error.UserData[RuleUserDataKeys.ErrorObject] = fieldRefExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -953,7 +950,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 // This can only happen with a design-time type.
                 message = string.Format(CultureInfo.CurrentCulture, Messages.CouldNotDetermineMemberType, fieldRefExpr.FieldName);
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_CouldNotDetermineMemberType);
+                ValidationError error = new(message, ErrorNumbers.Error_CouldNotDetermineMemberType);
                 error.UserData[RuleUserDataKeys.ErrorObject] = fieldRefExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -962,7 +959,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (isWritten && fi.IsLiteral)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.FieldSetNotAllowed, fieldRefExpr.FieldName, RuleDecompiler.DecompileType(targetType));
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_InvalidAssignTarget);
+                ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = fieldRefExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -988,11 +985,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             CodeFieldReferenceExpression fieldRefExpr = (CodeFieldReferenceExpression)expression;
             object target = RuleExpressionWalker.Evaluate(execution, fieldRefExpr.TargetObject).Value;
 
-            RuleFieldExpressionInfo fieldExprInfo = execution.Validation.ExpressionInfo(fieldRefExpr) as RuleFieldExpressionInfo;
-            if (fieldExprInfo == null)  // Oops, someone forgot to validate.
+            if (execution.Validation.ExpressionInfo(fieldRefExpr) is not RuleFieldExpressionInfo fieldExprInfo)  // Oops, someone forgot to validate.
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                InvalidOperationException exception = new InvalidOperationException(message);
+                InvalidOperationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = fieldRefExpr;
                 throw exception;
             }
@@ -1010,7 +1006,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (targetObject == null)
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.NullFieldTarget, fieldRefExpr.FieldName);
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = fieldRefExpr;
                 throw exception;
             }
@@ -1024,7 +1020,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             CodeFieldReferenceExpression fieldRefExpr = (CodeFieldReferenceExpression)expression;
 
-            CodeFieldReferenceExpression newField = new CodeFieldReferenceExpression
+            CodeFieldReferenceExpression newField = new()
             {
                 FieldName = fieldRefExpr.FieldName,
                 TargetObject = RuleExpressionWalker.Clone(fieldRefExpr.TargetObject)
@@ -1058,7 +1054,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (propGetExpr.TargetObject == null)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.NullPropertyTarget, propGetExpr.PropertyName);
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
+                ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = propGetExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -1082,7 +1078,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (targetType == typeof(NullLiteral))
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.NullPropertyTarget, propGetExpr.PropertyName);
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_BindingTypeMissing);
+                ValidationError error = new(message, ErrorNumbers.Error_BindingTypeMissing);
                 error.UserData[RuleUserDataKeys.ErrorObject] = propGetExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -1100,7 +1096,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (pi == null)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.UnknownProperty, propGetExpr.PropertyName, RuleDecompiler.DecompileType(targetType));
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_CannotResolveMember);
+                ValidationError error = new(message, ErrorNumbers.Error_CannotResolveMember);
                 error.UserData[RuleUserDataKeys.ErrorObject] = propGetExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -1110,7 +1106,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 // This can only happen with a design-time type.
                 message = string.Format(CultureInfo.CurrentCulture, Messages.CouldNotDetermineMemberType, propGetExpr.PropertyName);
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_CouldNotDetermineMemberType);
+                ValidationError error = new(message, ErrorNumbers.Error_CouldNotDetermineMemberType);
                 error.UserData[RuleUserDataKeys.ErrorObject] = propGetExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -1121,7 +1117,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 string baseMessage = isWritten ? Messages.UnknownPropertySet : Messages.UnknownPropertyGet;
                 message = string.Format(CultureInfo.CurrentCulture, baseMessage, propGetExpr.PropertyName, RuleDecompiler.DecompileType(targetType));
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_CannotResolveMember);
+                ValidationError error = new(message, ErrorNumbers.Error_CannotResolveMember);
                 error.UserData[RuleUserDataKeys.ErrorObject] = propGetExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -1134,11 +1130,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             object[] attrs = pi.GetCustomAttributes(typeof(RuleAttribute), true);
             if (attrs != null && attrs.Length > 0)
             {
-                Stack<MemberInfo> methodStack = new Stack<MemberInfo>();
+                Stack<MemberInfo> methodStack = new();
                 methodStack.Push(pi);
 
                 bool allAttributesValid = true;
-                foreach (RuleAttribute ruleAttr in attrs)
+                foreach (RuleAttribute ruleAttr in attrs.OfType<RuleAttribute>())
                 {
                     if (!ruleAttr.Validate(validation, pi, targetType, null))
                         allAttributesValid = false;
@@ -1166,17 +1162,16 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (targetExprInfo == null)  // Oops, someone forgot to validate.
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                InvalidOperationException exception = new InvalidOperationException(message);
+                InvalidOperationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = targetObject;
                 throw exception;
             }
 
             // Get the property info from the validator so we can look for [RuleRead] and [RuleWrite] attributes.
-            RulePropertyExpressionInfo propExprInfo = analysis.Validation.ExpressionInfo(propGetExpr) as RulePropertyExpressionInfo;
-            if (propExprInfo == null)  // Oops, someone forgot to validate.
+            if (analysis.Validation.ExpressionInfo(propGetExpr) is not RulePropertyExpressionInfo propExprInfo)  // Oops, someone forgot to validate.
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                InvalidOperationException exception = new InvalidOperationException(message);
+                InvalidOperationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = propGetExpr;
                 throw exception;
             }
@@ -1184,7 +1179,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             PropertyInfo pi = propExprInfo.PropertyInfo;
 
             // Look for RuleAttribute's on the invoked property.
-            List<CodeExpression> attributedExprs = new List<CodeExpression>();
+            List<CodeExpression> attributedExprs = [];
             analysis.AnalyzeRuleAttributes(pi, targetObject, qualifier, null, null, attributedExprs);
 
             // See if the target object needs default analysis.
@@ -1202,11 +1197,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             object target = RuleExpressionWalker.Evaluate(execution, propGetExpr.TargetObject).Value;
 
-            RulePropertyExpressionInfo propExprInfo = execution.Validation.ExpressionInfo(propGetExpr) as RulePropertyExpressionInfo;
-            if (propExprInfo == null)  // Oops, someone forgot to validate.
+            if (execution.Validation.ExpressionInfo(propGetExpr) is not RulePropertyExpressionInfo propExprInfo)  // Oops, someone forgot to validate.
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                InvalidOperationException exception = new InvalidOperationException(message);
+                InvalidOperationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = propGetExpr;
                 throw exception;
             }
@@ -1223,7 +1217,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (targetObject == null)
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.NullPropertyTarget, propGetExpr.PropertyName);
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = propGetExpr;
                 throw exception;
             }
@@ -1237,7 +1231,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             CodePropertyReferenceExpression propGetExpr = (CodePropertyReferenceExpression)expression;
 
-            CodePropertyReferenceExpression newProperty = new CodePropertyReferenceExpression
+            CodePropertyReferenceExpression newProperty = new()
             {
                 PropertyName = propGetExpr.PropertyName,
                 TargetObject = RuleExpressionWalker.Clone(propGetExpr.TargetObject)
@@ -1262,17 +1256,16 @@ namespace LogicBuilder.Workflow.Activities.Rules
     // CodeMethodInvokeExpression
     internal class MethodInvokeExpression : RuleExpressionInternal
     {
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             Type targetType = null;
             RuleMethodInvokeExpressionInfo methodInvokeInfo = null;
             string message;
-            ValidationError error = null;
             BindingFlags bindingFlags = BindingFlags.Public;
 
             CodeMethodInvokeExpression invokeExpr = (CodeMethodInvokeExpression)expression;
 
+            ValidationError error;
             if (isWritten)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeMethodInvokeExpression).ToString());
@@ -1323,7 +1316,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     targetType = null; // force exit after validating the arguments
                 }
 
-                List<CodeExpression> argExprs = new List<CodeExpression>();
+                List<CodeExpression> argExprs = [];
 
                 bool hasInvalidArgument = false;
                 if (invokeExpr.Parameters != null)
@@ -1421,11 +1414,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             object[] attrs = mi.GetCustomAttributes(typeof(RuleAttribute), true);
             if (attrs != null && attrs.Length > 0)
             {
-                Stack<MemberInfo> methodStack = new Stack<MemberInfo>();
+                Stack<MemberInfo> methodStack = new();
                 methodStack.Push(mi);
 
                 bool allAttributesValid = true;
-                foreach (RuleAttribute ruleAttr in attrs)
+                foreach (RuleAttribute ruleAttr in attrs.OfType<RuleAttribute>())
                 {
                     if (!ruleAttr.Validate(validation, mi, targetType, mi.GetParameters()))
                         allAttributesValid = false;
@@ -1458,17 +1451,16 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (targetExprInfo == null)  // Oops, someone forgot to validate.
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                InvalidOperationException exception = new InvalidOperationException(message);
+                InvalidOperationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = targetObject;
                 throw exception;
             }
 
             // Get the method info from the validation so we can look for [RuleRead] and [RuleWrite] attributes.
-            RuleMethodInvokeExpressionInfo methodExprInfo = analysis.Validation.ExpressionInfo(invokeExpr) as RuleMethodInvokeExpressionInfo;
-            if (methodExprInfo == null)  // Oops, someone forgot to validate.
+            if (analysis.Validation.ExpressionInfo(invokeExpr) is not RuleMethodInvokeExpressionInfo methodExprInfo)  // Oops, someone forgot to validate.
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                InvalidOperationException exception = new InvalidOperationException(message);
+                InvalidOperationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = invokeExpr;
                 throw exception;
             }
@@ -1476,7 +1468,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             MethodInfo mi = methodExprInfo.MethodInfo;
 
             // Look for RuleAttribute's on the invoked method.
-            List<CodeExpression> attributedExprs = new List<CodeExpression>();
+            List<CodeExpression> attributedExprs = [];
             analysis.AnalyzeRuleAttributes(mi, targetObject, qualifier, invokeExpr.Parameters, mi.GetParameters(), attributedExprs);
 
             // See if the target object needs default analysis.
@@ -1512,11 +1504,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             object target = RuleExpressionWalker.Evaluate(execution, invokeExpr.Method.TargetObject).Value;
 
-            RuleMethodInvokeExpressionInfo invokeExprInfo = execution.Validation.ExpressionInfo(invokeExpr) as RuleMethodInvokeExpressionInfo;
-            if (invokeExprInfo == null)  // Oops, someone forgot to validate.
+            if (execution.Validation.ExpressionInfo(invokeExpr) is not RuleMethodInvokeExpressionInfo invokeExprInfo)  // Oops, someone forgot to validate.
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                InvalidOperationException exception = new InvalidOperationException(message);
+                InvalidOperationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = invokeExpr;
                 throw exception;
             }
@@ -1526,7 +1517,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (!mi.IsStatic && target == null)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullMethod, invokeExpr.Method.MethodName);
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = invokeExpr;
                 throw exception;
             }
@@ -1580,8 +1571,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     if (invokeExpr.Parameters[i] is CodeDirectionExpression direction && (direction.Direction == FieldDirection.Ref || direction.Direction == FieldDirection.Out))
                     {
                         // lazy creation of fieldsToSet
-                        if (outArgumentResults == null)
-                            outArgumentResults = new RuleExpressionResult[invokeExpr.Parameters.Count];
+                        outArgumentResults ??= new RuleExpressionResult[invokeExpr.Parameters.Count];
                         // keep track of this out expression so we can set it later
                         outArgumentResults[i] = argResult;
 
@@ -1612,7 +1602,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     System.Diagnostics.Debug.Assert(arrayType.IsArray);
                     Type elementType = arrayType.GetElementType();
 
-                    Array paramsArray = (Array)arrayType.InvokeMember(arrayType.Name, BindingFlags.CreateInstance, null, null, new object[] { actualArgCount - i }, CultureInfo.CurrentCulture);
+                    Array paramsArray = (Array)arrayType.InvokeMember(arrayType.Name, BindingFlags.CreateInstance, null, null, [actualArgCount - i], CultureInfo.CurrentCulture);
                     for (; i < actualArgCount; ++i)
                     {
                         Type argType = execution.Validation.ExpressionInfo(invokeExpr.Parameters[i]).ExpressionType;
@@ -1644,8 +1634,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 for (int i = 0; i < invokeExpr.Parameters.Count; ++i)
                 {
-                    if (outArgumentResults[i] != null)
-                        outArgumentResults[i].Value = arguments[i];
+                    outArgumentResults[i]?.Value = arguments[i];
                 }
             }
 
@@ -1659,7 +1648,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if ((invokeExpr.Method == null) || (invokeExpr.Method.TargetObject == null))
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.NullMethodTarget, invokeExpr.Method.MethodName);
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = invokeExpr;
                 throw exception;
             }
@@ -1682,7 +1671,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     if (paramExpr == null)
                     {
                         string message = string.Format(CultureInfo.CurrentCulture, Messages.NullMethodTypeParameter, i.ToString(CultureInfo.CurrentCulture), invokeExpr.Method.MethodName);
-                        RuleEvaluationException exception = new RuleEvaluationException(message);
+                        RuleEvaluationException exception = new(message);
                         exception.Data[RuleUserDataKeys.ErrorObject] = invokeExpr;
                         throw exception;
                     }
@@ -1701,7 +1690,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             CodeMethodInvokeExpression invokeExpr = (CodeMethodInvokeExpression)expression;
 
-            CodeMethodInvokeExpression newMethod = new CodeMethodInvokeExpression
+            CodeMethodInvokeExpression newMethod = new()
             {
                 Method = CloneMethodReference(invokeExpr.Method)
             };
@@ -1712,7 +1701,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private static CodeMethodReferenceExpression CloneMethodReference(CodeMethodReferenceExpression oldReference)
         {
-            CodeMethodReferenceExpression newReference = new CodeMethodReferenceExpression
+            CodeMethodReferenceExpression newReference = new()
             {
                 MethodName = oldReference.MethodName,
                 TargetObject = RuleExpressionWalker.Clone(oldReference.TargetObject)
@@ -1757,7 +1746,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (isWritten)
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeDirectionExpression).ToString());
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_InvalidAssignTarget);
+                ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = directionExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -1766,7 +1755,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // direction specified, make sure that something is specified
             if (directionExpr.Expression == null)
             {
-                ValidationError error = new ValidationError(Messages.NullDirectionTarget, ErrorNumbers.Error_ParameterNotSet);
+                ValidationError error = new(Messages.NullDirectionTarget, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = directionExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -1775,7 +1764,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (directionExpr.Expression is CodeTypeReferenceExpression)
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.CodeExpressionNotHandled, directionExpr.Expression.GetType().FullName);
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
+                ValidationError error = new(message, ErrorNumbers.Error_CodeExpressionNotHandled);
                 error.UserData[RuleUserDataKeys.ErrorObject] = directionExpr.Expression;
                 validation.AddError(error);
                 return null;
@@ -1887,7 +1876,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override CodeExpression Clone(CodeExpression expression)
         {
             CodeDirectionExpression directionExpr = (CodeDirectionExpression)expression;
-            CodeDirectionExpression newDirection = new CodeDirectionExpression
+            CodeDirectionExpression newDirection = new()
             {
                 Direction = directionExpr.Direction,
                 Expression = RuleExpressionWalker.Clone(directionExpr.Expression)
@@ -1917,7 +1906,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (typeRefExpr.Type == null)
             {
-                ValidationError error = new ValidationError(Messages.NullTypeType, ErrorNumbers.Error_ParameterNotSet);
+                ValidationError error = new(Messages.NullTypeType, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = typeRefExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -1926,7 +1915,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (isWritten)
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeTypeReferenceExpression).ToString());
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_InvalidAssignTarget);
+                ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = typeRefExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -1957,7 +1946,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override CodeExpression Clone(CodeExpression expression)
         {
             CodeTypeReferenceExpression typeRefExpr = (CodeTypeReferenceExpression)expression;
-            CodeTypeReferenceExpression newType = new CodeTypeReferenceExpression(CloneType(typeRefExpr.Type));
+            CodeTypeReferenceExpression newType = new(CloneType(typeRefExpr.Type));
             return newType;
         }
 
@@ -1966,7 +1955,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (oldType == null)
                 return null;
 
-            CodeTypeReference newType = new CodeTypeReference
+            CodeTypeReference newType = new()
             {
                 ArrayElementType = CloneType(oldType.ArrayElementType),
                 ArrayRank = oldType.ArrayRank,
@@ -2014,7 +2003,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
     // CodeCastExpression
     internal class CastExpression : RuleExpressionInternal
     {
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message;
@@ -2024,7 +2012,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (isWritten)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeCastExpression).ToString());
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_InvalidAssignTarget);
+                ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = castExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -2032,7 +2020,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (castExpr.Expression == null)
             {
-                ValidationError error = new ValidationError(Messages.NullCastExpr, ErrorNumbers.Error_ParameterNotSet);
+                ValidationError error = new(Messages.NullCastExpr, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = castExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -2041,7 +2029,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (castExpr.Expression is CodeTypeReferenceExpression)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.CodeExpressionNotHandled, castExpr.Expression.GetType().FullName);
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
+                ValidationError error = new(message, ErrorNumbers.Error_CodeExpressionNotHandled);
                 error.UserData[RuleUserDataKeys.ErrorObject] = castExpr.Expression;
                 validation.AddError(error);
                 return null;
@@ -2049,7 +2037,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (castExpr.TargetType == null)
             {
-                ValidationError error = new ValidationError(Messages.NullCastType, ErrorNumbers.Error_ParameterNotSet);
+                ValidationError error = new(Messages.NullCastType, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = castExpr;
                 validation.Errors.Add(error);
                 return null;
@@ -2071,7 +2059,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (ConditionHelper.IsNonNullableValueType(toType))
                 {
                     message = string.Format(CultureInfo.CurrentCulture, Messages.CastOfNullInvalid, RuleDecompiler.DecompileType(toType));
-                    ValidationError error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
+                    ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
                     error.UserData[RuleUserDataKeys.ErrorObject] = castExpr;
                     validation.Errors.Add(error);
                     return null;
@@ -2142,7 +2130,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (!canConvert)
                 {
                     message = string.Format(CultureInfo.CurrentCulture, Messages.CastIncompatibleTypes, RuleDecompiler.DecompileType(fromType), RuleDecompiler.DecompileType(toType));
-                    ValidationError error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
+                    ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
                     error.UserData[RuleUserDataKeys.ErrorObject] = castExpr;
                     validation.Errors.Add(error);
                     return null;
@@ -2154,24 +2142,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private static bool IsNumeric(Type type)
         {
-            switch (Type.GetTypeCode(type))
+            return Type.GetTypeCode(type) switch
             {
-                case TypeCode.SByte:
-                case TypeCode.Byte:
-                case TypeCode.Int16:
-                case TypeCode.UInt16:
-                case TypeCode.Int32:
-                case TypeCode.UInt32:
-                case TypeCode.Int64:
-                case TypeCode.UInt64:
-                case TypeCode.Char:
-                case TypeCode.Single:
-                case TypeCode.Double:
-                case TypeCode.Decimal:
-                    return true;
-                default:
-                    return false;
-            }
+                TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                _ => false,
+            };
         }
 
         internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
@@ -2195,7 +2170,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (castExprInfo == null)  // Oops, someone forgot to validate.
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                InvalidOperationException exception = new InvalidOperationException(message);
+                InvalidOperationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = castExpr;
                 throw exception;
             }
@@ -2208,7 +2183,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (ConditionHelper.IsNonNullableValueType(toType))
                 {
                     message = string.Format(CultureInfo.CurrentCulture, Messages.CastIncompatibleTypes, Messages.NullValue, RuleDecompiler.DecompileType(toType));
-                    RuleEvaluationException exception = new RuleEvaluationException(message);
+                    RuleEvaluationException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = castExpr;
                     throw exception;
                 }
@@ -2230,14 +2205,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
             CodeExpression targetObject = castExpr.Expression;
             if (targetObject == null)
             {
-                RuleEvaluationException exception = new RuleEvaluationException(Messages.NullCastExpr);
+                RuleEvaluationException exception = new(Messages.NullCastExpr);
                 exception.Data[RuleUserDataKeys.ErrorObject] = castExpr;
                 throw exception;
             }
 
             if (castExpr.TargetType == null)
             {
-                RuleEvaluationException exception = new RuleEvaluationException(Messages.NullCastType);
+                RuleEvaluationException exception = new(Messages.NullCastType);
                 exception.Data[RuleUserDataKeys.ErrorObject] = castExpr;
                 throw exception;
             }
@@ -2258,7 +2233,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override CodeExpression Clone(CodeExpression expression)
         {
             CodeCastExpression castExpr = (CodeCastExpression)expression;
-            CodeCastExpression newCast = new CodeCastExpression
+            CodeCastExpression newCast = new()
             {
                 TargetType = TypeReferenceExpression.CloneType(castExpr.TargetType),
                 Expression = RuleExpressionWalker.Clone(castExpr.Expression)
@@ -2283,11 +2258,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     // CodeIndexerExpression
     internal class IndexerPropertyExpression : RuleExpressionInternal
     {
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message;
-            ValidationError error = null;
             RulePropertyExpressionInfo propExprInfo = null;
             bool includeNonPublic = false;
             Type targetType = null;
@@ -2295,6 +2268,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             CodeIndexerExpression indexerExpr = (CodeIndexerExpression)expression;
 
             CodeExpression targetObject = indexerExpr.TargetObject;
+            ValidationError error;
             if (targetObject == null)
             {
                 error = new ValidationError(Messages.NullIndexerTarget, ErrorNumbers.Error_ParameterNotSet);
@@ -2343,7 +2317,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     targetType = null; // force exit after validating the arguments
                 }
 
-                List<CodeExpression> argExprs = new List<CodeExpression>();
+                List<CodeExpression> argExprs = [];
 
                 bool hasInvalidArgument = false;
                 for (int i = 0; i < indexerExpr.Indices.Count; ++i)
@@ -2434,11 +2408,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             object[] attrs = pi.GetCustomAttributes(typeof(RuleAttribute), true);
             if (attrs != null && attrs.Length > 0)
             {
-                Stack<MemberInfo> methodStack = new Stack<MemberInfo>();
+                Stack<MemberInfo> methodStack = new();
                 methodStack.Push(pi);
 
                 bool allAttributesValid = true;
-                foreach (RuleAttribute ruleAttr in attrs)
+                foreach (RuleAttribute ruleAttr in attrs.OfType<RuleAttribute>())
                 {
                     if (!ruleAttr.Validate(validation, pi, targetType, pi.GetIndexParameters()))
                         allAttributesValid = false;
@@ -2466,17 +2440,16 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (targetExprInfo == null)  // Oops, someone forgot to validate.
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                InvalidOperationException exception = new InvalidOperationException(message);
+                InvalidOperationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = targetObject;
                 throw exception;
             }
 
             // Get the property info from the validator so we can look for [RuleRead] and [RuleWrite] attributes.
-            RulePropertyExpressionInfo propExprInfo = analysis.Validation.ExpressionInfo(indexerExpr) as RulePropertyExpressionInfo;
-            if (propExprInfo == null)  // Oops, someone forgot to validate.
+            if (analysis.Validation.ExpressionInfo(indexerExpr) is not RulePropertyExpressionInfo propExprInfo)  // Oops, someone forgot to validate.
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                InvalidOperationException exception = new InvalidOperationException(message);
+                InvalidOperationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = indexerExpr;
                 throw exception;
             }
@@ -2484,7 +2457,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             PropertyInfo pi = propExprInfo.PropertyInfo;
 
             // Look for RuleAttribute's on the invoked indexer property.
-            List<CodeExpression> attributedExprs = new List<CodeExpression>();
+            List<CodeExpression> attributedExprs = [];
             analysis.AnalyzeRuleAttributes(pi, targetObject, qualifier, indexerExpr.Indices, pi.GetIndexParameters(), attributedExprs);
 
             // See if the target object needs default analysis.
@@ -2516,11 +2489,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             CodeIndexerExpression indexerExpr = (CodeIndexerExpression)expression;
 
-            RulePropertyExpressionInfo propExprInfo = execution.Validation.ExpressionInfo(indexerExpr) as RulePropertyExpressionInfo;
-            if (propExprInfo == null)  // Oops, someone forgot to validate.
+            if (execution.Validation.ExpressionInfo(indexerExpr) is not RulePropertyExpressionInfo propExprInfo)  // Oops, someone forgot to validate.
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.ExpressionNotValidated);
-                InvalidOperationException exception = new InvalidOperationException(message);
+                InvalidOperationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = indexerExpr;
                 throw exception;
             }
@@ -2533,7 +2505,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (target == null)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullIndexer);
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = indexerExpr;
                 throw exception;
             }
@@ -2571,7 +2543,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 System.Diagnostics.Debug.Assert(arrayType.IsArray);
                 Type elementType = arrayType.GetElementType();
 
-                Array paramsArray = (Array)arrayType.InvokeMember(arrayType.Name, BindingFlags.CreateInstance, null, null, new object[] { actualArgCount - i }, CultureInfo.CurrentCulture);
+                Array paramsArray = (Array)arrayType.InvokeMember(arrayType.Name, BindingFlags.CreateInstance, null, null, [actualArgCount - i], CultureInfo.CurrentCulture);
                 for (; i < actualArgCount; ++i)
                 {
                     Type argType = execution.Validation.ExpressionInfo(indexerExpr.Indices[i]).ExpressionType;
@@ -2582,7 +2554,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 indexArgs[numFixedParameters] = paramsArray;
             }
 
-            RulePropertyResult result = new RulePropertyResult(pi, target, indexArgs);
+            RulePropertyResult result = new(pi, target, indexArgs);
             return result;
         }
 
@@ -2596,7 +2568,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (targetObject == null)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.NullIndexerTarget);
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = indexerExpr;
                 throw exception;
             }
@@ -2604,7 +2576,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (indexerExpr.Indices == null || indexerExpr.Indices.Count == 0)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.MissingIndexExpressions);
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = indexerExpr;
                 throw exception;
             }
@@ -2630,7 +2602,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             for (int i = 0; i < indices.Length; ++i)
                 indices[i] = RuleExpressionWalker.Clone(indexerExpr.Indices[i]);
 
-            CodeIndexerExpression newIndexer = new CodeIndexerExpression(targetObject, indices);
+            CodeIndexerExpression newIndexer = new(targetObject, indices);
             return newIndexer;
         }
 
@@ -2665,12 +2637,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message;
-            ValidationError error = null;
             Type targetType = null;
 
             CodeArrayIndexerExpression arrayIndexerExpr = (CodeArrayIndexerExpression)expression;
 
             CodeExpression targetObject = arrayIndexerExpr.TargetObject;
+            ValidationError error;
             if (targetObject == null)
             {
                 error = new ValidationError(Messages.NullIndexerTarget, ErrorNumbers.Error_ParameterNotSet);
@@ -2844,7 +2816,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (target == null)
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullIndexer);
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = arrayIndexerExpr;
                 throw exception;
             }
@@ -2860,7 +2832,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 indexArgs[i] = (long)Executor.AdjustType(argType, argValue, typeof(long));
             }
 
-            RuleArrayElementResult result = new RuleArrayElementResult((Array)target, indexArgs);
+            RuleArrayElementResult result = new((Array)target, indexArgs);
             return result;
         }
 
@@ -2874,7 +2846,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (targetObject == null)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.NullIndexerTarget);
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = arrayIndexerExpr;
                 throw exception;
             }
@@ -2882,7 +2854,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (arrayIndexerExpr.Indices == null || arrayIndexerExpr.Indices.Count == 0)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.MissingIndexExpressions);
-                RuleEvaluationException exception = new RuleEvaluationException(message);
+                RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = arrayIndexerExpr;
                 throw exception;
             }
@@ -2908,7 +2880,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             for (int i = 0; i < indices.Length; ++i)
                 indices[i] = RuleExpressionWalker.Clone(arrayIndexerExpr.Indices[i]);
 
-            CodeArrayIndexerExpression newIndexer = new CodeArrayIndexerExpression(targetObject, indices);
+            CodeArrayIndexerExpression newIndexer = new(targetObject, indices);
             return newIndexer;
         }
 
@@ -2967,7 +2939,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 return null;
 
             // look up parameters
-            List<CodeExpression> parameters = new List<CodeExpression>();
+            List<CodeExpression> parameters = [];
             try
             {
                 // Early exit from this if a cycle is detected.
@@ -3022,7 +2994,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 return null;
             }
 
-            RuleConstructorExpressionInfo constructorInvokeInfo = validation.ResolveConstructor(resultType, bindingFlags, parameters, out error);
+            RuleConstructorExpressionInfo constructorInvokeInfo = validation.ResolveConstructor(resultType, bindingFlags, parameters, out _);
             if (constructorInvokeInfo == null)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.UnknownConstructor, RuleDecompiler.DecompileType(resultType));
@@ -3052,7 +3024,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (createExpression.CreateType == null)
             {
-                RuleEvaluationException exception = new RuleEvaluationException(Messages.NullTypeType);
+                RuleEvaluationException exception = new(Messages.NullTypeType);
                 exception.Data[RuleUserDataKeys.ErrorObject] = createExpression;
                 throw exception;
             }
@@ -3060,13 +3032,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
             RuleExpressionInfo expressionInfo = execution.Validation.ExpressionInfo(createExpression);
             if (expressionInfo == null)  // Oops, someone forgot to validate.
             {
-                InvalidOperationException exception = new InvalidOperationException(Messages.ExpressionNotValidated);
+                InvalidOperationException exception = new(Messages.ExpressionNotValidated);
                 exception.Data[RuleUserDataKeys.ErrorObject] = createExpression;
                 throw exception;
             }
 
-            RuleConstructorExpressionInfo createExpressionInfo = expressionInfo as RuleConstructorExpressionInfo;
-            if (createExpressionInfo == null)
+            if (expressionInfo is not RuleConstructorExpressionInfo createExpressionInfo)
             {
                 // it's just a regular RuleExpressionInfo, which means this is a value-type with no parameters
                 return new RuleLiteralResult(Activator.CreateInstance(expressionInfo.ExpressionType));
@@ -3120,8 +3091,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     if (createExpression.Parameters[i] is CodeDirectionExpression direction && (direction.Direction == FieldDirection.Ref || direction.Direction == FieldDirection.Out))
                     {
                         // lazy creation of fieldsToSet
-                        if (outArgumentResults == null)
-                            outArgumentResults = new RuleExpressionResult[actualArgCount];
+                        outArgumentResults ??= new RuleExpressionResult[actualArgCount];
                         // keep track of this out expression so we can set it later
                         outArgumentResults[i] = argResult;
                     }
@@ -3179,8 +3149,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 for (int i = 0; i < createExpression.Parameters.Count; ++i)
                 {
-                    if (outArgumentResults[i] != null)
-                        outArgumentResults[i].Value = arguments[i];
+                    outArgumentResults[i]?.Value = arguments[i];
                 }
             }
             return new RuleLiteralResult(result);
@@ -3205,7 +3174,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (paramExpr == null)
                 {
                     string message = string.Format(CultureInfo.CurrentCulture, Messages.NullConstructorTypeParameter, i.ToString(CultureInfo.CurrentCulture), createExpression.CreateType);
-                    RuleEvaluationException exception = new RuleEvaluationException(message);
+                    RuleEvaluationException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = createExpression;
                     throw exception;
                 }
@@ -3225,7 +3194,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             CodeObjectCreateExpression createExpression = (CodeObjectCreateExpression)expression;
 
-            CodeObjectCreateExpression newCreate = new CodeObjectCreateExpression
+            CodeObjectCreateExpression newCreate = new()
             {
                 CreateType = TypeReferenceExpression.CloneType(createExpression.CreateType)
             };
@@ -3240,8 +3209,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             CodeObjectCreateExpression createExpression = (CodeObjectCreateExpression)expression;
 
-            CodeObjectCreateExpression createComperand = comperand as CodeObjectCreateExpression;
-            if (createComperand == null)
+            if (comperand is not CodeObjectCreateExpression createComperand)
                 return false;
             // check types
             if (!TypeReferenceExpression.MatchType(createExpression.CreateType, createComperand.CreateType))
@@ -3260,7 +3228,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region Array Create expression
     internal class ArrayCreateExpression : RuleExpressionInternal
     {
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message;
@@ -3270,7 +3237,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (isWritten)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeObjectCreateExpression).ToString());
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_InvalidAssignTarget);
+                ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
                 validation.Errors.Add(error);
                 return null;
@@ -3278,7 +3245,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (createExpression.CreateType == null)
             {
-                ValidationError error = new ValidationError(Messages.NullTypeType, ErrorNumbers.Error_ParameterNotSet);
+                ValidationError error = new(Messages.NullTypeType, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
                 validation.Errors.Add(error);
                 return null;
@@ -3296,7 +3263,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (resultType.IsArray)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.ArrayTypeInvalid, resultType.Name);
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
+                ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
                 validation.Errors.Add(error);
                 return null;
@@ -3310,7 +3277,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
                 if (createExpression.Size < 0)
                 {
-                    ValidationError error = new ValidationError(Messages.ArraySizeInvalid, ErrorNumbers.Error_ParameterNotSet);
+                    ValidationError error = new(Messages.ArraySizeInvalid, ErrorNumbers.Error_ParameterNotSet);
                     error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
                     validation.Errors.Add(error);
                     return null;
@@ -3328,7 +3295,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         && (sizeInfo.ExpressionType != typeof(ulong)))
                     {
                         message = string.Format(CultureInfo.CurrentCulture, Messages.ArraySizeTypeInvalid, sizeInfo.ExpressionType.Name);
-                        ValidationError error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
+                        ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
                         error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
                         validation.Errors.Add(error);
                         return null;
@@ -3341,7 +3308,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     if (init == null)
                     {
                         message = string.Format(CultureInfo.CurrentCulture, Messages.MissingInitializer, resultType.Name);
-                        ValidationError error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
+                        ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
                         error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
                         validation.Errors.Add(error);
                         return null;
@@ -3389,7 +3356,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     if (createExpression.Size > 0)
                     {
                         // both size and SizeExpression specified, complain
-                        ValidationError error = new ValidationError(Messages.ArraySizeBoth, ErrorNumbers.Error_ParameterNotSet);
+                        ValidationError error = new(Messages.ArraySizeBoth, ErrorNumbers.Error_ParameterNotSet);
                         error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
                         validation.Errors.Add(error);
                         return null;
@@ -3401,7 +3368,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if ((size >= 0) && (createExpression.Initializers.Count > size))
                 {
                     message = string.Format(CultureInfo.CurrentCulture, Messages.InitializerCountMismatch, createExpression.Initializers.Count, size);
-                    ValidationError error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
+                    ValidationError error = new(message, ErrorNumbers.Error_OperandTypesIncompatible);
                     error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
                     validation.Errors.Add(error);
                     return null;
@@ -3430,7 +3397,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (createExpression.CreateType == null)
             {
-                RuleEvaluationException exception = new RuleEvaluationException(Messages.NullTypeType);
+                RuleEvaluationException exception = new(Messages.NullTypeType);
                 exception.Data[RuleUserDataKeys.ErrorObject] = createExpression;
                 throw exception;
             }
@@ -3438,7 +3405,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             RuleExpressionInfo createExpressionInfo = execution.Validation.ExpressionInfo(createExpression);
             if (createExpressionInfo == null)  // Oops, someone forgot to validate.
             {
-                InvalidOperationException exception = new InvalidOperationException(Messages.ExpressionNotValidated);
+                InvalidOperationException exception = new(Messages.ExpressionNotValidated);
                 exception.Data[RuleUserDataKeys.ErrorObject] = createExpression;
                 throw exception;
             }
@@ -3504,7 +3471,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     if (paramExpr == null)
                     {
                         string message = string.Format(CultureInfo.CurrentCulture, Messages.NullConstructorTypeParameter, i.ToString(CultureInfo.CurrentCulture), createExpression.CreateType);
-                        RuleEvaluationException exception = new RuleEvaluationException(message);
+                        RuleEvaluationException exception = new(message);
                         exception.Data[RuleUserDataKeys.ErrorObject] = createExpression;
                         throw exception;
                     }
@@ -3525,7 +3492,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             CodeArrayCreateExpression createExpression = (CodeArrayCreateExpression)expression;
 
-            CodeArrayCreateExpression newCreate = new CodeArrayCreateExpression
+            CodeArrayCreateExpression newCreate = new()
             {
                 CreateType = TypeReferenceExpression.CloneType(createExpression.CreateType),
                 Size = createExpression.Size
@@ -3541,8 +3508,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             CodeArrayCreateExpression createExpression = (CodeArrayCreateExpression)expression;
 
-            CodeArrayCreateExpression createComperand = comperand as CodeArrayCreateExpression;
-            if ((createComperand == null)
+            if ((comperand is not CodeArrayCreateExpression createComperand)
                 || (createExpression.Size != createComperand.Size)
                 || (!TypeReferenceExpression.MatchType(createExpression.CreateType, createComperand.CreateType)))
                 return false;

@@ -30,7 +30,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         /// <summary>
         /// Collection of literal factory methods indexed by type
         /// </summary>
-        static private Dictionary<Type, LiteralMaker> types = CreateMakersDictionary();
+        private static readonly Dictionary<Type, LiteralMaker> types = CreateMakersDictionary();
 
         /// <summary>
         /// The type of the literal
@@ -60,12 +60,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
         /// <summary>
         /// Collection of TypeFlags for the supported value types indexed by type
         /// </summary>
-        private static Dictionary<Type, TypeFlags> supportedTypes = CreateTypesDictionary();
+        private static readonly Dictionary<Type, TypeFlags> supportedTypes = CreateTypesDictionary();
 
         private static Dictionary<Type, LiteralMaker> CreateMakersDictionary()
         {
             // Create the literal class factory delegates
-            Dictionary<Type, LiteralMaker> dictionary = new Dictionary<Type, LiteralMaker>(32)
+            Dictionary<Type, LiteralMaker> dictionary = new(32)
             {
                 { typeof(byte), new LiteralMaker(Literal.MakeByte) },
                 { typeof(sbyte), new LiteralMaker(Literal.MakeSByte) },
@@ -101,7 +101,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         private static Dictionary<Type, TypeFlags> CreateTypesDictionary()
         {
             // Create the literal class factory delegates
-            Dictionary<Type, TypeFlags> dictionary = new Dictionary<Type, TypeFlags>(32)
+            Dictionary<Type, TypeFlags> dictionary = new(32)
             {
                 { typeof(byte), TypeFlags.UnsignedNumbers },
                 { typeof(byte?), TypeFlags.UnsignedNumbers },
@@ -410,7 +410,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         #region Type Checking Methods
 
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         internal static RuleBinaryExpressionInfo AllowedComparison(
             Type lhs,
             CodeExpression lhsExpression,
@@ -483,9 +482,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         internal static MethodInfo ObjectEquality = typeof(DefaultOperators).GetMethod("ObjectEquality");
 
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
-        [SuppressMessage("Microsoft.Performance", "CA1803:AvoidCostlyCallsWherePossible")]
-        [SuppressMessage("Microsoft.Performance", "CA1800:DoNotCastUnnecessarily")]     // bogus since the casts are in different case statements
         internal static MethodInfo MapOperatorToMethod(
             CodeBinaryOperatorType op,
             Type lhs,
@@ -558,7 +554,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             // NOTE: types maybe NullLiteral, which signifies the constant "null"
-            List<MethodInfo> candidates = new List<MethodInfo>();
+            List<MethodInfo> candidates = [];
             bool lhsNullable = ConditionHelper.IsNullableValueType(lhs);
             bool rhsNullable = ConditionHelper.IsNullableValueType(rhs);
             Type lhsType0 = (lhsNullable) ? Nullable.GetUnderlyingType(lhs) : lhs;
@@ -1615,7 +1611,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class BoolLiteral : Literal
     {
-        private bool m_value;
+        private readonly bool m_value;
 
         internal override object Value
         {
@@ -1665,7 +1661,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class ByteLiteral : Literal
     {
-        private byte m_value;
+        private readonly byte m_value;
 
         internal override object Value
         {
@@ -1952,7 +1948,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class SByteLiteral : Literal
     {
-        private sbyte m_value;
+        private readonly sbyte m_value;
 
         internal override object Value
         {
@@ -2223,7 +2219,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class CharLiteral : Literal
     {
-        private char m_value;
+        private readonly char m_value;
 
         internal override object Value
         {
@@ -2509,7 +2505,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class DecimalLiteral : Literal
     {
-        private decimal m_value;
+        private readonly decimal m_value;
 
         internal override object Value
         {
@@ -2755,7 +2751,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class ShortLiteral : Literal
     {
-        private short m_value;
+        private readonly short m_value;
 
         internal override object Value
         {
@@ -3025,7 +3021,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class IntLiteral : Literal
     {
-        private int m_value;
+        private readonly int m_value;
 
         internal override object Value
         {
@@ -3311,7 +3307,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class LongLiteral : Literal
     {
-        private long m_value;
+        private readonly long m_value;
 
         internal override object Value
         {
@@ -3597,7 +3593,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class UShortLiteral : Literal
     {
-        private ushort m_value;
+        private readonly ushort m_value;
 
         internal override object Value
         {
@@ -3883,7 +3879,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class UIntLiteral : Literal
     {
-        private uint m_value;
+        private readonly uint m_value;
 
         internal override object Value
         {
@@ -4169,7 +4165,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class ULongLiteral : Literal
     {
-        private ulong m_value;
+        private readonly ulong m_value;
 
         internal override object Value
         {
@@ -4423,7 +4419,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class DoubleLiteral : Literal
     {
-        private double m_value;
+        private readonly double m_value;
 
         internal override object Value
         {
@@ -4689,7 +4685,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class FloatLiteral : Literal
     {
-        private float m_value;
+        private readonly float m_value;
 
         internal override object Value
         {
@@ -4955,7 +4951,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// </summary>
     internal class StringLiteral : Literal
     {
-        private string m_value;
+        private readonly string m_value;
 
         internal override object Value
         {

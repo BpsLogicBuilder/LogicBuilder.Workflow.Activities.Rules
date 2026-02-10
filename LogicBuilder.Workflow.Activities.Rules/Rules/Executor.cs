@@ -2,7 +2,6 @@
 // Copyright (C) 2005 Microsoft Corporation All Rights Reserved
 // ---------------------------------------------------------------------------
 
-#pragma warning disable 1634, 1691
 #define CODE_ANALYSIS
 using System.CodeDom;
 using System.Collections.Generic;
@@ -20,14 +19,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
         public abstract object Value { get; set; }
     }
 
-    public class RuleLiteralResult : RuleExpressionResult
+    public class RuleLiteralResult(object literal) : RuleExpressionResult
     {
-        private object literal;
-
-        public RuleLiteralResult(object literal)
-        {
-            this.literal = literal;
-        }
+        private readonly object literal = literal;
 
         public override object Value
         {
@@ -42,16 +36,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
     }
 
-    internal class RuleFieldResult : RuleExpressionResult
+    internal class RuleFieldResult(object targetObject, FieldInfo fieldInfo) : RuleExpressionResult
     {
-        private object targetObject;
-        private FieldInfo fieldInfo;
-
-        public RuleFieldResult(object targetObject, FieldInfo fieldInfo)
-        {
-            this.targetObject = targetObject;
-            this.fieldInfo = fieldInfo ?? throw new ArgumentNullException("fieldInfo");
-        }
+        private readonly object targetObject = targetObject;
+        private readonly FieldInfo fieldInfo = fieldInfo ?? throw new ArgumentNullException("fieldInfo");
 
         public override object Value
         {
@@ -62,7 +50,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 {
                     // Accessing a non-static field from null target.
                     string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullField, fieldInfo.Name);
-                    RuleEvaluationException exception = new RuleEvaluationException(message);
+                    RuleEvaluationException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = fieldInfo;
                     throw exception;
                 }
@@ -76,7 +64,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 {
                     // Accessing a non-static field from null target.
                     string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullField, fieldInfo.Name);
-                    RuleEvaluationException exception = new RuleEvaluationException(message);
+                    RuleEvaluationException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = fieldInfo;
                     throw exception;
                 }
@@ -86,18 +74,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
     }
 
-    internal class RulePropertyResult : RuleExpressionResult
+    internal class RulePropertyResult(PropertyInfo propertyInfo, object targetObject, object[] indexerArguments) : RuleExpressionResult
     {
-        private PropertyInfo propertyInfo;
-        private object targetObject;
-        private object[] indexerArguments;
-
-        public RulePropertyResult(PropertyInfo propertyInfo, object targetObject, object[] indexerArguments)
-        {
-            this.targetObject = targetObject;
-            this.propertyInfo = propertyInfo ?? throw new ArgumentNullException("propertyInfo");
-            this.indexerArguments = indexerArguments;
-        }
+        private readonly PropertyInfo propertyInfo = propertyInfo ?? throw new ArgumentNullException("propertyInfo");
+        private readonly object targetObject = targetObject;
+        private readonly object[] indexerArguments = indexerArguments;
 
         public override object Value
         {
@@ -107,7 +88,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (!propertyInfo.GetGetMethod(true).IsStatic && targetObject == null)
                 {
                     string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullProperty, propertyInfo.Name);
-                    RuleEvaluationException exception = new RuleEvaluationException(message);
+                    RuleEvaluationException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = propertyInfo;
                     throw exception;
                 }
@@ -133,7 +114,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (!propertyInfo.GetSetMethod(true).IsStatic && targetObject == null)
                 {
                     string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullProperty, propertyInfo.Name);
-                    RuleEvaluationException exception = new RuleEvaluationException(message);
+                    RuleEvaluationException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = propertyInfo;
                     throw exception;
                 }
@@ -156,16 +137,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
     }
 
-    internal class RuleArrayElementResult : RuleExpressionResult
+    internal class RuleArrayElementResult(Array targetArray, long[] indexerArguments) : RuleExpressionResult
     {
-        private Array targetArray;
-        private long[] indexerArguments;
-
-        public RuleArrayElementResult(Array targetArray, long[] indexerArguments)
-        {
-            this.targetArray = targetArray ?? throw new ArgumentNullException("targetArray");
-            this.indexerArguments = indexerArguments ?? throw new ArgumentNullException("indexerArguments");
-        }
+        private readonly Array targetArray = targetArray ?? throw new ArgumentNullException("targetArray");
+        private readonly long[] indexerArguments = indexerArguments ?? throw new ArgumentNullException("indexerArguments");
 
         public override object Value
         {
@@ -186,11 +161,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
     public class RuleExecution
     {
         private bool halted;    // "Halt" was executed?
-        private object thisObject;
+        private readonly object thisObject;
         private RuleValidation validation;
-        private RuleLiteralResult thisLiteralResult;
+        private readonly RuleLiteralResult thisLiteralResult;
 
-        [SuppressMessage("Microsoft.Naming", "CA1720:AvoidTypeNamesInParameters", MessageId = "1#")]
         public RuleExecution(RuleValidation validation, object thisObject)
         {
             if (validation == null)
@@ -282,7 +256,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal static IList<RuleState> Preprocess(RuleChainingBehavior behavior, ICollection<Rule> rules, RuleValidation validation, Tracer tracer)
         {
             // start by taking the active rules and make them into a list sorted by priority
-            List<RuleState> orderedRules = new List<RuleState>(rules.Count);
+            List<RuleState> orderedRules = new(rules.Count);
             foreach (Rule r in rules)
             {
                 if (r.Active)
@@ -298,15 +272,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return orderedRules;
         }
 
-        internal static void ExecuteRuleSet(IList<RuleState> orderedRules, RuleExecution ruleExecution, Tracer tracer, string trackingKey)
+        internal static void ExecuteRuleSet(IList<RuleState> orderedRules, RuleExecution ruleExecution, Tracer tracer)
         {
             // keep track of rule execution
             long[] executionCount = new long[orderedRules.Count];
             bool[] satisfied = new bool[orderedRules.Count];
             // clear the halted flag
             ruleExecution.Halted = false;
-
-            //ActivityExecutionContext activityExecutionContext = ruleExecution.ActivityExecutionContext;
 
             // loop until we hit the end of the list
             int current = 0;
@@ -318,12 +290,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (!satisfied[current])
                 {
                     // yes, so evaluate it and determine the list of actions needed
-                    if (tracer != null)
-                        tracer.StartRule(currentRuleState.Rule.Name);
+                    tracer?.StartRule(currentRuleState.Rule.Name);
                     satisfied[current] = true;
                     bool result = currentRuleState.Rule.Condition.Evaluate(ruleExecution);
-                    if (tracer != null)
-                        tracer.RuleResult(currentRuleState.Rule.Name, result);
+                    tracer?.RuleResult(currentRuleState.Rule.Name, result);
 
                     ICollection<RuleAction> actions = (result) ?
                         currentRuleState.Rule.thenActions :
@@ -337,8 +307,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     {
                         ++executionCount[current];
                         string ruleName = currentRuleState.Rule.Name;
-                        if (tracer != null)
-                            tracer.StartActions(ruleName, result);
+                        tracer?.StartActions(ruleName, result);
 
                         // evaluate the actions
                         foreach (RuleAction action in actions)
@@ -365,8 +334,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                                     // evaluate at least once, or repeatedly if appropriate
                                     if ((executionCount[updatedRuleIndex] == 0) || (rs.Rule.ReevaluationBehavior == RuleReevaluationBehavior.Always))
                                     {
-                                        if (tracer != null)
-                                            tracer.TraceUpdate(ruleName, rs.Rule.Name);
+                                        tracer?.TraceUpdate(ruleName, rs.Rule.Name);
                                         satisfied[updatedRuleIndex] = false;
                                         if (updatedRuleIndex < current)
                                             current = updatedRuleIndex;
@@ -429,7 +397,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private static ICollection<int> AnalyzeSideEffects(ICollection<string> sideEffects, RuleSymbolInfo[] ruleSymbols)
         {
-            Dictionary<int, object> affectedRules = new Dictionary<int, object>();
+            Dictionary<int, object> affectedRules = [];
 
             for (int i = 0; i < ruleSymbols.Length; ++i)
             {
@@ -545,7 +513,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private static RuleSymbolInfo AnalyzeRule(RuleChainingBehavior behavior, Rule rule, RuleValidation validator, Tracer tracer)
         {
-            RuleSymbolInfo rsi = new RuleSymbolInfo();
+            RuleSymbolInfo rsi = new();
 
             if (rule.Condition != null)
             {
@@ -577,7 +545,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         private static ICollection<string> GetActionSideEffects(RuleChainingBehavior behavior, IList<RuleAction> actions, RuleValidation validation)
         {
             // Man, I wish there were a Set<T> class...
-            Dictionary<string, object> symbols = new Dictionary<string, object>();
+            Dictionary<string, object> symbols = [];
 
             foreach (RuleAction action in actions)
             {
@@ -602,14 +570,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal static bool EvaluateBool(CodeExpression expression, RuleExecution context)
         {
             object result = RuleExpressionWalker.Evaluate(context, expression).Value;
-            if (result is bool)
-                return (bool)result;
+            if (result is bool boolResult)
+                return boolResult;
 
             Type expectedType = context.Validation.ExpressionInfo(expression).ExpressionType;
             if (expectedType == null)
             {
                 // oops ... not a boolean, so error
-                InvalidOperationException exception = new InvalidOperationException(Messages.ConditionMustBeBoolean);
+                InvalidOperationException exception = new(Messages.ConditionMustBeBoolean);
                 exception.Data[RuleUserDataKeys.ErrorObject] = expression;
                 throw exception;
             }
@@ -647,7 +615,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (AdjustValueStandard(operandType, operandValue, sx, out object intermediateResult1))
             {
                 // we are happy with the first conversion, so call the user's static method
-                object intermediateResult2 = conversion.Invoke(null, new object[] { intermediateResult1 });
+                object intermediateResult2 = conversion.Invoke(null, [intermediateResult1]);
                 if (AdjustValueStandard(tx, intermediateResult2, toType, out object intermediateResult3))
                     return intermediateResult3;
             }
@@ -690,7 +658,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (AdjustValueStandard(operandType, operandValue, sx, out object intermediateResult1))
             {
                 // we are happy with the first conversion, so call the user's static method
-                object intermediateResult2 = conversion.Invoke(null, new object[] { intermediateResult1 });
+                object intermediateResult2 = conversion.Invoke(null, [intermediateResult1]);
                 if (AdjustValueStandard(tx, intermediateResult2, toType, out object intermediateResult3))
                     return intermediateResult3;
             }
@@ -701,8 +669,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     RuleDecompiler.DecompileType(toType)));
         }
 
-
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private static bool AdjustValueStandard(Type operandType, object operandValue, Type toType, out object converted)
         {
             // assume it's the same for now
@@ -725,7 +691,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     // here we have a Nullable<T>
                     // however, we may need to call the implicit conversion operator if the types are not compatible
                     converted = Activator.CreateInstance(toType);
-                    return RuleValidation.StandardImplicitConversion(operandType, toType, null, out ValidationError error);
+                    return RuleValidation.StandardImplicitConversion(operandType, toType, null, out _);
                 }
 
                 // not a value type, so null is valid

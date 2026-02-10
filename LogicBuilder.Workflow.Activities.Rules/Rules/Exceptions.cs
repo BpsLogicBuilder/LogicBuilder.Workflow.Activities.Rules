@@ -250,7 +250,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     [Serializable]
     public class RuleSetValidationException : RuleException, ISerializable
     {
-        private ValidationErrorCollection m_errors;
+        private readonly ValidationErrorCollection m_errors;
 
         /// <summary>
         /// Collection of validation errors that occurred while validating the RuleSet

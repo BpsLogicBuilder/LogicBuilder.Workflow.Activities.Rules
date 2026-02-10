@@ -67,9 +67,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         // To improve performance, cache the RuleDefinitions deserialized from 
         // .rules resources keyed by the type of activity.
-        static Hashtable cloneableOrNullRulesResources = new Hashtable();
+        static readonly Hashtable cloneableOrNullRulesResources = [];
         // It is unfortunate, however, that cloning might not always succeed, we will keep them here.
-        static Hashtable uncloneableRulesResources = new Hashtable();
+        static readonly Hashtable uncloneableRulesResources = [];
 
         internal static RuleDefinitions GetRuleDefinitionsFromManifest(Type workflowType)
         {
@@ -93,16 +93,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 Stream stream = workflowType.Module.Assembly.GetManifestResourceStream(workflowType, resourceName);
 
                 // Try just the .rules file name. This is needed for wfc.exe compilation scenarios.
-                if (stream == null)
-                    stream = workflowType.Module.Assembly.GetManifestResourceStream(resourceName);
+                stream ??= workflowType.Module.Assembly.GetManifestResourceStream(resourceName);
 
                 if (stream != null)
                 {
-                    using (StreamReader reader = new StreamReader(stream))
-                    {
-                        using (XmlReader xmlReader = XmlReader.Create(reader))
-                            rules = new WorkflowMarkupSerializer().Deserialize(xmlReader) as RuleDefinitions;
-                    }
+                    using StreamReader reader = new(stream);
+                    using XmlReader xmlReader = XmlReader.Create(reader);
+                    rules = new WorkflowMarkupSerializer().Deserialize(xmlReader) as RuleDefinitions;
                 }
                 // Don't know yet whether 'rules' is cloneable, give it a try
                 if (!uncloneableRulesResources.ContainsKey(workflowType))
@@ -134,7 +131,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
     internal static class EnumHelper
     {
-        [SuppressMessage("Microsoft.Performance", "CA1803:AvoidCostlyCallsWherePossible")]
         public static Type GetUnderlyingType(Type type)
         {
             Type underlyingType = typeof(int);
@@ -145,7 +141,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 Debug.Assert(methodInfo != null, "Missing GetEnumType method on the DesignTimeType!");
                 if (methodInfo != null)
                 {
-                    Type result = methodInfo.Invoke(type, new object[0]) as Type;
+                    Type result = methodInfo.Invoke(type, []) as Type;
                     underlyingType = result ?? underlyingType;
                 }
             }

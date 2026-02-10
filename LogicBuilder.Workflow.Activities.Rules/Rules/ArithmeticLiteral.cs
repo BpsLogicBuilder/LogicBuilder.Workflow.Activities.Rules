@@ -46,7 +46,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         /// <summary>
         /// Collection of literal factory methods indexed by type
         /// </summary>
-        private static Dictionary<Type, LiteralMaker> types = CreateTypesDictionary();
+        private static readonly Dictionary<Type, LiteralMaker> types = CreateTypesDictionary();
 
         /// <summary>
         /// Group types by characteristics so we can check if operation is allowed
@@ -70,12 +70,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
         /// <summary>
         /// Collection of TypeFlags for the supported value types indexed by type
         /// </summary>
-        private static Dictionary<Type, TypeFlags> supportedTypes = CreateSupportedTypesDictionary();
+        private static readonly Dictionary<Type, TypeFlags> supportedTypes = CreateSupportedTypesDictionary();
 
         private static Dictionary<Type, LiteralMaker> CreateTypesDictionary()
         {
             // Create the literal class factory delegates
-            Dictionary<Type, LiteralMaker> dictionary = new Dictionary<Type, LiteralMaker>(16)
+            Dictionary<Type, LiteralMaker> dictionary = new(16)
             {
                 { typeof(byte), MakeByte },
                 { typeof(sbyte), MakeSByte },
@@ -111,7 +111,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         static private Dictionary<Type, TypeFlags> CreateSupportedTypesDictionary()
         {
-            Dictionary<Type, TypeFlags> dictionary = new Dictionary<Type, TypeFlags>(26)
+            Dictionary<Type, TypeFlags> dictionary = new(26)
             {
                 { typeof(byte), TypeFlags.UInt16 },
                 { typeof(byte?), TypeFlags.Nullable | TypeFlags.UInt16 },
@@ -335,7 +335,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private static Type ResultType(CodeBinaryOperatorType operation, TypeFlags lhsType, TypeFlags rhsType)
         {
             TypeFlags combined = (lhsType | rhsType);
@@ -817,7 +816,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region IntArithmeticLiteral Class
     internal class IntArithmeticLiteral : ArithmeticLiteral
     {
-        private int m_value;
+        private readonly int m_value;
         internal IntArithmeticLiteral(int literalValue)
         {
             m_value = literalValue;
@@ -1129,7 +1128,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region LongArithmeticLiteral Class
     internal class LongArithmeticLiteral : ArithmeticLiteral
     {
-        private long m_value;
+        private readonly long m_value;
         internal LongArithmeticLiteral(long literalValue)
         {
             m_value = literalValue;
@@ -1439,7 +1438,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region CharArithmeticLiteral Class
     internal class CharArithmeticLiteral : ArithmeticLiteral
     {
-        private char m_value;
+        private readonly char m_value;
         internal CharArithmeticLiteral(char literalValue)
         {
             m_value = literalValue;
@@ -1734,7 +1733,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region UShortArithmeticLiteral Class
     internal class UShortArithmeticLiteral : ArithmeticLiteral
     {
-        private ushort m_value;
+        private readonly ushort m_value;
         internal UShortArithmeticLiteral(ushort literalValue)
         {
             m_value = literalValue;
@@ -2029,7 +2028,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region UIntArithmeticLiteral Class
     internal class UIntArithmeticLiteral : ArithmeticLiteral
     {
-        private uint m_value;
+        private readonly uint m_value;
         internal UIntArithmeticLiteral(uint literalValue)
         {
             m_value = literalValue;
@@ -2324,7 +2323,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region ULongArithmeticLiteral Class
     internal class ULongArithmeticLiteral : ArithmeticLiteral
     {
-        private ulong m_value;
+        private readonly ulong m_value;
         internal ULongArithmeticLiteral(ulong literalValue)
         {
             m_value = literalValue;
@@ -2647,7 +2646,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region FloatArithmeticLiteral Class
     internal class FloatArithmeticLiteral : ArithmeticLiteral
     {
-        private float m_value;
+        private readonly float m_value;
         internal FloatArithmeticLiteral(float literalValue)
         {
             m_value = literalValue;
@@ -2862,7 +2861,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region DoubleArithmeticLiteral Class
     internal class DoubleArithmeticLiteral : ArithmeticLiteral
     {
-        private double m_value;
+        private readonly double m_value;
         internal DoubleArithmeticLiteral(double literalValue)
         {
             m_value = literalValue;
@@ -3077,7 +3076,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region DecimalArithmeticLiteral Class
     internal class DecimalArithmeticLiteral : ArithmeticLiteral
     {
-        private decimal m_value;
+        private readonly decimal m_value;
         internal DecimalArithmeticLiteral(decimal literalValue)
         {
             m_value = literalValue;
@@ -3272,7 +3271,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region BooleanArithmeticLiteral Class
     internal class BooleanArithmeticLiteral : ArithmeticLiteral
     {
-        private bool m_value;
+        private readonly bool m_value;
         internal BooleanArithmeticLiteral(bool literalValue)
         {
             m_value = literalValue;
@@ -3333,7 +3332,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region StringArithmeticLiteral Class
     internal class StringArithmeticLiteral : ArithmeticLiteral
     {
-        private string m_value;
+        private readonly string m_value;
         internal StringArithmeticLiteral(string literalValue)
         {
             m_value = literalValue;
