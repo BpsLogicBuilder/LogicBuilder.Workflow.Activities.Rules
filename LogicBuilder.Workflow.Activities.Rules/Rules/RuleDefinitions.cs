@@ -10,25 +10,21 @@ namespace LogicBuilder.Workflow.Activities.Rules
 {
     #region class RuleDefinitions
 
-    public sealed class RuleDefinitions// : IWorkflowChangeDiff
+    public sealed class RuleDefinitions
     {
-
-        //[SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes")]
-        //public static readonly DependencyProperty RuleDefinitionsProperty = DependencyProperty.RegisterAttached("RuleDefinitions", typeof(RuleDefinitions), typeof(RuleDefinitions), new PropertyMetadata(null, DependencyPropertyOptions.Metadata, new GetValueOverride(OnGetRuleConditions), null, new Attribute[] { new DesignerSerializationVisibilityAttribute(DesignerSerializationVisibility.Hidden) }));
 
         private RuleConditionCollection conditions;
         private RuleSetCollection ruleSets;
         private bool runtimeInitialized;
         [NonSerialized]
-        private object syncLock = new object();
+        private readonly object syncLock = new();
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public RuleConditionCollection Conditions
         {
             get
             {
-                if (this.conditions == null)
-                    this.conditions = new RuleConditionCollection();
+                this.conditions ??= [];
                 return conditions;
             }
         }
@@ -38,8 +34,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             get
             {
-                if (this.ruleSets == null)
-                    this.ruleSets = new RuleSetCollection();
+                this.ruleSets ??= [];
                 return this.ruleSets;
             }
         }
@@ -102,18 +97,18 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         internal RuleDefinitions Clone()
         {
-            RuleDefinitions newRuleDefinitions = new RuleDefinitions();
+            RuleDefinitions newRuleDefinitions = new();
 
             if (this.ruleSets != null)
             {
-                newRuleDefinitions.ruleSets = new RuleSetCollection();
+                newRuleDefinitions.ruleSets = [];
                 foreach (RuleSet r in this.ruleSets)
                     newRuleDefinitions.ruleSets.Add(r.Clone());
             }
 
             if (this.conditions != null)
             {
-                newRuleDefinitions.conditions = new RuleConditionCollection();
+                newRuleDefinitions.conditions = [];
                 foreach (RuleCondition r in this.conditions)
                     newRuleDefinitions.conditions.Add(r.Clone());
             }

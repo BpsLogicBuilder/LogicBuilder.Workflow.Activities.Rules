@@ -8,7 +8,7 @@ namespace LogicBuilder.Workflow.Activities
 {
     internal static class WorkflowActivityTrace
     {
-        static TraceSource rules;
+        static readonly TraceSource rules;
 
         internal static TraceSource Rules
         {
@@ -44,7 +44,7 @@ namespace LogicBuilder.Workflow.Activities
 
             foreach (TraceListener listener in Trace.Listeners)
             {
-                if (!(listener is DefaultTraceListener))
+                if (listener is not DefaultTraceListener)
                 {
                     rules.Listeners.Add(listener);
                 }

@@ -205,7 +205,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             else
             {
                 string typeName = type.FullName;
-                typeName ??= type.Name;
+                typeName ??= type.Name;// Full name may be null for an unbound generic.
 
                 typeName = UnmangleTypeName(typeName);
                 decompilation.Append(typeName);

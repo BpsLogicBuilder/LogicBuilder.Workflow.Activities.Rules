@@ -6,13 +6,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
 {
     #region class RuleSetCollection
 
-    public sealed class RuleSetCollection : KeyedCollection<string, RuleSet>//, IWorkflowChangeDiff
+    public sealed class RuleSetCollection : KeyedCollection<string, RuleSet>
     {
         #region members and constructors
 
         private bool _runtimeInitialized;
         [NonSerialized]
-        private object syncLock = new object();
+        private readonly object syncLock = new();
 
         public RuleSetCollection()
         {

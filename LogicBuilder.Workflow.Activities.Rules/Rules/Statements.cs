@@ -19,7 +19,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
     internal class ExpressionStatement : RuleCodeDomStatement
     {
-        private CodeExpressionStatement exprStatement;
+        private readonly CodeExpressionStatement exprStatement;
 
         private ExpressionStatement(CodeExpressionStatement exprStatement)
         {
@@ -37,7 +37,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (exprStatement.Expression == null)
             {
-                ValidationError error = new ValidationError(Messages.NullInvokeStatementExpression, ErrorNumbers.Error_ParameterNotSet);
+                ValidationError error = new(Messages.NullInvokeStatementExpression, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = exprStatement;
                 validation.Errors.Add(error);
             }
@@ -48,7 +48,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
             else
             {
-                ValidationError error = new ValidationError(Messages.InvokeNotHandled, ErrorNumbers.Error_CodeExpressionNotHandled);
+                ValidationError error = new(Messages.InvokeNotHandled, ErrorNumbers.Error_CodeExpressionNotHandled);
                 error.UserData[RuleUserDataKeys.ErrorObject] = exprStatement;
                 validation.Errors.Add(error);
             }
@@ -70,7 +70,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             if (exprStatement.Expression == null)
             {
-                RuleEvaluationException exception = new RuleEvaluationException(Messages.InvokeStatementNull);
+                RuleEvaluationException exception = new(Messages.InvokeStatementNull);
                 exception.Data[RuleUserDataKeys.ErrorObject] = exprStatement;
                 throw exception;
             }
@@ -80,14 +80,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         internal override bool Match(CodeStatement comperand)
         {
-            CodeExpressionStatement comperandStatement = comperand as CodeExpressionStatement;
-            return ((comperandStatement != null)
+            return ((comperand is CodeExpressionStatement comperandStatement)
                 && RuleExpressionWalker.Match(exprStatement.Expression, comperandStatement.Expression));
         }
 
         internal override CodeStatement Clone()
         {
-            CodeExpressionStatement newStatement = new CodeExpressionStatement
+            CodeExpressionStatement newStatement = new()
             {
                 Expression = RuleExpressionWalker.Clone(exprStatement.Expression)
             };
@@ -97,7 +96,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
     internal class AssignmentStatement : RuleCodeDomStatement
     {
-        private CodeAssignStatement assignStatement;
+        private readonly CodeAssignStatement assignStatement;
 
         private AssignmentStatement(CodeAssignStatement assignStatement)
         {
@@ -117,21 +116,20 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (assignStatement.Left == null)
             {
-                ValidationError error = new ValidationError(Messages.NullAssignLeft, ErrorNumbers.Error_LeftOperandMissing);
+                ValidationError error = new(Messages.NullAssignLeft, ErrorNumbers.Error_LeftOperandMissing);
                 error.UserData[RuleUserDataKeys.ErrorObject] = assignStatement;
                 validation.Errors.Add(error);
             }
             else
             {
                 lhsExprInfo = validation.ExpressionInfo(assignStatement.Left);
-                if (lhsExprInfo == null)
-                    lhsExprInfo = RuleExpressionWalker.Validate(validation, assignStatement.Left, true);
+                lhsExprInfo ??= RuleExpressionWalker.Validate(validation, assignStatement.Left, true);
             }
 
             RuleExpressionInfo rhsExprInfo = null;
             if (assignStatement.Right == null)
             {
-                ValidationError error = new ValidationError(Messages.NullAssignRight, ErrorNumbers.Error_RightOperandMissing);
+                ValidationError error = new(Messages.NullAssignRight, ErrorNumbers.Error_RightOperandMissing);
                 error.UserData[RuleUserDataKeys.ErrorObject] = assignStatement;
                 validation.Errors.Add(error);
             }
@@ -148,7 +146,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (assignmentType == typeof(NullLiteral))
                 {
                     // Can't assign to a null literal.
-                    ValidationError error = new ValidationError(Messages.NullAssignLeft, ErrorNumbers.Error_LeftOperandInvalidType);
+                    ValidationError error = new(Messages.NullAssignLeft, ErrorNumbers.Error_LeftOperandInvalidType);
                     error.UserData[RuleUserDataKeys.ErrorObject] = assignStatement;
                     validation.Errors.Add(error);
                     success = false;
@@ -203,13 +201,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             if (assignStatement.Right == null)
             {
-                RuleEvaluationException exception = new RuleEvaluationException(Messages.AssignRightNull);
+                RuleEvaluationException exception = new(Messages.AssignRightNull);
                 exception.Data[RuleUserDataKeys.ErrorObject] = assignStatement;
                 throw exception;
             }
             if (assignStatement.Left == null)
             {
-                RuleEvaluationException exception = new RuleEvaluationException(Messages.AssignLeftNull);
+                RuleEvaluationException exception = new(Messages.AssignLeftNull);
                 exception.Data[RuleUserDataKeys.ErrorObject] = assignStatement;
                 throw exception;
             }
@@ -221,15 +219,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         internal override bool Match(CodeStatement comperand)
         {
-            CodeAssignStatement comperandStatement = comperand as CodeAssignStatement;
-            return ((comperandStatement != null)
+            return ((comperand is CodeAssignStatement comperandStatement)
                 && RuleExpressionWalker.Match(assignStatement.Left, comperandStatement.Left)
                 && RuleExpressionWalker.Match(assignStatement.Right, comperandStatement.Right));
         }
 
         internal override CodeStatement Clone()
         {
-            CodeAssignStatement newStatement = new CodeAssignStatement
+            CodeAssignStatement newStatement = new()
             {
                 Left = RuleExpressionWalker.Clone(assignStatement.Left),
                 Right = RuleExpressionWalker.Clone(assignStatement.Right)

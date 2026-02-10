@@ -26,17 +26,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal List<Rule> rules;
         internal RuleChainingBehavior behavior = RuleChainingBehavior.Full;
         private bool runtimeInitialized;
-        private object syncLock = new object();
-
-        // keep track of cached data
-        //[NonSerialized]
-        //private RuleEngine cachedEngine;
-        //[NonSerialized]
-        //private RuleValidation cachedValidation;
+        private readonly object syncLock = new();
 
         public RuleSet()
         {
-            this.rules = new List<Rule>();
+            this.rules = [];
         }
 
         public RuleSet(string name)
@@ -96,7 +90,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 throw new ArgumentNullException("validation");
 
             // Validate each rule.
-            Dictionary<string, object> ruleNames = new Dictionary<string, object>();
+            Dictionary<string, object> ruleNames = [];
             foreach (Rule r in rules)
             {
                 if (!string.IsNullOrEmpty(r.Name))  // invalid names caught when validating the rule
@@ -104,7 +98,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     if (ruleNames.ContainsKey(r.Name))
                     {
                         // Duplicate rule name found.
-                        ValidationError error = new ValidationError(Messages.Error_DuplicateRuleName, ErrorNumbers.Error_DuplicateConditions);
+                        ValidationError error = new(Messages.Error_DuplicateRuleName, ErrorNumbers.Error_DuplicateConditions);
                         error.UserData[RuleUserDataKeys.ErrorObject] = r;
                         validation.AddError(error);
                     }
@@ -131,7 +125,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (ruleExecution.Validation == null)
                 throw new ArgumentException(SR.GetString(SR.Error_MissingValidationProperty), "ruleExecution");
 
-            RuleEngine engine = new RuleEngine(this, ruleExecution.Validation);
+            RuleEngine engine = new(this, ruleExecution.Validation);
             engine.Execute(ruleExecution);
         }
 
@@ -178,7 +172,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (this.rules != null)
             {
-                newRuleSet.rules = new List<Rule>();
+                newRuleSet.rules = [];
                 foreach (Rule r in this.rules)
                     newRuleSet.rules.Add(r.Clone());
             }
@@ -188,8 +182,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override bool Equals(object obj)
         {
-            RuleSet other = obj as RuleSet;
-            if (other == null)
+            if (obj is not RuleSet other)
                 return false;
             if ((this.Name != other.Name)
                 || (this.Description != other.Description)

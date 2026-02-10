@@ -1,5 +1,3 @@
-using System;
-
 namespace LogicBuilder.Workflow.Activities.Rules
 {
     public static class RuleUserDataKeys

@@ -21,7 +21,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         class CustomExpressionWrapper : RuleExpressionInternal
         {
-            private IRuleExpression ruleExpr;
+            private readonly IRuleExpression ruleExpr;
 
             internal CustomExpressionWrapper(IRuleExpression ruleExpr)
             {
@@ -71,7 +71,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        static TypeWrapperTuple[] typeWrappers = new TypeWrapperTuple[] {
+        static readonly TypeWrapperTuple[] typeWrappers = [
             new TypeWrapperTuple(typeof(CodeThisReferenceExpression), new ThisExpression()),
             new TypeWrapperTuple(typeof(CodePrimitiveExpression), new PrimitiveExpression()),
             new TypeWrapperTuple(typeof(CodeFieldReferenceExpression), new FieldReferenceExpression()),
@@ -85,7 +85,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             new TypeWrapperTuple(typeof(CodeCastExpression), new CastExpression()),
             new TypeWrapperTuple(typeof(CodeObjectCreateExpression), new ObjectCreateExpression()),
             new TypeWrapperTuple(typeof(CodeArrayCreateExpression), new ArrayCreateExpression())
-        };
+        ];
 
         private static RuleExpressionInternal GetExpression(CodeExpression expression)
         {
@@ -124,7 +124,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (ruleExpr == null)
                 {
                     string message = string.Format(CultureInfo.CurrentCulture, Messages.CodeExpressionNotHandled, expression.GetType().FullName);
-                    ValidationError error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
+                    ValidationError error = new(message, ErrorNumbers.Error_CodeExpressionNotHandled);
                     error.UserData[RuleUserDataKeys.ErrorObject] = expression;
 
                     if (validation.Errors == null)
@@ -172,14 +172,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return ruleExpr.Evaluate(expression, execution);
         }
 
-        [SuppressMessage("Microsoft.Naming", "CA1720:AvoidTypeNamesInParameters", MessageId = "0#")]
         public static void Decompile(StringBuilder stringBuilder, CodeExpression expression, CodeExpression parentExpression)
         {
             RuleExpressionInternal ruleExpr = GetExpression(expression);
             ruleExpr.Decompile(expression, stringBuilder, parentExpression);
         }
 
-        [SuppressMessage("Microsoft.Design", "CA1062:ValidateArgumentsOfPublicMethods")]
         public static bool Match(CodeExpression firstExpression, CodeExpression secondExpression)
         {
             // If they're both null, they match.
@@ -225,7 +223,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             Type statementType = statement.GetType();
 
-            RuleCodeDomStatement wrapper = null;
+            RuleCodeDomStatement wrapper;
             if (statementType == typeof(CodeExpressionStatement))
             {
                 wrapper = ExpressionStatement.Create(statement);
@@ -237,7 +235,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             else
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.CodeStatementNotHandled, statement.GetType().FullName);
-                NotSupportedException exception = new NotSupportedException(message);
+                NotSupportedException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = statement;
                 throw exception;
             }

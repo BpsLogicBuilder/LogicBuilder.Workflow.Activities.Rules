@@ -140,7 +140,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.True(result);
-            Assert.Equal(0, validation.Errors.Count);
+            Assert.Empty(validation.Errors);
         }
 
         #endregion

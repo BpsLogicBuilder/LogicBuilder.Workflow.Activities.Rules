@@ -14,7 +14,7 @@ internal sealed class SRDescriptionAttribute : DescriptionAttribute
 
     public SRDescriptionAttribute(string description, string resourceSet)
     {
-        ResourceManager rm = new ResourceManager(resourceSet, Assembly.GetExecutingAssembly());
+        ResourceManager rm = new(resourceSet, Assembly.GetExecutingAssembly());
         DescriptionValue = rm.GetString(description);
         System.Diagnostics.Debug.Assert(DescriptionValue != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", description));
     }
@@ -23,7 +23,7 @@ internal sealed class SRDescriptionAttribute : DescriptionAttribute
 [AttributeUsage(AttributeTargets.All)]
 internal sealed class SRCategoryAttribute : CategoryAttribute
 {
-    private string resourceSet = String.Empty;
+    private readonly string resourceSet = String.Empty;
 
     public SRCategoryAttribute(string category)
         : base(category)
@@ -40,7 +40,7 @@ internal sealed class SRCategoryAttribute : CategoryAttribute
     {
         if (this.resourceSet.Length > 0)
         {
-            ResourceManager rm = new ResourceManager(resourceSet, Assembly.GetExecutingAssembly());
+            ResourceManager rm = new(resourceSet, Assembly.GetExecutingAssembly());
             String localizedString = rm.GetString(value);
             System.Diagnostics.Debug.Assert(localizedString != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", value));
             return localizedString;
@@ -62,7 +62,7 @@ internal sealed class SRDisplayNameAttribute : DisplayNameAttribute
 
     public SRDisplayNameAttribute(string name, string resourceSet)
     {
-        ResourceManager rm = new ResourceManager(resourceSet, Assembly.GetExecutingAssembly());
+        ResourceManager rm = new(resourceSet, Assembly.GetExecutingAssembly());
         DisplayNameValue = rm.GetString(name);
         System.Diagnostics.Debug.Assert(DisplayNameValue != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", name));
     }
@@ -76,7 +76,7 @@ internal sealed class SRDisplayNameAttribute : DisplayNameAttribute
 internal sealed class SR
 {
     static SR loader = null;
-    ResourceManager resources;
+    readonly ResourceManager resources;
 
     internal SR()
     {
@@ -85,8 +85,7 @@ internal sealed class SR
 
     private static SR GetLoader()
     {
-        if (loader == null)
-            loader = new SR();
+        loader ??= new SR();
         return loader;
     }
 

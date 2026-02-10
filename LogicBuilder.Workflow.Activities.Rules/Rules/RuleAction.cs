@@ -1,4 +1,3 @@
-#pragma warning disable 1634, 1691
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Globalization;
@@ -91,7 +90,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (path == null)
             {
-                ValidationError error = new ValidationError(Messages.NullUpdate, ErrorNumbers.Error_ParameterNotSet);
+                ValidationError error = new(Messages.NullUpdate, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = this;
                 validator.AddError(error);
                 success = false;
@@ -109,7 +108,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         if (i < parts.Length - 1)
                         {
                             // The "*" occurred in the middle of the path, which is a no-no.
-                            ValidationError error = new ValidationError(Messages.InvalidWildCardInPathQualifier, ErrorNumbers.Error_InvalidWildCardInPathQualifier);
+                            ValidationError error = new(Messages.InvalidWildCardInPathQualifier, ErrorNumbers.Error_InvalidWildCardInPathQualifier);
                             error.UserData[RuleUserDataKeys.ErrorObject] = this;
                             validator.AddError(error);
                             success = false;
@@ -148,7 +147,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         else
                         {
                             string message = string.Format(CultureInfo.CurrentCulture, Messages.UpdateUnknownFieldOrProperty, parts[i]);
-                            ValidationError error = new ValidationError(message, ErrorNumbers.Error_InvalidUpdate);
+                            ValidationError error = new(message, ErrorNumbers.Error_InvalidUpdate);
                             error.UserData[RuleUserDataKeys.ErrorObject] = this;
                             validator.AddError(error);
                             success = false;
@@ -159,7 +158,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
             else
             {
-                ValidationError error = new ValidationError(Messages.UpdateNotThis, ErrorNumbers.Error_InvalidUpdate);
+                ValidationError error = new(Messages.UpdateNotThis, ErrorNumbers.Error_InvalidUpdate);
                 error.UserData[RuleUserDataKeys.ErrorObject] = this;
                 validator.AddError(error);
                 success = false;
@@ -175,7 +174,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override ICollection<string> GetSideEffects(RuleValidation validation)
         {
-            return new string[] { this.path };
+            return [this.path];
         }
 
         public override RuleAction Clone()
@@ -191,8 +190,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         public override bool Equals(object obj)
         {
 #pragma warning disable 56506
-            RuleUpdateAction other = obj as RuleUpdateAction;
-            return ((other != null) && (string.Equals(this.Path, other.Path, StringComparison.Ordinal)));
+            return ((obj is RuleUpdateAction other) && (string.Equals(this.Path, other.Path, StringComparison.Ordinal)));
 #pragma warning restore 56506
         }
 
@@ -234,7 +232,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (codeDomStatement == null)
             {
-                ValidationError error = new ValidationError(Messages.NullStatement, ErrorNumbers.Error_ParameterNotSet);
+                ValidationError error = new(Messages.NullStatement, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = this;
                 validator.AddError(error);
                 return false;
@@ -254,7 +252,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override ICollection<string> GetSideEffects(RuleValidation validation)
         {
-            RuleAnalysis analysis = new RuleAnalysis(validation, true);
+            RuleAnalysis analysis = new(validation, true);
             if (codeDomStatement != null)
                 CodeDomStatementWalker.AnalyzeUsage(analysis, codeDomStatement);
             return analysis.GetSymbols();
@@ -272,7 +270,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (codeDomStatement == null)
                 return "";
 
-            StringBuilder decompilation = new StringBuilder();
+            StringBuilder decompilation = new();
             CodeDomStatementWalker.Decompile(decompilation, codeDomStatement);
             return decompilation.ToString();
         }
@@ -280,8 +278,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         public override bool Equals(object obj)
         {
 #pragma warning disable 56506
-            RuleStatementAction other = obj as RuleStatementAction;
-            return ((other != null) && (CodeDomStatementWalker.Match(CodeDomStatement, other.CodeDomStatement)));
+            return ((obj is RuleStatementAction other) && (CodeDomStatementWalker.Match(CodeDomStatement, other.CodeDomStatement)));
 #pragma warning restore 56506
         }
 

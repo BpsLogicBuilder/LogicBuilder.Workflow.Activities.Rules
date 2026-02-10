@@ -9,6 +9,7 @@ using System.Reflection;
 using LogicBuilder.Workflow.Activities.Common;
 using LogicBuilder.Workflow.ComponentModel.Compiler;
 using System;
+using System.Linq;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
@@ -24,16 +25,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal abstract void Analyze(RuleAnalysis analysis, MemberInfo member, CodeExpression targetExpression, RulePathQualifier targetQualifier, CodeExpressionCollection argumentExpressions, ParameterInfo[] parameters, List<CodeExpression> attributedExpressions);
     }
 
-    public abstract class RuleReadWriteAttribute : RuleAttribute
+    public abstract class RuleReadWriteAttribute(string path, RuleAttributeTarget target) : RuleAttribute
     {
-        private RuleAttributeTarget attributeTarget;
-        private string attributePath;
-
-        protected RuleReadWriteAttribute(string path, RuleAttributeTarget target)
-        {
-            this.attributeTarget = target;
-            this.attributePath = path;
-        }
+        private readonly RuleAttributeTarget attributeTarget = target;
+        private readonly string attributePath = path;
 
         public string Path
         {
@@ -47,9 +42,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         internal override bool Validate(RuleValidation validation, MemberInfo member, Type contextType, ParameterInfo[] parameters)
         {
-            ValidationError error = null;
-            string message = null;
-
             if (string.IsNullOrEmpty(attributePath))
             {
                 // It is allowed to pass null or the empty string to [RuleRead] or [RuleWrite].  This
@@ -65,6 +57,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             string firstPart = parts[0];
             int startOfRelativePortion = 0;
+            ValidationError error;
+            string message;
             if (attributeTarget == RuleAttributeTarget.This)
             {
                 // When target is "This", the path is allowed to start with the token "this".  It is
@@ -291,14 +285,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
 
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method, AllowMultiple = true)]
-    public sealed class RuleInvokeAttribute : RuleAttribute
+    public sealed class RuleInvokeAttribute(string methodInvoked) : RuleAttribute
     {
-        private string methodInvoked;
-
-        public RuleInvokeAttribute(string methodInvoked)
-        {
-            this.methodInvoked = methodInvoked;
-        }
+        private readonly string methodInvoked = methodInvoked;
 
         public string MethodInvoked
         {
@@ -307,7 +296,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         internal override bool Validate(RuleValidation validation, MemberInfo member, Type contextType, ParameterInfo[] parameters)
         {
-            Stack<MemberInfo> methodStack = new Stack<MemberInfo>();
+            Stack<MemberInfo> methodStack = new();
             methodStack.Push(member);
 
             bool result = ValidateInvokeAttribute(validation, member, contextType, methodStack);
@@ -359,7 +348,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         object[] attrs = mi.GetCustomAttributes(typeof(RuleAttribute), true);
                         if (attrs != null && attrs.Length != 0)
                         {
-                            foreach (RuleAttribute invokedRuleAttr in attrs)
+                            foreach (RuleAttribute invokedRuleAttr in attrs.OfType<RuleAttribute>())
                             {
                                 if (invokedRuleAttr is RuleReadWriteAttribute readWriteAttr)
                                 {
@@ -397,7 +386,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         internal override void Analyze(RuleAnalysis analysis, MemberInfo member, CodeExpression targetExpression, RulePathQualifier targetQualifier, CodeExpressionCollection argumentExpressions, ParameterInfo[] parameters, List<CodeExpression> attributedExpressions)
         {
-            Stack<MemberInfo> methodStack = new Stack<MemberInfo>();
+            Stack<MemberInfo> methodStack = new();
             methodStack.Push(member);
 
             AnalyzeInvokeAttribute(analysis, member.DeclaringType, methodStack, targetExpression, targetQualifier, argumentExpressions, parameters, attributedExpressions);
