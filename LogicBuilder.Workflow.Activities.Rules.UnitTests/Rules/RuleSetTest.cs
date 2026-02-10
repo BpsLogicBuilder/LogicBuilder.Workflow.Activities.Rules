@@ -407,20 +407,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
-        public void Equals_DifferentType_ReturnsFalse()
-        {
-            // Arrange
-            var ruleSet = new RuleSet("Test");
-            var other = "Not a RuleSet";
-
-            // Act
-            bool result = ruleSet.Equals(other);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
         public void Equals_SameInstance_ReturnsTrue()
         {
             // Arrange

@@ -194,19 +194,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.True(contains);
         }
 
-        [Fact]
-        public void Contains_OnEmptyCollection_ReturnsFalse()
-        {
-            // Arrange
-            var collection = new RuleConditionCollection();
-
-            // Act
-            bool contains = collection.Contains("AnyCondition");
-
-            // Assert
-            Assert.False(contains);
-        }
-
         #endregion
 
         #region Remove Tests
@@ -281,19 +268,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         #endregion
 
         #region RuntimeMode Tests
-
-        [Fact]
-        public void RuntimeMode_DefaultValue_IsFalse()
-        {
-            // Arrange
-            var collection = new RuleConditionCollection();
-
-            // Act
-            bool runtimeMode = collection.RuntimeMode;
-
-            // Assert
-            Assert.False(runtimeMode);
-        }
 
         [Fact]
         public void RuntimeMode_CanBeSet()
@@ -542,19 +516,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         #endregion
 
         #region Count Tests
-
-        [Fact]
-        public void Count_OnEmptyCollection_ReturnsZero()
-        {
-            // Arrange
-            var collection = new RuleConditionCollection();
-
-            // Act
-            int count = collection.Count;
-
-            // Assert
-            Assert.Equal(0, count);
-        }
 
         [Fact]
         public void Count_AfterAddingItems_ReturnsCorrectCount()

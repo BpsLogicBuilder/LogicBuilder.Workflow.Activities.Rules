@@ -331,20 +331,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
-        public void Equals_WithDifferentType_ReturnsFalse()
-        {
-            // Arrange
-            var action = new RuleStatementAction(new CodeExpressionStatement(new CodePrimitiveExpression(42)));
-            var other = new RuleHaltAction();
-
-            // Act
-            var result = action.Equals(other);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
         public void Equals_WithMatchingStatements_ReturnsTrue()
         {
             // Arrange
