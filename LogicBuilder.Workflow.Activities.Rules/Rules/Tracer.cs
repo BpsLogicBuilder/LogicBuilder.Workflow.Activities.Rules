@@ -4,10 +4,12 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
+    [ExcludeFromCodeCoverage]
     internal class Tracer
     {
         private string tracePrefix;
