@@ -124,13 +124,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public IList<RuleAction> ThenActions
         {
-            get { if (thenActions == null) thenActions = new List<RuleAction>(); return thenActions; }
+            get { thenActions ??= []; return thenActions; }
         }
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public IList<RuleAction> ElseActions
         {
-            get { if (elseActions == null) elseActions = new List<RuleAction>(); return elseActions; }
+            get { elseActions ??= []; return elseActions; }
         }
 
         internal void Validate(RuleValidation validation)
@@ -165,22 +165,22 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 {
                     ValidationError oldError = errors[i];
 
-                    ValidationError newError = new ValidationError(prefix + oldError.ErrorText, oldError.ErrorNumber, oldError.IsWarning);
+                    ValidationError newError = new(prefix + oldError.ErrorText, oldError.ErrorNumber, oldError.IsWarning);
                     foreach (DictionaryEntry de in oldError.UserData)
                         newError.UserData[de.Key] = de.Value;
 
                     errors[i] = newError;
 
                     //TODO: skip if name is null or empty.
-                    //if (!string.IsNullOrEmpty(name))
-                    UpdateErrorsByRuleName();
+                    if (!string.IsNullOrEmpty(name))
+                        UpdateErrorsByRuleName();
 
                     void UpdateErrorsByRuleName()
                     {
                         if (validation.ErrorsByRuleName.TryGetValue(name, out IList<ValidationError> ruleErrorList))
                             ruleErrorList.Add(newError);
                         else
-                            validation.ErrorsByRuleName.Add(name, new List<ValidationError> { newError });
+                            validation.ErrorsByRuleName.Add(name, [newError]);
                     }
                 }
             }
@@ -216,14 +216,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (this.thenActions != null)
             {
-                newRule.thenActions = new List<RuleAction>();
+                newRule.thenActions = [];
                 foreach (RuleAction thenAction in this.thenActions)
                     newRule.thenActions.Add(thenAction.Clone());
             }
 
             if (this.elseActions != null)
             {
-                newRule.elseActions = new List<RuleAction>();
+                newRule.elseActions = [];
                 foreach (RuleAction elseAction in this.elseActions)
                     newRule.elseActions.Add(elseAction.Clone());
             }
@@ -233,8 +233,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override bool Equals(object obj)
         {
-            Rule other = obj as Rule;
-            if (other == null)
+            if (obj is not Rule other)
                 return false;
             if ((this.Name != other.Name)
                 || (this.Description != other.Description)

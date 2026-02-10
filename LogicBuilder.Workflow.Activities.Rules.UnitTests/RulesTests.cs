@@ -195,6 +195,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests
         }
 
         [Fact(Skip = "Unexpected return charater on GitHub Actions runner.")]
+        //[Fact]
         public void TestSerialization()
         {
             //Arrange

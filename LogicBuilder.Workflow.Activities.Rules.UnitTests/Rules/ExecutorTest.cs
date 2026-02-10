@@ -131,7 +131,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var orderedRules = new List<RuleState>();
 
             // Act
-            Executor.ExecuteRuleSet(orderedRules, execution, null, null);
+            Executor.ExecuteRuleSet(orderedRules, execution, null);
 
             // Assert
             Assert.False(execution.Halted);
@@ -164,7 +164,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var orderedRules = new List<RuleState> { new(rule) };
 
             // Act
-            Executor.ExecuteRuleSet(orderedRules, execution, null, null);
+            Executor.ExecuteRuleSet(orderedRules, execution, null);
 
             // Assert
             Assert.Equal(99, testObject.IntProperty);
@@ -197,7 +197,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var orderedRules = new List<RuleState> { new(rule) };
 
             // Act
-            Executor.ExecuteRuleSet(orderedRules, execution, null, null);
+            Executor.ExecuteRuleSet(orderedRules, execution, null);
 
             // Assert
             Assert.Equal(77, testObject.IntProperty);
@@ -224,7 +224,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var orderedRules = new List<RuleState> { new(rule) };
 
             // Act
-            Executor.ExecuteRuleSet(orderedRules, execution, null, null);
+            Executor.ExecuteRuleSet(orderedRules, execution, null);
 
             // Assert
             Assert.True(execution.Halted);

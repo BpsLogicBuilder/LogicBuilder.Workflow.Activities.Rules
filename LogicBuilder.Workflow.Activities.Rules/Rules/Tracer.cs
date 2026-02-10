@@ -12,22 +12,21 @@ namespace LogicBuilder.Workflow.Activities.Rules
     [ExcludeFromCodeCoverage]
     internal class Tracer
     {
-        private string tracePrefix;
+        private readonly string tracePrefix;
 
         // get the localized trace messages once
-        private static string traceRuleIdentifier = Messages.TraceRuleIdentifier;
-        private static string traceRuleHeader = Messages.TraceRuleHeader;
-        private static string traceRuleSetEvaluate = Messages.TraceRuleSetEvaluate;
-        private static string traceRuleEvaluate = Messages.TraceRuleEvaluate;
-        private static string traceRuleResult = Messages.TraceRuleResult;
-        private static string traceRuleActions = Messages.TraceRuleActions;
-        private static string traceCondition = Messages.Condition;
-        private static string traceThen = Messages.Then;
-        private static string traceElse = Messages.Else;
-        private static string traceUpdate = Messages.TraceUpdate;
-        private static string traceRuleTriggers = Messages.TraceRuleTriggers;
-        private static string traceRuleConditionDependency = Messages.TraceRuleConditionDependency;
-        private static string traceRuleActionSideEffect = Messages.TraceRuleActionSideEffect;
+        private static readonly string traceRuleHeader = Messages.TraceRuleHeader;
+        private static readonly string traceRuleSetEvaluate = Messages.TraceRuleSetEvaluate;
+        private static readonly string traceRuleEvaluate = Messages.TraceRuleEvaluate;
+        private static readonly string traceRuleResult = Messages.TraceRuleResult;
+        private static readonly string traceRuleActions = Messages.TraceRuleActions;
+        private static readonly string traceCondition = Messages.Condition;
+        private static readonly string traceThen = Messages.Then;
+        private static readonly string traceElse = Messages.Else;
+        private static readonly string traceUpdate = Messages.TraceUpdate;
+        private static readonly string traceRuleTriggers = Messages.TraceRuleTriggers;
+        private static readonly string traceRuleConditionDependency = Messages.TraceRuleConditionDependency;
+        private static readonly string traceRuleActionSideEffect = Messages.TraceRuleActionSideEffect;
 
         internal Tracer(string name)
         {

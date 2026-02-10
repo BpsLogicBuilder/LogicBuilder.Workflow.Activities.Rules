@@ -20,14 +20,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region ExpressionInfo
 
     // Public base class (which just holds the Type of the expression).
-    public class RuleExpressionInfo
+    public class RuleExpressionInfo(Type expressionType)
     {
-        private Type expressionType;
-
-        public RuleExpressionInfo(Type expressionType)
-        {
-            this.expressionType = expressionType;
-        }
+        private readonly Type expressionType = expressionType;
 
         public Type ExpressionType
         {
@@ -36,17 +31,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
     }
 
     // Internal derivation for CodeMethodInvokeExpression
-    public class RuleMethodInvokeExpressionInfo : RuleExpressionInfo
+    public class RuleMethodInvokeExpressionInfo(MethodInfo mi, bool needsParamsExpansion) : RuleExpressionInfo(mi.ReturnType)
     {
-        private MethodInfo methodInfo;
-        private bool needsParamsExpansion;
-
-        public RuleMethodInvokeExpressionInfo(MethodInfo mi, bool needsParamsExpansion)
-            : base(mi.ReturnType)
-        {
-            this.methodInfo = mi;
-            this.needsParamsExpansion = needsParamsExpansion;
-        }
+        private readonly MethodInfo methodInfo = mi;
+        private readonly bool needsParamsExpansion = needsParamsExpansion;
 
         public MethodInfo MethodInfo
         {
@@ -62,9 +50,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     // Internal derivation for CodeBinaryExpression
     internal class RuleBinaryExpressionInfo : RuleExpressionInfo
     {
-        private Type leftType;
-        private Type rightType;
-        private MethodInfo methodInfo;
+        private readonly Type leftType;
+        private readonly Type rightType;
+        private readonly MethodInfo methodInfo;
 
         // no overridden method needed
         internal RuleBinaryExpressionInfo(Type lhsType, Type rhsType, Type resultType)
@@ -102,7 +90,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     // Internal derivation for CodeFieldReferenceExpression
     internal class RuleFieldExpressionInfo : RuleExpressionInfo
     {
-        private FieldInfo fieldInfo;
+        private readonly FieldInfo fieldInfo;
 
         internal RuleFieldExpressionInfo(FieldInfo fi)
             : base(fi.FieldType)
@@ -119,8 +107,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
     // Internal derivation for CodePropertyReferenceExpression
     internal class RulePropertyExpressionInfo : RuleExpressionInfo
     {
-        private PropertyInfo propertyInfo;
-        private bool needsParamsExpansion;
+        private readonly PropertyInfo propertyInfo;
+        private readonly bool needsParamsExpansion;
 
         // Note that the type pi.PropertyType may differ from the "exprType" argument if this
         // property is a Bind.
@@ -143,17 +131,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
     }
 
     // Internal derivation for CodeMethodInvokeExpression
-    public class RuleConstructorExpressionInfo : RuleExpressionInfo
+    public class RuleConstructorExpressionInfo(ConstructorInfo ci, bool needsParamsExpansion) : RuleExpressionInfo(ci.DeclaringType)
     {
-        private ConstructorInfo constructorInfo;
-        private bool needsParamsExpansion;
-
-        public RuleConstructorExpressionInfo(ConstructorInfo ci, bool needsParamsExpansion)
-            : base(ci.DeclaringType)
-        {
-            this.constructorInfo = ci;
-            this.needsParamsExpansion = needsParamsExpansion;
-        }
+        private readonly ConstructorInfo constructorInfo = ci;
+        private readonly bool needsParamsExpansion = needsParamsExpansion;
 
         internal ConstructorInfo ConstructorInfo
         {
@@ -168,11 +149,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
     public class ExtensionMethodInfo : MethodInfo
     {
-        MethodInfo actualMethod;
-        int actualParameterLength;
-        ParameterInfo[] expectedParameters;
-        Type assumedDeclaringType;
-        bool hasOutOrRefParameters = false;
+        readonly MethodInfo actualMethod;
+        readonly int actualParameterLength;
+        readonly ParameterInfo[] expectedParameters;
+        readonly Type assumedDeclaringType;
+        readonly bool hasOutOrRefParameters = false;
 
         public ExtensionMethodInfo(MethodInfo method, ParameterInfo[] actualParameters)
             : base()
@@ -183,7 +164,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // modify parameters
             actualParameterLength = actualParameters.Length;
             if (actualParameterLength < 2)
-                expectedParameters = new ParameterInfo[0];
+                expectedParameters = [];
             else
             {
                 expectedParameters = new ParameterInfo[actualParameterLength - 1];
@@ -288,7 +269,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     internal class SimpleParameterInfo : ParameterInfo
     {
         // only thing we look at is ParameterType, so no need to override anything else
-        Type parameterType;
+        readonly Type parameterType;
 
         public SimpleParameterInfo(ParameterInfo parameter)
             : base()
@@ -544,20 +525,19 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
     internal class EnumOperationMethodInfo : MethodInfo
     {
-        CodeBinaryOperatorType op;
-        ParameterInfo[] expectedParameters;
-        Type resultType;        // may be nullable, enum, or value type
-        bool resultIsNullable;  // true if resultType is nullable
+        readonly CodeBinaryOperatorType op;
+        readonly ParameterInfo[] expectedParameters;
+        readonly Type resultType;        // may be nullable, enum, or value type
+        readonly bool resultIsNullable;  // true if resultType is nullable
 
-        Type lhsBaseType;       // non-Nullable, may be enum
-        Type rhsBaseType;
-        Type resultBaseType;
+        readonly Type lhsBaseType;       // non-Nullable, may be enum
+        readonly Type rhsBaseType;
+        readonly Type resultBaseType;
 
         Type lhsRootType;       // underlying type (int, long, ushort, etc)
         Type rhsRootType;
-        Type resultRootType;
+        readonly Type resultRootType;
 
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public EnumOperationMethodInfo(Type lhs, CodeBinaryOperatorType operation, Type rhs, bool isZero)
         {
             // only 5 arithmetic cases (U = underlying type of E):
@@ -678,7 +658,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return expectedParameters;
         }
 
-        [SuppressMessage("Microsoft.Performance", "CA1803:AvoidCostlyCallsWherePossible")]
         public override object Invoke(object obj, BindingFlags invokeAttr, Binder binder, object[] parameters, CultureInfo culture)
         {
             // we should get passed in 2 values that correspond to the parameter types
@@ -757,12 +736,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override object[] GetCustomAttributes(Type attributeType, bool inherit)
         {
-            return new object[0];
+            return [];
         }
 
         public override object[] GetCustomAttributes(bool inherit)
         {
-            return new object[0];
+            return [];
         }
 
         public override bool IsDefined(Type attributeType, bool inherit)
@@ -791,7 +770,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
     public class SimpleRunTimeTypeProvider
     {
-        private Assembly root;
+        private readonly Assembly root;
         private List<Assembly> references;
 
         public SimpleRunTimeTypeProvider(Assembly startingAssembly)
@@ -876,7 +855,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public Type[] GetTypes()
         {
-            List<Type> types = new List<Type>();
+            List<Type> types = [];
             try
             {
                 types.AddRange(root.GetTypes());
@@ -902,7 +881,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                             types.Add(type);
                 }
             }
-            return types.ToArray();
+            return [.. types];
         }
 
         public Assembly LocalAssembly
@@ -917,7 +896,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 // references is created on demand, does not include root
                 if (references == null)
                 {
-                    List<Assembly> list = new List<Assembly>();
+                    List<Assembly> list = [];
                     foreach (AssemblyName a in root.GetReferencedAssemblies())
                     {
                         list.Add(Assembly.Load(a));
@@ -952,15 +931,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
     public class RuleValidation
     {
-        private Type thisType;
-        private SimpleRunTimeTypeProvider typeProvider;
-        private ValidationErrorCollection errors = new ValidationErrorCollection();
-        private Dictionary<string, Type> typesUsed = new Dictionary<string, Type>(16);
-        private Stack<CodeExpression> activeParentNodes = new Stack<CodeExpression>();
-        private Dictionary<CodeExpression, RuleExpressionInfo> expressionInfoMap = new Dictionary<CodeExpression, RuleExpressionInfo>();
-        private Dictionary<CodeTypeReference, Type> typeRefMap = new Dictionary<CodeTypeReference, Type>();
-        private static readonly Type voidType = typeof(void);
-        private static string voidTypeName = voidType.AssemblyQualifiedName;
+        private readonly Type thisType;
+        private readonly SimpleRunTimeTypeProvider typeProvider;
+        private readonly ValidationErrorCollection errors = [];
+        private readonly Dictionary<string, Type> typesUsed = new(16);
+        private readonly Stack<CodeExpression> activeParentNodes = new();
+        private readonly Dictionary<CodeExpression, RuleExpressionInfo> expressionInfoMap = [];
+        private readonly Dictionary<CodeTypeReference, Type> typeRefMap = [];
 
         #region Constructors
 
@@ -1009,7 +986,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (resultType != null || Errors.Count == 0)
                 {
                     string message = Messages.ConditionMustBeBoolean;
-                    ValidationError error = new ValidationError(message, ErrorNumbers.Error_ConditionMustBeBoolean);
+                    ValidationError error = new(message, ErrorNumbers.Error_ConditionMustBeBoolean);
                     error.UserData[RuleUserDataKeys.ErrorObject] = expression;
                     Errors.Add(error);
                 }
@@ -1092,7 +1069,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (activeParentNodes.Contains(newParent))
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.CyclicalExpression);
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_CyclicalExpression);
+                ValidationError error = new(message, ErrorNumbers.Error_CyclicalExpression);
                 error.UserData[RuleUserDataKeys.ErrorObject] = newParent;
                 Errors.Add(error);
                 return false;
@@ -1178,7 +1155,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // explicit reference conversions
             // this looks like the inverse of implicit conversions
             // so we don't return an error
-            if (StandardImplicitConversion(toType, fromType, null, out ValidationError dummyError))
+            if (StandardImplicitConversion(toType, fromType, null, out _))
                 return true;
             // include interface checks
             if (toType.IsInterface)
@@ -1217,10 +1194,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return false;
         }
 
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         internal static MethodInfo FindImplicitConversion(Type fromType, Type toType, out ValidationError error)
         {
-            List<MethodInfo> candidates = new List<MethodInfo>();
+            List<MethodInfo> candidates = [];
 
             bool fromIsNullable = ConditionHelper.IsNullableValueType(fromType);
             bool toIsNullable = ConditionHelper.IsNullableValueType(toType);
@@ -1250,7 +1226,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (fromIsNullable && toIsNullable)
             {
                 // start by finding all the conversion operators from S0 -> T0
-                List<MethodInfo> liftedCandidates = new List<MethodInfo>();
+                List<MethodInfo> liftedCandidates = [];
                 if (fromType0.IsClass)
                 {
                     AddImplicitConversions(fromType0, fromType0, toType0, liftedCandidates);
@@ -1293,7 +1269,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             // find the most specific source type
-            ValidationError dummyError; // so we don't return an error
             Type sx = candidates[0].GetParameters()[0].ParameterType;
             if (sx != fromType)
             {
@@ -1306,7 +1281,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         sx = fromType;
                         break;
                     }
-                    if (StandardImplicitConversion(testType, sx, null, out dummyError))
+                    if (StandardImplicitConversion(testType, sx, null, out _))
                         sx = testType;
                 }
             }
@@ -1324,7 +1299,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         tx = toType;
                         break;
                     }
-                    if (StandardImplicitConversion(tx, testType, null, out dummyError))
+                    if (StandardImplicitConversion(tx, testType, null, out _))
                         tx = testType;
                 }
             }
@@ -1336,7 +1311,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 if ((candidates[i].ReturnType == tx) &&
                     (candidates[i].GetParameters()[0].ParameterType == sx) &&
-                    (!(candidates[i] is LiftedConversionMethodInfo)))
+                    (candidates[i] is not LiftedConversionMethodInfo))
                 {
                     position = i;
                     ++numMatches;
@@ -1374,7 +1349,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 else
                 {
                     // we are doing a conversion T? = S, so a conversion from S -> T is valid
-                    MethodInfo result = FindImplicitConversion(fromType, toType0, out error);
+                    MethodInfo result = FindImplicitConversion(fromType, toType0, out _);
                     if (result != null)
                     {
                         error = null;
@@ -1393,11 +1368,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return null;
         }
 
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         internal static MethodInfo FindExplicitConversion(Type fromType, Type toType, out ValidationError error)
         {
-            List<MethodInfo> candidates = new List<MethodInfo>();
-            ValidationError dummyError; // don't return transient errors
+            List<MethodInfo> candidates = [];
+            // don't return transient errors
 
             bool fromIsNullable = ConditionHelper.IsNullableValueType(fromType);
             bool toIsNullable = ConditionHelper.IsNullableValueType(toType);
@@ -1437,7 +1411,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (fromIsNullable && toIsNullable)
             {
                 // start by finding all the conversion operators from S0 -> T0
-                List<MethodInfo> liftedCandidates = new List<MethodInfo>();
+                List<MethodInfo> liftedCandidates = [];
                 if (fromType0.IsClass)
                 {
                     AddExplicitConversions(fromType0, fromType0, toType0, liftedCandidates);
@@ -1502,11 +1476,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 for (int i = 0; i < candidates.Count; ++i)
                 {
                     Type testType = candidates[i].GetParameters()[0].ParameterType;
-                    if (StandardImplicitConversion(fromType, testType, null, out dummyError))
+                    if (StandardImplicitConversion(fromType, testType, null, out _))
                     {
                         if (sx == null)
                             sx = testType;
-                        else if (StandardImplicitConversion(testType, sx, null, out dummyError))
+                        else if (StandardImplicitConversion(testType, sx, null, out _))
                             sx = testType;
                     }
                 }
@@ -1517,11 +1491,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 for (int i = 0; i < candidates.Count; ++i)
                 {
                     Type testType = candidates[i].GetParameters()[0].ParameterType;
-                    if (StandardImplicitConversion(testType, fromType, null, out dummyError))
+                    if (StandardImplicitConversion(testType, fromType, null, out _))
                     {
                         if (sx == null)
                             sx = testType;
-                        else if (StandardImplicitConversion(sx, testType, null, out dummyError))
+                        else if (StandardImplicitConversion(sx, testType, null, out _))
                             sx = testType;
                     }
                 }
@@ -1546,11 +1520,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 for (int i = 0; i < candidates.Count; ++i)
                 {
                     Type testType = candidates[i].ReturnType;
-                    if (StandardImplicitConversion(testType, toType, null, out dummyError))
+                    if (StandardImplicitConversion(testType, toType, null, out _))
                     {
                         if (tx == null)
                             tx = testType;
-                        else if (StandardImplicitConversion(tx, testType, null, out dummyError))
+                        else if (StandardImplicitConversion(tx, testType, null, out _))
                             tx = testType;
                     }
                 }
@@ -1561,11 +1535,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 for (int i = 0; i < candidates.Count; ++i)
                 {
                     Type testType = candidates[i].ReturnType;
-                    if (StandardImplicitConversion(toType, testType, null, out dummyError))
+                    if (StandardImplicitConversion(toType, testType, null, out _))
                     {
                         if (tx == null)
                             tx = testType;
-                        else if (StandardImplicitConversion(testType, tx, null, out dummyError))
+                        else if (StandardImplicitConversion(testType, tx, null, out _))
                             tx = testType;
                     }
                 }
@@ -1578,7 +1552,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 if ((candidates[i].ReturnType == tx) &&
                         (candidates[i].GetParameters()[0].ParameterType == sx) &&
-                        (!(candidates[i] is LiftedConversionMethodInfo)))
+                        (candidates[i] is not LiftedConversionMethodInfo))
                 {
                     position = i;
                     ++numMatches;
@@ -1616,7 +1590,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 else
                 {
                     // we are doing a conversion T? = S, so a conversion from S -> T is valid
-                    MethodInfo result = FindExplicitConversion(fromType, toType0, out error);
+                    MethodInfo result = FindExplicitConversion(fromType, toType0, out _);
                     if (result != null)
                     {
                         error = null;
@@ -1640,7 +1614,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return ((type.IsValueType) && (!type.IsPrimitive));
         }
 
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private static bool IsExplicitNumericConversion(Type sourceType, Type testType)
         {
             // includes the implicit conversions as well
@@ -1653,247 +1626,70 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 ? Type.GetTypeCode(testType.GetGenericArguments()[0])
                 : Type.GetTypeCode(testType);
 
-            switch (sourceTypeCode)
+            return sourceTypeCode switch
             {
-                case TypeCode.SByte:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.UInt16:
-                        case TypeCode.UInt32:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-
-                        case TypeCode.Int16:
-                        case TypeCode.Int32:
-                        case TypeCode.Int64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Decimal:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.Byte:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.Byte:
-                        case TypeCode.SByte:
-                        case TypeCode.Char:
-
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Decimal:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.Int16:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.UInt16:
-                        case TypeCode.UInt32:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-
-                        case TypeCode.Int16:
-                        case TypeCode.Int32:
-                        case TypeCode.Int64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Decimal:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.UInt16:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Char:
-
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Decimal:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.Int32:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-
-                        case TypeCode.Int64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Decimal:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.UInt32:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Char:
-
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Decimal:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.Int64:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Decimal:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.UInt64:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Decimal:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.Char:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.Char:
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Decimal:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.Single:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-                        case TypeCode.Single:
-                        case TypeCode.Decimal:
-
-                        case TypeCode.Double:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.Double:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Decimal:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.Decimal:
-                    switch (testTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Decimal:
-                            return true;
-                    }
-                    return false;
-            }
-            return false;
+                TypeCode.SByte => testTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                },
+                TypeCode.Byte => testTypeCode switch
+                {
+                    TypeCode.Byte or TypeCode.SByte or TypeCode.Char or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                },
+                TypeCode.Int16 => testTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                },
+                TypeCode.UInt16 => testTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Char or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                },
+                TypeCode.Int32 => testTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Int64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                },
+                TypeCode.UInt32 => testTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Char or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                },
+                TypeCode.Int64 => testTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                },
+                TypeCode.UInt64 => testTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                },
+                TypeCode.Char => testTypeCode switch
+                {
+                    TypeCode.Char or TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                },
+                TypeCode.Single => testTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Decimal or TypeCode.Double => true,
+                    _ => false,
+                },
+                TypeCode.Double => testTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                },
+                TypeCode.Decimal => testTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                },
+                _ => false,
+            };
         }
 
 
@@ -1901,14 +1697,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
 
             // is there a standard conversion we can use
-            if (StandardImplicitConversion(fromType, toType, null, out ValidationError error))
+            if (StandardImplicitConversion(fromType, toType, null, out _))
                 return true;
-
             // no standard one, did the user provide one?
-            return (FindImplicitConversion(fromType, toType, out error) != null);
+            return (FindImplicitConversion(fromType, toType, out _) != null);
         }
 
-        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         internal static bool StandardImplicitConversion(Type rhsType, Type lhsType, CodeExpression rhsExpression, out ValidationError error)
         {
             error = null;
@@ -1967,34 +1761,24 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (lhsType.IsEnum)
             {
                 // right-hand side can be decimal-integer-literal 0
-                CodePrimitiveExpression primitive = rhsExpression as CodePrimitiveExpression;
-                if ((primitive == null) || (primitive.Value == null))
+                if ((rhsExpression is not CodePrimitiveExpression primitive) || (primitive.Value == null))
                 {
                     // not a constant
                     return false;
                 }
-                switch (Type.GetTypeCode(primitive.Value.GetType()))
+                return Type.GetTypeCode(primitive.Value.GetType()) switch
                 {
-                    case TypeCode.SByte:
-                        return ((sbyte)primitive.Value == 0);
-                    case TypeCode.Byte:
-                        return ((byte)primitive.Value == 0);
-                    case TypeCode.Int16:
-                        return ((short)primitive.Value == 0);
-                    case TypeCode.UInt16:
-                        return ((ushort)primitive.Value == 0);
-                    case TypeCode.Int32:
-                        return ((int)primitive.Value == 0);
-                    case TypeCode.UInt32:
-                        return ((uint)primitive.Value == 0);
-                    case TypeCode.Int64:
-                        return ((long)primitive.Value == 0);
-                    case TypeCode.UInt64:
-                        return ((ulong)primitive.Value == 0);
-                    case TypeCode.Char:
-                        return ((char)primitive.Value == 0);
-                }
-                return false;
+                    TypeCode.SByte => ((sbyte)primitive.Value == 0),
+                    TypeCode.Byte => ((byte)primitive.Value == 0),
+                    TypeCode.Int16 => ((short)primitive.Value == 0),
+                    TypeCode.UInt16 => ((ushort)primitive.Value == 0),
+                    TypeCode.Int32 => ((int)primitive.Value == 0),
+                    TypeCode.UInt32 => ((uint)primitive.Value == 0),
+                    TypeCode.Int64 => ((long)primitive.Value == 0),
+                    TypeCode.UInt64 => ((ulong)primitive.Value == 0),
+                    TypeCode.Char => ((char)primitive.Value == 0),
+                    _ => false,
+                };
             }
             if (rhsType.IsEnum)
             {
@@ -2009,227 +1793,80 @@ namespace LogicBuilder.Workflow.Activities.Rules
             TypeCode lhsTypeCode = Type.GetTypeCode(lhsType);
             TypeCode rhsTypeCode = Type.GetTypeCode(rhsType);
 
-            switch (lhsTypeCode)
+            return lhsTypeCode switch
             {
-                case TypeCode.Decimal:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Decimal:
-                        case TypeCode.Char:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.Double:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Single:
-                        case TypeCode.Double:
-                        case TypeCode.Char:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.Single:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Single:
-                        case TypeCode.Char:
-                            return true;
-                    }
-                    return false;
-
-                case TypeCode.Char:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.Char:
-                            return true;
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                            // Maybe, if the value is in range.
-                            return CheckValueRange(rhsExpression, lhsType, out error);
-                    }
-                    return false;
-
-                case TypeCode.SByte:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.SByte:
-                            return true;
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-                            // Maybe, if the value is in range.
-                            return CheckValueRange(rhsExpression, lhsType, out error);
-                    }
-                    return false;
-
-                case TypeCode.Byte:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.Byte:
-                            return true;
-                        case TypeCode.SByte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-                            // Maybe, if the value is in range.
-                            return CheckValueRange(rhsExpression, lhsType, out error);
-                    }
-                    return false;
-
-                case TypeCode.Int16:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                            return true;
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-                            // Maybe, if the value is in range.
-                            return CheckValueRange(rhsExpression, lhsType, out error);
-                    }
-                    return false;
-
-                case TypeCode.Int32:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.Char:
-                            return true;
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                            // Maybe, if the value is in range.
-                            return CheckValueRange(rhsExpression, lhsType, out error);
-                    }
-                    return false;
-
-                case TypeCode.Int64:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.SByte:
-                        case TypeCode.Byte:
-                        case TypeCode.Int16:
-                        case TypeCode.UInt16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.Char:
-                            return true;
-                        case TypeCode.UInt64:
-                            // Maybe, if the value is in range.
-                            return CheckValueRange(rhsExpression, lhsType, out error);
-                    }
-                    return false;
-
-                case TypeCode.UInt16:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.Byte:
-                        case TypeCode.UInt16:
-                        case TypeCode.Char:
-                            return true;
-                        case TypeCode.SByte:
-                        case TypeCode.Int16:
-                        case TypeCode.Int32:
-                        case TypeCode.UInt32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                            // Maybe, if the value is in range.
-                            return CheckValueRange(rhsExpression, lhsType, out error);
-                    }
-                    return false;
-
-                case TypeCode.UInt32:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.Byte:
-                        case TypeCode.UInt16:
-                        case TypeCode.UInt32:
-                        case TypeCode.Char:
-                            return true;
-                        case TypeCode.SByte:
-                        case TypeCode.Int16:
-                        case TypeCode.Int32:
-                        case TypeCode.Int64:
-                        case TypeCode.UInt64:
-                            // Maybe, if the value is in range.
-                            return CheckValueRange(rhsExpression, lhsType, out error);
-                    }
-                    return false;
-
-                case TypeCode.UInt64:
-                    switch (rhsTypeCode)
-                    {
-                        case TypeCode.Byte:
-                        case TypeCode.UInt16:
-                        case TypeCode.UInt32:
-                        case TypeCode.UInt64:
-                        case TypeCode.Char:
-                            return true;
-                        case TypeCode.SByte:
-                        case TypeCode.Int16:
-                        case TypeCode.Int32:
-                        case TypeCode.Int64:
-                            // Maybe, if the value is in range.
-                            return CheckValueRange(rhsExpression, lhsType, out error);
-                    }
-                    return false;
-
-                default:
-                    // It wasn't a numeric type, it was some other kind of value type (e.g., bool,
-                    // DateTime, etc).  There will be no conversions.
-                    return false;
-            }
+                TypeCode.Decimal => rhsTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Decimal or TypeCode.Char => true,
+                    _ => false,
+                },
+                TypeCode.Double => rhsTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Double or TypeCode.Char => true,
+                    _ => false,
+                },
+                TypeCode.Single => rhsTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Char => true,
+                    _ => false,
+                },
+                TypeCode.Char => rhsTypeCode switch
+                {
+                    TypeCode.Char => true,
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
+                    _ => false,
+                },
+                TypeCode.SByte => rhsTypeCode switch
+                {
+                    TypeCode.SByte => true,
+                    TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
+                    _ => false,
+                },
+                TypeCode.Byte => rhsTypeCode switch
+                {
+                    TypeCode.Byte => true,
+                    TypeCode.SByte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
+                    _ => false,
+                },
+                TypeCode.Int16 => rhsTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 => true,
+                    TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
+                    _ => false,
+                },
+                TypeCode.Int32 => rhsTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.Char => true,
+                    TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
+                    _ => false,
+                },
+                TypeCode.Int64 => rhsTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.Char => true,
+                    TypeCode.UInt64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
+                    _ => false,
+                },
+                TypeCode.UInt16 => rhsTypeCode switch
+                {
+                    TypeCode.Byte or TypeCode.UInt16 or TypeCode.Char => true,
+                    TypeCode.SByte or TypeCode.Int16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
+                    _ => false,
+                },
+                TypeCode.UInt32 => rhsTypeCode switch
+                {
+                    TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.Char => true,
+                    TypeCode.SByte or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 or TypeCode.UInt64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
+                    _ => false,
+                },
+                TypeCode.UInt64 => rhsTypeCode switch
+                {
+                    TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64 or TypeCode.Char => true,
+                    TypeCode.SByte or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
+                    _ => false,
+                },
+                _ => false,// It wasn't a numeric type, it was some other kind of value type (e.g., bool,
+                           // DateTime, etc).  There will be no conversions.
+            };
         }
 
         private static void AddImplicitConversions(Type t, Type source, Type target, List<MethodInfo> methods)
@@ -2244,8 +1881,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 {
                     Type sourceType = mi.GetParameters()[0].ParameterType;
                     Type targetType = mi.ReturnType;
-                    if (StandardImplicitConversion(source, sourceType, null, out ValidationError error) &&
-                        StandardImplicitConversion(targetType, target, null, out error))
+                    if (StandardImplicitConversion(source, sourceType, null, out _) &&
+                        StandardImplicitConversion(targetType, target, null, out _))
                     {
                         if (!methods.Contains(mi))
                             methods.Add(mi);
@@ -2266,8 +1903,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 {
                     Type sourceType = mi.GetParameters()[0].ParameterType;
                     Type targetType = mi.ReturnType;
-                    if ((StandardImplicitConversion(source, sourceType, null, out ValidationError error) || StandardImplicitConversion(sourceType, source, null, out error))
-                     && (StandardImplicitConversion(target, targetType, null, out error) || StandardImplicitConversion(targetType, target, null, out error)))
+                    if ((StandardImplicitConversion(source, sourceType, null, out _) || StandardImplicitConversion(sourceType, source, null, out _))
+                     && (StandardImplicitConversion(target, targetType, null, out _) || StandardImplicitConversion(targetType, target, null, out _)))
                     {
                         if (!methods.Contains(mi))
                             methods.Add(mi);
@@ -2276,7 +1913,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         private static bool CheckValueRange(CodeExpression rhsExpression, Type lhsType, out ValidationError error)
         {
             error = null;
@@ -2340,7 +1976,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     errorNumber = ErrorNumbers.Error_NonStaticMember;
                 }
 
-                ValidationError error = new ValidationError(message, errorNumber);
+                ValidationError error = new(message, errorNumber);
                 error.UserData[RuleUserDataKeys.ErrorObject] = parentExpr;
                 Errors.Add(error);
 
@@ -2351,7 +1987,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 // Can't access private members except on the subject type.
                 message = string.Format(CultureInfo.CurrentCulture, Messages.CannotAccessPrivateMember, memberName, RuleDecompiler.DecompileType(targetType));
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_CannotResolveMember);
+                ValidationError error = new(message, ErrorNumbers.Error_CannotResolveMember);
                 error.UserData[RuleUserDataKeys.ErrorObject] = parentExpr;
                 Errors.Add(error);
 
@@ -2362,7 +1998,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 // Can't access internal members except on the subject assembly.
                 message = string.Format(CultureInfo.CurrentCulture, Messages.CannotAccessInternalMember, memberName, RuleDecompiler.DecompileType(targetType));
-                ValidationError error = new ValidationError(message, ErrorNumbers.Error_CannotResolveMember);
+                ValidationError error = new(message, ErrorNumbers.Error_CannotResolveMember);
                 error.UserData[RuleUserDataKeys.ErrorObject] = parentExpr;
                 Errors.Add(error);
 
@@ -2430,8 +2066,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (pi == null && targetType.IsInterface)
             {
                 Type[] parentInterfacesArray = targetType.GetInterfaces();
-                List<Type> parentInterfaces = new List<Type>();
-                parentInterfaces.AddRange(parentInterfacesArray);
+                List<Type> parentInterfaces = [.. parentInterfacesArray];
 
                 int index = 0;
                 while (index < parentInterfaces.Count)
@@ -2502,8 +2137,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private class CandidateParameter
         {
-            private Type type;
-            private FieldDirection direction;
+            private readonly Type type;
+            private readonly FieldDirection direction;
 
             internal CandidateParameter(Type type)
             {
@@ -2578,8 +2213,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             public override bool Equals(object obj)
             {
-                CandidateParameter otherParam = obj as CandidateParameter;
-                if (otherParam == null)
+                if (obj is not CandidateParameter otherParam)
                     return false;
 
                 return this.direction == otherParam.direction && this.type == otherParam.type;
@@ -2610,8 +2244,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
                 // If this parameter can be converted to the other parameter, and not vice versa, then
                 // this is a better conversion.  (And in the reverse situation, it's a worse conversion.)
-                bool thisConvertsToOther = RuleValidation.TypesAreAssignable(this.type, otherParam.type, null, out ValidationError dummy);
-                bool otherConvertsToThis = RuleValidation.TypesAreAssignable(otherParam.type, this.type, null, out dummy);
+                bool thisConvertsToOther = RuleValidation.TypesAreAssignable(this.type, otherParam.type, null, out _);
+                bool otherConvertsToThis = RuleValidation.TypesAreAssignable(otherParam.type, this.type, null, out _);
                 if (thisConvertsToOther && !otherConvertsToThis)
                     return better;
                 if (otherConvertsToThis && !thisConvertsToOther)
@@ -2627,7 +2261,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 return equal;
             }
 
-            [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
             private static bool BetterSignedConversion(Type t1, Type t2)
             {
                 TypeCode tc1 = Type.GetTypeCode(t1);
@@ -2700,11 +2333,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             internal MemberInfo Member;
-            private ParameterInfo[] memberParameters;
-            private List<CandidateParameter> signature;
-            private Form form;
-            private static ParameterInfo[] noParameters = new ParameterInfo[0];
-            private static List<CandidateParameter> noSignature = new List<CandidateParameter>();
+            private readonly ParameterInfo[] memberParameters;
+            private readonly List<CandidateParameter> signature;
+            private readonly Form form;
+            private static readonly ParameterInfo[] noParameters = [];
+            private static readonly List<CandidateParameter> noSignature = [];
 
             // Constructor for candidate methods with parameters.
             internal CandidateMember(MemberInfo member, ParameterInfo[] parameters, List<CandidateParameter> signature, Form form)
@@ -2726,7 +2359,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 get { return form == Form.Expanded; }
             }
 
-            [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
             internal int CompareMember(Type targetType, CandidateMember other, List<Argument> arguments, RuleValidation validator)
             {
                 int better = 1;
@@ -2782,8 +2414,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         return worse;
 
                     // compare arguments, including the "this" argument
-                    CandidateParameter thisDeclaringParam = new CandidateParameter(thisExtension.AssumedDeclaringType);
-                    CandidateParameter otherDeclaringParam = new CandidateParameter(otherExtension.AssumedDeclaringType);
+                    CandidateParameter thisDeclaringParam = new(thisExtension.AssumedDeclaringType);
+                    CandidateParameter otherDeclaringParam = new(otherExtension.AssumedDeclaringType);
                     if (!thisDeclaringParam.Equals(otherDeclaringParam))
                     {
                         signaturesAreIdentical = false;
@@ -2932,10 +2564,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (targetType.IsInterface)
             {
-                candidateTypes = new List<Type>
-                {
+                candidateTypes =
+                [
                     targetType
-                };
+                ];
 
                 // Add all base interfaces in its hierarchy to the candidate list.
                 for (int i = 0; i < candidateTypes.Count; ++i)
@@ -2950,10 +2582,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             else
             {
                 // It was a class; just add the one class.
-                candidateTypes = new List<Type>(1)
-                {
+                candidateTypes =
+                [
                     targetType
-                };
+                ];
             }
 
             return candidateTypes;
@@ -2983,7 +2615,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
             else
             {
-                List<CandidateParameter> signature = new List<CandidateParameter>();
+                List<CandidateParameter> signature = [];
 
                 int parameterCount = parameters.Length;
 
@@ -3019,7 +2651,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 int p = 0;
                 for (; p < fixedParameterCount; ++p)
                 {
-                    CandidateParameter candidateParam = new CandidateParameter(parameters[p]);
+                    CandidateParameter candidateParam = new(parameters[p]);
                     if (p < numArguments)
                     {
                         if (!candidateParam.Match(arguments[p], candidateName, p + 1, out error))
@@ -3072,7 +2704,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     else if (numArguments == parameterCount)
                     {
                         // Special case:  one argument was passed as the params array.
-                        CandidateParameter candidateParam = new CandidateParameter(lastParam);
+                        CandidateParameter candidateParam = new(lastParam);
                         if (candidateParam.Match(arguments[p], candidateName, p + 1, out error))
                         {
                             // It was the same array type as the params array, so the candidate 
@@ -3086,7 +2718,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     {
                         // One or more arguments were passed as the params array.  As long
                         // as they match the element type, this method is a candidate.
-                        CandidateParameter candidateParam = new CandidateParameter(lastParam.ParameterType.GetElementType());
+                        CandidateParameter candidateParam = new(lastParam.ParameterType.GetElementType());
 
                         for (; p < numArguments; ++p)
                         {
@@ -3121,10 +2753,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             Debug.Assert(numCandidates > 0, "expected at least one candidate");
 
             // Start by assuming the first candidate is the best one.
-            List<CandidateMember> bestCandidates = new List<CandidateMember>(1)
-            {
+            List<CandidateMember> bestCandidates =
+            [
                 candidates[0]
-            };
+            ];
 
             // Go through the rest of the candidates and try to find a better one.  (If
             // there are no more candidates, then there was only one, and that's the right
@@ -3167,11 +2799,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public MethodInfo FindBestCandidate(Type targetType, List<MethodInfo> methods, params Type[] types)
         {
-            List<Argument> arguments = new List<Argument>();
+            List<Argument> arguments = [];
             foreach (Type t in types)
                 arguments.Add(new Argument(t));
 
-            List<CandidateMember> candidates = new List<CandidateMember>(methods.Count);
+            List<CandidateMember> candidates = new(methods.Count);
             foreach (MethodInfo method in methods)
             {
                 EvaluateCandidate(candidates, method, method.GetParameters(), arguments, out ValidationError tempError,
@@ -3194,7 +2826,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             string message;
 
-            List<Argument> arguments = new List<Argument>(argumentExprs.Count);
+            List<Argument> arguments = new(argumentExprs.Count);
             foreach (CodeExpression argumentExpr in argumentExprs)
                 arguments.Add(new Argument(argumentExpr, this));
 
@@ -3235,7 +2867,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             string message;
 
-            List<Argument> arguments = new List<Argument>(argumentExprs.Count);
+            List<Argument> arguments = new(argumentExprs.Count);
             foreach (CodeExpression argumentExpr in argumentExprs)
                 arguments.Add(new Argument(argumentExpr, this));
 
@@ -3280,7 +2912,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public static List<ConstructorInfo> GetConstructors(List<Type> targetTypes, BindingFlags constructorBindingFlags)
         {
-            List<ConstructorInfo> methods = new List<ConstructorInfo>();
+            List<ConstructorInfo> methods = [];
 
             for (int t = 0; t < targetTypes.Count; ++t)
             {
@@ -3307,7 +2939,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private List<MethodInfo> GetNamedMethods(List<Type> targetTypes, string methodName, BindingFlags methodBindingFlags)
         {
-            List<MethodInfo> methods = new List<MethodInfo>();
+            List<MethodInfo> methods = [];
             List<ExtensionMethodInfo> currentExtensionMethods = ExtensionMethods;
             for (int t = 0; t < targetTypes.Count; ++t)
             {
@@ -3343,7 +2975,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         private const string ExtensionAttributeFullName = "System.Runtime.CompilerServices.ExtensionAttribute, " + AssemblyRef.SystemCore;
         private Type extensionAttribute;
 
-        private static Type defaultExtensionAttribute = GetDefaultExtensionAttribute();
+        private static readonly Type defaultExtensionAttribute = GetDefaultExtensionAttribute();
 
         private static Type GetDefaultExtensionAttribute()
         {
@@ -3375,12 +3007,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private void DetermineExtensionMethods()
         {
-            extensionMethods = new List<ExtensionMethodInfo>();
+            extensionMethods = [];
 
             SetExtensionAttribute();
             if (extensionAttribute != null)
             {
-                seenAssemblies = new List<Assembly>();
+                seenAssemblies = [];
                 Assembly localAssembly = typeProvider.LocalAssembly;
                 if (localAssembly != null)
                 {
@@ -3496,7 +3128,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         static List<CandidateMember> GetCandidateMethods(string methodName, List<MethodInfo> methods, List<Argument> arguments, out ValidationError error)
         {
-            List<CandidateMember> candidates = new List<CandidateMember>();
+            List<CandidateMember> candidates = [];
 
             error = null;
 
@@ -3540,7 +3172,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         static List<CandidateMember> GetCandidateConstructors(List<ConstructorInfo> constructors, List<Argument> arguments, out ValidationError error)
         {
-            List<CandidateMember> candidates = new List<CandidateMember>();
+            List<CandidateMember> candidates = [];
 
             error = null;
 
@@ -3596,7 +3228,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 return null;
             }
 
-            List<Argument> arguments = new List<Argument>(numArgs);
+            List<Argument> arguments = new(numArgs);
             foreach (CodeExpression argumentExpr in argumentExprs)
                 arguments.Add(new Argument(argumentExpr, this));
 
@@ -3639,7 +3271,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private static List<PropertyInfo> GetIndexerProperties(List<Type> candidateTypes, BindingFlags bindingFlags)
         {
-            List<PropertyInfo> indexerProperties = new List<PropertyInfo>();
+            List<PropertyInfo> indexerProperties = [];
 
             foreach (Type targetType in candidateTypes)
             {
@@ -3684,7 +3316,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private static List<CandidateMember> GetCandidateIndexers(List<PropertyInfo> indexerProperties, List<Argument> arguments, out ValidationError error)
         {
-            List<CandidateMember> candidates = new List<CandidateMember>();
+            List<CandidateMember> candidates = [];
 
             error = null;
 
@@ -3756,7 +3388,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         return resultType;
                     }
                     message = string.Format(CultureInfo.CurrentCulture, Messages.UnknownType, typeRef.BaseType);
-                    ValidationError error = new ValidationError(message, ErrorNumbers.Error_UnableToResolveType);
+                    ValidationError error = new(message, ErrorNumbers.Error_UnableToResolveType);
                     error.UserData[RuleUserDataKeys.ErrorObject] = typeRef;
                     Errors.Add(error);
                     return null;
@@ -3783,7 +3415,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     resultType = resultType.MakeGenericType(typeArguments);
                     if (resultType == null)
                     {
-                        StringBuilder sb = new StringBuilder(typeRef.BaseType);
+                        StringBuilder sb = new(typeRef.BaseType);
                         string prefix = "<";
                         foreach (Type t in typeArguments)
                         {
@@ -3793,7 +3425,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         }
                         sb.Append(">");
                         message = string.Format(CultureInfo.CurrentCulture, Messages.UnknownGenericType, sb.ToString());
-                        ValidationError error = new ValidationError(message, ErrorNumbers.Error_UnableToResolveType);
+                        ValidationError error = new(message, ErrorNumbers.Error_UnableToResolveType);
                         error.UserData[RuleUserDataKeys.ErrorObject] = typeRef;
                         Errors.Add(error);
                         return null;

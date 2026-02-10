@@ -10,16 +10,10 @@ using System.Reflection;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
-    public class RulePathQualifier
+    public class RulePathQualifier(string name, RulePathQualifier next)
     {
-        private string name;
-        private RulePathQualifier next;
-
-        public RulePathQualifier(string name, RulePathQualifier next)
-        {
-            this.name = name;
-            this.next = next;
-        }
+        private readonly string name = name;
+        private readonly RulePathQualifier next = next;
 
         public string Name
         {
@@ -32,17 +26,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
     }
 
-    public class RuleAnalysis
+    public class RuleAnalysis(RuleValidation validation, bool forWrites)
     {
-        private RuleValidation validation;
-        private bool forWrites;
-        private Dictionary<string, object> symbols = new Dictionary<string, object>();
-
-        public RuleAnalysis(RuleValidation validation, bool forWrites)
-        {
-            this.validation = validation;
-            this.forWrites = forWrites;
-        }
+        private readonly RuleValidation validation = validation;
+        private readonly bool forWrites = forWrites;
+        private readonly Dictionary<string, object> symbols = [];
 
         internal RuleValidation Validation
         {
@@ -59,11 +47,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
             symbols[symbol] = null;
         }
 
-
-        [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         public ICollection<string> GetSymbols()
         {
-            List<string> symbolList = new List<string>(symbols.Keys.Count);
+            List<string> symbolList = new(symbols.Keys.Count);
 
             foreach (KeyValuePair<string, object> pair in symbols)
                 symbolList.Add(pair.Key);

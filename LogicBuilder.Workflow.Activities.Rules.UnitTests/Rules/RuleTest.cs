@@ -618,7 +618,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
         #region Validate Tests
 
-        [Fact(Skip = "TODO: Line 175 of Rule.cs.  Skip if (!string.IsNullOrEmpty(name))")]
+        [Fact]
         public void Validate_WithoutName_AddsValidationError()
         {
             // Arrange

@@ -14,7 +14,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         private bool _runtimeInitialized;
         [NonSerialized]
-        private object _runtimeInitializationLock = new object();
+        private readonly object _runtimeInitializationLock = new();
 
         public RuleConditionCollection()
         {

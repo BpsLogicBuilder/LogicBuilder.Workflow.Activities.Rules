@@ -91,64 +91,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests
         }
         #endregion
 
-        #region Helper Method Tests
-        [Fact(Skip = "Remove UndoSetAsInitialState from SR")]
-        public void GetUndoSetAsInitialState_WithStateName_ReturnsFormattedString()
-        {
-            // Arrange
-            string stateName = "TestState";
-
-            // Act
-            string result = SR.GetUndoSetAsInitialState(stateName);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.NotEmpty(result);
-            Assert.Contains(stateName, result);
-        }
-
-        [Fact(Skip = "Remove UndoSetAsInitialState from SR")]
-        public void GetUndoSetAsInitialState_WithEmptyStateName_ReturnsFormattedString()
-        {
-            // Arrange
-            string stateName = string.Empty;
-
-            // Act
-            string result = SR.GetUndoSetAsInitialState(stateName);
-
-            // Assert
-            Assert.NotNull(result);
-        }
-
-        [Fact(Skip = "Remove UndoSetAsCompletedState from SR")]
-        public void GetUndoSetAsCompletedState_WithStateName_ReturnsFormattedString()
-        {
-            // Arrange
-            string stateName = "CompletedState";
-
-            // Act
-            string result = SR.GetUndoSetAsCompletedState(stateName);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.NotEmpty(result);
-            Assert.Contains(stateName, result);
-        }
-
-        [Fact(Skip = "Remove UndoSetAsCompletedState from SR")]
-        public void GetUndoSetAsCompletedState_WithEmptyStateName_ReturnsFormattedString()
-        {
-            // Arrange
-            string stateName = string.Empty;
-
-            // Act
-            string result = SR.GetUndoSetAsCompletedState(stateName);
-
-            // Assert
-            Assert.NotNull(result);
-        }
-        #endregion
-
         #region Resource Key Constants Tests
         [Fact]
         public void ResourceKeyConstants_AreNotNull()

@@ -6,16 +6,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
     public class RuleEngine
     {
-        private string name;
-        private RuleValidation validation;
-        private IList<RuleState> analyzedRules;
+        private readonly string name;
+        private readonly RuleValidation validation;
+        private readonly IList<RuleState> analyzedRules;
 
         public RuleEngine(RuleSet ruleSet, Type objectType)
             : this(ruleSet, new RuleValidation(objectType))
@@ -39,8 +38,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
             this.analyzedRules = Executor.Preprocess(ruleSet.ChainingBehavior, ruleSet.Rules, validation, tracer);
         }
 
-
-        [SuppressMessage("Microsoft.Naming", "CA1720:AvoidTypeNamesInParameters", MessageId = "0#")]
         public void Execute(object thisObject)
         {
             Execute(new RuleExecution(validation, thisObject));
@@ -48,13 +45,16 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         internal void Execute(RuleExecution ruleExecution)
         {
+            if (ruleExecution == null)
+                throw new ArgumentNullException(nameof(ruleExecution));
+
             Tracer tracer = null;
             if (WorkflowActivityTrace.Rules.Switch.ShouldTrace(TraceEventType.Information))
             {
                 tracer = new Tracer(name);
                 tracer.StartRuleSet();
             }
-            Executor.ExecuteRuleSet(analyzedRules, ruleExecution, tracer, RuleSet.RuleSetTrackingKey + name);
+            Executor.ExecuteRuleSet(analyzedRules, ruleExecution, tracer);
         }
     }
 }

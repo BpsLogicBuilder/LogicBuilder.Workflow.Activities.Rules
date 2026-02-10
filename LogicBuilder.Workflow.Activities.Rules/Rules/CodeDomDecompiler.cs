@@ -55,7 +55,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 // opposed to an integer).
 
                 bool hasDecimal = svalue.IndexOf('.') >= 0;
-                bool hasExponent = svalue.IndexOfAny(new char[] { 'e', 'E' }) >= 0;
+                bool hasExponent = svalue.IndexOfAny(['e', 'E']) >= 0;
 
                 if (!hasDecimal && !hasExponent)
                     decompilation.Append(".0");
@@ -174,7 +174,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (type == null)
                 return string.Empty;
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             DecompileType_Helper(sb, type);
             return sb.ToString();
         }
@@ -205,8 +205,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             else
             {
                 string typeName = type.FullName;
-                if (typeName == null) // Full name may be null for an unbound generic.
-                    typeName = type.Name;
+                typeName ??= type.Name;// Full name may be null for an unbound generic.
 
                 typeName = UnmangleTypeName(typeName);
                 decompilation.Append(typeName);
@@ -266,11 +265,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        private static Dictionary<string, string> knownTypeMap = InitializeKnownTypeMap();
+        private static readonly Dictionary<string, string> knownTypeMap = InitializeKnownTypeMap();
 
         private static Dictionary<string, string> InitializeKnownTypeMap()
         {
-            Dictionary<string, string> map = new Dictionary<string, string>
+            Dictionary<string, string> map = new()
             {
                 { "System.Char", "char" },
                 { "System.Byte", "byte" },
@@ -322,7 +321,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (method == null)
                 return string.Empty;
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             DecompileType_Helper(sb, method.DeclaringType);
             sb.Append('.');
             if (knownOperatorMap.TryGetValue(method.Name, out string operatorName))
@@ -341,11 +340,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return sb.ToString();
         }
 
-        private static Dictionary<string, string> knownOperatorMap = InitializeKnownOperatorMap();
+        private static readonly Dictionary<string, string> knownOperatorMap = InitializeKnownOperatorMap();
 
         private static Dictionary<string, string> InitializeKnownOperatorMap()
         {
-            Dictionary<string, string> map = new Dictionary<string, string>(27)
+            Dictionary<string, string> map = new(27)
             {
 
                 // unary operators
@@ -404,12 +403,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private delegate Operation ComputePrecedence(CodeExpression expresssion);
 
-        private static Dictionary<Type, ComputePrecedence> precedenceMap = InitializePrecedenceMap();
+        private static readonly Dictionary<Type, ComputePrecedence> precedenceMap = InitializePrecedenceMap();
 
 
         private static Dictionary<Type, ComputePrecedence> InitializePrecedenceMap()
         {
-            Dictionary<Type, ComputePrecedence> map = new Dictionary<Type, ComputePrecedence>(7)
+            Dictionary<Type, ComputePrecedence> map = new(7)
             {
                 { typeof(CodeBinaryOperatorExpression), GetBinaryPrecedence },
                 { typeof(CodeCastExpression), GetCastPrecedence },
@@ -436,7 +435,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)expression;
 
-            Operation operation = Operation.NoParentheses;
+            Operation operation;
             switch (binaryExpr.Operator)
             {
                 case CodeBinaryOperatorType.Multiply:
@@ -481,7 +480,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
                 default:
                     string message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, binaryExpr.Operator.ToString());
-                    NotSupportedException exception = new NotSupportedException(message);
+                    NotSupportedException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
                     throw exception;
             }
