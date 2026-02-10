@@ -172,8 +172,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     errors[i] = newError;
 
                     //TODO: skip if name is null or empty.
-                    //if (!string.IsNullOrEmpty(name))
-                    UpdateErrorsByRuleName();
+                    if (!string.IsNullOrEmpty(name))
+                        UpdateErrorsByRuleName();
 
                     void UpdateErrorsByRuleName()
                     {

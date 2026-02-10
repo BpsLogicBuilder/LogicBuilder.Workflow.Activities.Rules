@@ -270,8 +270,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Equal(hash1, hash2);
         }
 
-        [Fact(Skip = "TODO: Use ToString.GetHashCode() for hashcode.")]
-        public void GetHashCode_ForTwoInstances_ReturnsDifferentValues()
+        [Fact]
+        public void GetHashCode_ForTwoInstances_ReturnsTheSameValues()
         {
             // Arrange
             var action1 = new RuleHaltAction();
@@ -282,7 +282,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             int hash2 = action2.GetHashCode();
 
             // Assert
-            Assert.NotEqual(hash1, hash2);
+            Assert.Equal(hash1, hash2);
         }
 
         #endregion

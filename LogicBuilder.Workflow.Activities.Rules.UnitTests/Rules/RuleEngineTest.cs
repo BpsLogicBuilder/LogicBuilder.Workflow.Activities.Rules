@@ -306,7 +306,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.NotNull(ruleExecution);
         }
 
-        [Fact(Skip = "Update RuleEngine.cs line 51 to throw ArgumentNullException(ruleExecution)")]
+        [Fact]
         public void Execute_WithNullRuleExecution_ThrowsArgumentNullException()
         {
             // Arrange

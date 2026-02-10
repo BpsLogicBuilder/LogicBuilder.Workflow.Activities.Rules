@@ -57,7 +57,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            return ToString().GetHashCode();
         }
     }
 

@@ -48,6 +48,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         internal void Execute(RuleExecution ruleExecution)
         {
+            if (ruleExecution == null)
+                throw new ArgumentNullException(nameof(ruleExecution));
+
             Tracer tracer = null;
             if (WorkflowActivityTrace.Rules.Switch.ShouldTrace(TraceEventType.Information))
             {

@@ -420,7 +420,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Null(array[2]);
         }
 
-        [Fact(Skip = "Fix line 3440 in Expressions.cs. createExpression == null should be createExpression == null")]
+        [Fact]
         public void Evaluate_WithoutValidation_ThrowsException()
         {
             // Arrange

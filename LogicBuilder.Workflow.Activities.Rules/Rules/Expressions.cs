@@ -3436,8 +3436,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             RuleExpressionInfo createExpressionInfo = execution.Validation.ExpressionInfo(createExpression);
-            //TODO - null check should be createExpressionInfo == null
-            if (createExpression == null)  // Oops, someone forgot to validate.
+            if (createExpressionInfo == null)  // Oops, someone forgot to validate.
             {
                 InvalidOperationException exception = new InvalidOperationException(Messages.ExpressionNotValidated);
                 exception.Data[RuleUserDataKeys.ErrorObject] = createExpression;
