@@ -97,59 +97,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             base.Add(item);
         }
-
-        //public IList<WorkflowChangeAction> Diff(object originalDefinition, object changedDefinition)
-        //{
-        //    List<WorkflowChangeAction> listChanges = new List<WorkflowChangeAction>();
-
-        //    RuleConditionCollection originalConditions = (RuleConditionCollection)originalDefinition;
-        //    RuleConditionCollection changedConditions = (RuleConditionCollection)changedDefinition;
-
-        //    if (null != changedConditions)
-        //    {
-        //        foreach (RuleCondition cCondition in changedConditions)
-        //        {
-        //            if (null != originalConditions)
-        //            {
-        //                if (originalConditions.Contains(cCondition.Name))
-        //                {
-        //                    RuleCondition oCondition = originalConditions[cCondition.Name];
-        //                    if (!oCondition.Equals(cCondition))
-        //                    {
-        //                        listChanges.Add(new UpdatedConditionAction(oCondition, cCondition));
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    listChanges.Add(new AddedConditionAction(cCondition));
-        //                }
-        //            }
-        //            else
-        //            {
-        //                listChanges.Add(new AddedConditionAction(cCondition));
-        //            }
-        //        }
-        //    }
-
-        //    if (null != originalConditions)
-        //    {
-        //        foreach (RuleCondition oCondition in originalConditions)
-        //        {
-        //            if (null != changedConditions)
-        //            {
-        //                if (!changedConditions.Contains(oCondition.Name))
-        //                {
-        //                    listChanges.Add(new RemovedConditionAction(oCondition));
-        //                }
-        //            }
-        //            else
-        //            {
-        //                listChanges.Add(new RemovedConditionAction(oCondition));
-        //            }
-        //        }
-        //    }
-        //    return listChanges;
-        //}
     }
     #endregion
 }

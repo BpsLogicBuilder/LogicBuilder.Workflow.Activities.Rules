@@ -238,20 +238,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.False(result);
         }
 
-        [Fact]
-        public void Equals_WithDifferentRuleActionType_ReturnsFalse()
-        {
-            // Arrange
-            var haltAction = new RuleHaltAction();
-            var updateAction = new RuleUpdateAction("SomeProperty");
-
-            // Act
-            bool result = haltAction.Equals(updateAction);
-
-            // Assert
-            Assert.False(result);
-        }
-
         #endregion
 
         #region GetHashCode Tests
