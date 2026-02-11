@@ -168,10 +168,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 expectedParameters = new ParameterInfo[actualParameterLength - 1];
                 Array.Copy(actualParameters, 1, expectedParameters, 0, actualParameterLength - 1);
-                foreach (ParameterInfo pi in expectedParameters.Where(p => p.ParameterType.IsByRef))
-                {
-                    hasOutOrRefParameters = true;
-                }
+                hasOutOrRefParameters = expectedParameters.Any(p => p.ParameterType.IsByRef);
             }
             // get the type we pretend this method is on (which happens to be the first actual parameter)
             assumedDeclaringType = actualParameters[0].ParameterType;

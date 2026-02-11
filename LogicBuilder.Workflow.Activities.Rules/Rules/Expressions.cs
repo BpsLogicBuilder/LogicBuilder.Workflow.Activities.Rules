@@ -363,13 +363,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         Stack<MemberInfo> methodStack = new();
                         methodStack.Push(method);
 
-                        bool allAttributesValid = true;
-                        foreach (RuleAttribute ruleAttr 
-                            in attrs.OfType<RuleAttribute>()
-                            .Where(r => !r.Validate(validation, method, method.DeclaringType, method.GetParameters())))
-                        {
-                            allAttributesValid = false;
-                        }
+                        bool allAttributesValid = !attrs.OfType<RuleAttribute>().Any(r => !r.Validate(validation, method, method.DeclaringType, method.GetParameters()));
 
                         methodStack.Pop();
 
@@ -1123,13 +1117,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 Stack<MemberInfo> methodStack = new();
                 methodStack.Push(pi);
 
-                bool allAttributesValid = true;
-                foreach (RuleAttribute ruleAttr 
-                    in attrs.OfType<RuleAttribute>()
-                    .Where(r => !r.Validate(validation, pi, targetType, null)))
-                {
-                    allAttributesValid = false;
-                }
+                bool allAttributesValid = !attrs.OfType<RuleAttribute>().Any(r => !r.Validate(validation, pi, targetType, null));
 
                 methodStack.Pop();
 
@@ -1408,13 +1396,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 Stack<MemberInfo> methodStack = new();
                 methodStack.Push(mi);
 
-                bool allAttributesValid = true;
-                foreach (RuleAttribute ruleAttr 
-                    in attrs.OfType<RuleAttribute>()
-                    .Where(r => !r.Validate(validation, mi, targetType, mi.GetParameters())))
-                {
-                    allAttributesValid = false;
-                }
+                bool allAttributesValid = !attrs.OfType<RuleAttribute>().Any(r => !r.Validate(validation, mi, targetType, mi.GetParameters()));
 
                 methodStack.Pop();
 
@@ -2402,13 +2384,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 Stack<MemberInfo> methodStack = new();
                 methodStack.Push(pi);
 
-                bool allAttributesValid = true;
-                foreach (RuleAttribute ruleAttr 
-                    in attrs.OfType<RuleAttribute>()
-                    .Where(r => !r.Validate(validation, pi, targetType, pi.GetIndexParameters())))
-                {
-                    allAttributesValid = false;
-                }
+                bool allAttributesValid = !attrs.OfType<RuleAttribute>().Any(r => !r.Validate(validation, pi, targetType, pi.GetIndexParameters()));
 
                 methodStack.Pop();
 
