@@ -511,8 +511,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (parentOperation == childOperation)
             {
                 return parentExpr is CodeBinaryOperatorExpression parentBinary
-                    ? childExpr == parentBinary.Right
-                    : false;
+                    && childExpr == parentBinary.Right;
             }
             else if (parentOperation > childOperation)
             {

@@ -10,6 +10,7 @@ using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 
 namespace LogicBuilder.Workflow.Activities.Rules
@@ -709,18 +710,17 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 // no overrides, so get the default list
                 methodName = methodName.Substring(3);       // strip off the op_
-                foreach (MethodInfo mi in typeof(DefaultOperators).GetMethods())
+                foreach (MethodInfo mi 
+                    in typeof(DefaultOperators).GetMethods()
+                    .Where(m => m.Name == methodName))
                 {
-                    if (mi.Name == methodName)
+                    ParameterInfo[] parameters = mi.GetParameters();
+                    Type parm1 = parameters[0].ParameterType;
+                    Type parm2 = parameters[1].ParameterType;
+                    if (RuleValidation.ImplicitConversion(lhs, parm1) &&
+                        RuleValidation.ImplicitConversion(rhs, parm2))
                     {
-                        ParameterInfo[] parameters = mi.GetParameters();
-                        Type parm1 = parameters[0].ParameterType;
-                        Type parm2 = parameters[1].ParameterType;
-                        if (RuleValidation.ImplicitConversion(lhs, parm1) &&
-                            RuleValidation.ImplicitConversion(rhs, parm2))
-                        {
-                            candidates.Add(mi);
-                        }
+                        candidates.Add(mi);
                     }
                 }
 
@@ -744,15 +744,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 // if no candidates and nullable, add lifted operators
                 if ((candidates.Count == 0) && ((lhsNullable || rhsNullable || (lhs == typeof(NullLiteral)) || (rhs == typeof(NullLiteral)))))
                 {
-                    foreach (MethodInfo mi in typeof(DefaultOperators).GetMethods())
+                    foreach (MethodInfo mi 
+                        in typeof(DefaultOperators).GetMethods()
+                        .Where(m => m.Name == methodName))
                     {
-                        if (mi.Name == methodName)
-                        {
-                            ParameterInfo[] parameters = mi.GetParameters();
-                            MethodInfo liftedMethod = EvaluateLiftedMethod(mi, parameters, group, lhsType0, rhsType0);
-                            if (liftedMethod != null)
-                                candidates.Add(liftedMethod);
-                        }
+                        ParameterInfo[] parameters = mi.GetParameters();
+                        MethodInfo liftedMethod = EvaluateLiftedMethod(mi, parameters, group, lhsType0, rhsType0);
+                        if (liftedMethod != null)
+                            candidates.Add(liftedMethod);
                     }
                 }
             }
