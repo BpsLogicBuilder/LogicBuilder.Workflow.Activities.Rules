@@ -3,15 +3,14 @@
 // ---------------------------------------------------------------------------
 
 #define CODE_ANALYSIS
-using System.CodeDom;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Reflection;
 using LogicBuilder.Workflow.Activities.Common;
 using LogicBuilder.Workflow.ComponentModel.Compiler;
 using System;
+using System.CodeDom;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.Reflection;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
@@ -366,8 +365,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
             public static bool Equality(uint x, uint y) { return x == y; }
             public static bool Equality(long x, long y) { return x == y; }
             public static bool Equality(ulong x, ulong y) { return x == y; }
-            public static bool Equality(float x, float y) { return x == y; }
-            public static bool Equality(double x, double y) { return x == y; }
+            public static bool Equality(float x, float y) { return Math.Abs(x - y) < float.Epsilon; }
+            public static bool Equality(double x, double y) { return Math.Abs(x - y) < double.Epsilon; }
             public static bool Equality(decimal x, decimal y) { return x == y; }
             public static bool Equality(bool x, bool y) { return x == y; }
             public static bool Equality(string x, string y) { return x == y; }
@@ -1716,11 +1715,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override bool Equal(float rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(double rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(decimal rhs)
         {
@@ -2003,11 +2002,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override bool Equal(float rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(double rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(decimal rhs)
         {
@@ -2274,11 +2273,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override bool Equal(float rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(double rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(decimal rhs)
         {
@@ -2806,11 +2805,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override bool Equal(float rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(double rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(decimal rhs)
         {
@@ -3076,11 +3075,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override bool Equal(float rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(double rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(decimal rhs)
         {
@@ -3362,11 +3361,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override bool Equal(float rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(double rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(decimal rhs)
         {
@@ -3648,11 +3647,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override bool Equal(float rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(double rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(decimal rhs)
         {
@@ -3934,11 +3933,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override bool Equal(float rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(double rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(decimal rhs)
         {
@@ -4220,11 +4219,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override bool Equal(float rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(double rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(decimal rhs)
         {
@@ -4438,47 +4437,47 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override bool Equal(sbyte rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(byte rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(char rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(short rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(ushort rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(int rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(uint rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(long rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(ulong rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(float rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
         internal override bool Equal(double rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < double.Epsilon;
         }
 
         internal override bool LessThan(Literal rhs)
@@ -4704,47 +4703,47 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override bool Equal(sbyte rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(byte rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(char rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(short rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(ushort rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(int rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(uint rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(long rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(ulong rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(float rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
         internal override bool Equal(double rhs)
         {
-            return m_value == rhs;
+            return Math.Abs(m_value - rhs) < float.Epsilon;
         }
 
         internal override bool LessThan(Literal rhs)

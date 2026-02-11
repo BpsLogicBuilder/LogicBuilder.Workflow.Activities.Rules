@@ -243,7 +243,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var original = new CloneableTestClass { Value = "Test" };
 
             // Act
-            var result = ConditionHelper.CloneObject(original) as CloneableTestClass;
+            var result = ConditionHelper.CloneObject(original) as CloneableTestClass ?? throw new InvalidOperationException("result is null.");
 
             // Assert
             Assert.NotNull(result);
@@ -312,7 +312,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.Single(result.UserData);
-            var clonedValue = result.UserData["key"] as CloneableTestClass;
+            var clonedValue = result.UserData["key"] as CloneableTestClass ?? throw new InvalidOperationException("Cloned value is null.");
             Assert.NotNull(clonedValue);
             Assert.NotSame(cloneableValue, clonedValue);
             Assert.Equal("Test", clonedValue.Value);

@@ -1,3 +1,4 @@
+using System;
 using System.CodeDom;
 using System.Text;
 
@@ -288,7 +289,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
                 new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), "IntField"));
 
             // Act
-            var cloned = RuleExpressionWalker.Clone(original) as CodeDirectionExpression;
+            var cloned = RuleExpressionWalker.Clone(original) as CodeDirectionExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
@@ -306,7 +307,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
                 new CodePrimitiveExpression(42));
 
             // Act
-            var cloned = RuleExpressionWalker.Clone(original) as CodeDirectionExpression;
+            var cloned = RuleExpressionWalker.Clone(original) as CodeDirectionExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
@@ -322,7 +323,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
                 new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), "IntField"));
 
             // Act
-            var cloned = RuleExpressionWalker.Clone(original) as CodeDirectionExpression;
+            var cloned = RuleExpressionWalker.Clone(original) as CodeDirectionExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
