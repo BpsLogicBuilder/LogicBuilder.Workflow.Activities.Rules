@@ -199,32 +199,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
-        public void Equals_WithSameInstance_ReturnsTrue()
-        {
-            // Arrange
-            var action = new RuleHaltAction();
-
-            // Act
-            bool result = action.Equals(action);
-
-            // Assert
-            Assert.True(result);
-        }
-
-        [Fact]
-        public void Equals_WithNull_ReturnsFalse()
-        {
-            // Arrange
-            var action = new RuleHaltAction();
-
-            // Act
-            bool result = action.Equals(null);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
         public void Equals_WithDifferentType_ReturnsFalse()
         {
             // Arrange

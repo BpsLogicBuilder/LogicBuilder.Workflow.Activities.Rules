@@ -2400,7 +2400,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     return better;
                 else if ((thisExtension != null) && (otherExtension == null))
                     return worse;
-                else if ((thisExtension != null) && (otherExtension != null))
+                else if ((thisExtension != null))
                 {
                     // we have 2 extension methods, which one is better
                     string[] thisNameSpace = thisExtension.DeclaringType.FullName.Split('.');

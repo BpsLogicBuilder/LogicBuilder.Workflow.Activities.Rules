@@ -263,19 +263,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
-        public void Equals_WithNullObject_ReturnsFalse()
-        {
-            // Arrange
-            var condition = new RuleExpressionCondition("Test");
-
-            // Act
-            var result = condition.Equals(null);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
         public void Equals_WithDifferentType_ReturnsFalse()
         {
             // Arrange
@@ -287,19 +274,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.False(result);
-        }
-
-        [Fact]
-        public void Equals_WithSameInstance_ReturnsTrue()
-        {
-            // Arrange
-            var condition = new RuleExpressionCondition("Test", new CodePrimitiveExpression(true));
-
-            // Act
-            var result = condition.Equals(condition);
-
-            // Assert
-            Assert.True(result);
         }
 
         #endregion

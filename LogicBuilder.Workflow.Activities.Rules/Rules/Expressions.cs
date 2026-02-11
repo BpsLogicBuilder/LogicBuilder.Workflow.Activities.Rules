@@ -3,16 +3,15 @@
 // ---------------------------------------------------------------------------
 
 #define CODE_ANALYSIS
-using System.CodeDom;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Reflection;
-using System.Text;
 using LogicBuilder.Workflow.Activities.Common;
 using LogicBuilder.Workflow.ComponentModel.Compiler;
 using System;
+using System.CodeDom;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
@@ -2723,7 +2722,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     }
                     else
                     {
-                        if (argExpr is CodeDirectionExpression argDirection)
+                        if (argExpr is CodeDirectionExpression)
                         {
                             // No "ref" or "out" arguments are allowed on indexer arguments.
                             error = new ValidationError(Messages.IndexerArgCannotBeRefOrOut, ErrorNumbers.Error_IndexerArgCannotBeRefOrOut);
@@ -3173,7 +3172,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 CodeExpression paramExpr = createExpression.Parameters[i];
                 if (paramExpr == null)
                 {
-                    string message = string.Format(CultureInfo.CurrentCulture, Messages.NullConstructorTypeParameter, i.ToString(CultureInfo.CurrentCulture), createExpression.CreateType);
+                    string message = string.Format(CultureInfo.CurrentCulture, Messages.NullConstructorTypeParameter, i.ToString(CultureInfo.CurrentCulture), createExpression.CreateType?.BaseType ?? "");
                     RuleEvaluationException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = createExpression;
                     throw exception;
@@ -3470,7 +3469,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     CodeExpression paramExpr = createExpression.Initializers[i];
                     if (paramExpr == null)
                     {
-                        string message = string.Format(CultureInfo.CurrentCulture, Messages.NullConstructorTypeParameter, i.ToString(CultureInfo.CurrentCulture), createExpression.CreateType);
+                        string message = string.Format(CultureInfo.CurrentCulture, Messages.NullConstructorTypeParameter, i.ToString(CultureInfo.CurrentCulture), createExpression.CreateType?.BaseType ?? "");
                         RuleEvaluationException exception = new(message);
                         exception.Data[RuleUserDataKeys.ErrorObject] = createExpression;
                         throw exception;

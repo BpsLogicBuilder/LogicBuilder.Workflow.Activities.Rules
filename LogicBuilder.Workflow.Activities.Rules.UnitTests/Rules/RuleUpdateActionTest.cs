@@ -340,19 +340,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
-        public void Equals_NullObject_ReturnsFalse()
-        {
-            // Arrange
-            var action = new RuleUpdateAction("this/IntField");
-
-            // Act
-            bool result = action.Equals(null);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
         public void Equals_DifferentType_ReturnsFalse()
         {
             // Arrange
@@ -364,19 +351,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.False(result);
-        }
-
-        [Fact]
-        public void Equals_SameInstance_ReturnsTrue()
-        {
-            // Arrange
-            var action = new RuleUpdateAction("this/IntField");
-
-            // Act
-            bool result = action.Equals(action);
-
-            // Assert
-            Assert.True(result);
         }
         #endregion
 

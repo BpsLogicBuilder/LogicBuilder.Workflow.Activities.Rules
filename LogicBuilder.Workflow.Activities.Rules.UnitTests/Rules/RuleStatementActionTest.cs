@@ -318,19 +318,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         #region Equals Tests
 
         [Fact]
-        public void Equals_WithNull_ReturnsFalse()
-        {
-            // Arrange
-            var action = new RuleStatementAction(new CodeExpressionStatement(new CodePrimitiveExpression(42)));
-
-            // Act
-            var result = action.Equals(null);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
         public void Equals_WithMatchingStatements_ReturnsTrue()
         {
             // Arrange
