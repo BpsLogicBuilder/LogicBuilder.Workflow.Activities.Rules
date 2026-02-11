@@ -73,6 +73,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 bool found = false;
                 for (int p = 0; p < (parameters?.Length ?? 0); ++p)
                 {
+                    if (parameters == null)
+                        throw new ArgumentNullException(nameof(parameters));
+
                     ParameterInfo param = parameters[p];
                     if (param.Name == firstPart)
                     {

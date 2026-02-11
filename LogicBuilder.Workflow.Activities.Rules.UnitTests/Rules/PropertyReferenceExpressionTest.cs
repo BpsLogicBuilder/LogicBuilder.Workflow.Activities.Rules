@@ -588,7 +588,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodePropertyReferenceExpression(targetObject, "PublicIntProperty");
 
             // Act
-            var cloned = _propertyReferenceExpression.Clone(expression) as CodePropertyReferenceExpression;
+            var cloned = _propertyReferenceExpression.Clone(expression) as CodePropertyReferenceExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
@@ -614,11 +614,9 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Equal(expression.PropertyName, cloned.PropertyName);
             Assert.NotSame(expression, cloned);
             Assert.NotSame(expression.TargetObject, cloned.TargetObject);
-            
-            var originalTarget = expression.TargetObject as CodePropertyReferenceExpression;
-            var clonedTarget = cloned.TargetObject as CodePropertyReferenceExpression;
-            Assert.NotNull(originalTarget);
-            Assert.NotNull(clonedTarget);
+
+            var originalTarget = expression.TargetObject as CodePropertyReferenceExpression ?? throw new InvalidOperationException("Original target is null.");
+            var clonedTarget = cloned.TargetObject as CodePropertyReferenceExpression ?? throw new InvalidOperationException("Cloned target is null.");
             Assert.Equal(originalTarget.PropertyName, clonedTarget.PropertyName);
             Assert.NotSame(originalTarget, clonedTarget);
         }
@@ -631,7 +629,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodePropertyReferenceExpression(targetObject, "StaticPublicProperty");
 
             // Act
-            var cloned = _propertyReferenceExpression.Clone(expression) as CodePropertyReferenceExpression;
+            var cloned = _propertyReferenceExpression.Clone(expression) as CodePropertyReferenceExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);

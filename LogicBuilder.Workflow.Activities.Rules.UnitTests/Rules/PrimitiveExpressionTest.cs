@@ -1,10 +1,6 @@
 using System;
 using System.CodeDom;
-using System.Globalization;
 using System.Text;
-using LogicBuilder.Workflow.Activities.Rules;
-using LogicBuilder.Workflow.ComponentModel.Compiler;
-using Xunit;
 
 namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 {
@@ -288,7 +284,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodePrimitiveExpression(42);
 
             // Act
-            var cloned = _primitiveExpression.Clone(expression) as CodePrimitiveExpression;
+            var cloned = _primitiveExpression.Clone(expression) as CodePrimitiveExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
@@ -303,7 +299,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodePrimitiveExpression("test");
 
             // Act
-            var cloned = _primitiveExpression.Clone(expression) as CodePrimitiveExpression;
+            var cloned = _primitiveExpression.Clone(expression) as CodePrimitiveExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
@@ -318,7 +314,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodePrimitiveExpression(null);
 
             // Act
-            var cloned = _primitiveExpression.Clone(expression) as CodePrimitiveExpression;
+            var cloned = _primitiveExpression.Clone(expression) as CodePrimitiveExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);

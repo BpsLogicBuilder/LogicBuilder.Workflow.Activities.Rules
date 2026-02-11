@@ -811,7 +811,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodeIndexerExpression(targetObject, indexExpr);
 
             // Act
-            var cloned = _indexerPropertyExpression.Clone(expression) as CodeIndexerExpression;
+            var cloned = _indexerPropertyExpression.Clone(expression) as CodeIndexerExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
@@ -875,15 +875,15 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodeIndexerExpression(targetObject, indexExpr);
 
             // Act
-            var cloned = _indexerPropertyExpression.Clone(expression) as CodeIndexerExpression;
+            var cloned = _indexerPropertyExpression.Clone(expression) as CodeIndexerExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
             Assert.Single(cloned.Indices);
             Assert.NotSame(expression, cloned);
-            
-            var originalIndex = expression.Indices[0] as CodePrimitiveExpression;
-            var clonedIndex = cloned.Indices[0] as CodePrimitiveExpression;
+
+            var originalIndex = expression.Indices[0] as CodePrimitiveExpression ?? throw new InvalidOperationException("Original index is null.");
+            var clonedIndex = cloned.Indices[0] as CodePrimitiveExpression ?? throw new InvalidOperationException("Cloned index is null.");
             Assert.NotNull(originalIndex);
             Assert.NotNull(clonedIndex);
             Assert.Equal(originalIndex.Value, clonedIndex.Value);

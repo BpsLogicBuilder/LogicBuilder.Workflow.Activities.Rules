@@ -241,7 +241,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             //using other to compare.  thisRule.Priority is greater than null (result is 1) - so return -1 for descending order.
             if (compare == 0)
                 // if the priorities are the same, compare names (in ascending order)
-                compare = -other.Rule.Name.CompareTo(Rule.Name);
+                compare = -other?.Rule?.Name.CompareTo(Rule.Name) ?? 1;
             return compare;
         }
     }
