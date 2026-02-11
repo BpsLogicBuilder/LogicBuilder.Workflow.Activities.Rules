@@ -607,7 +607,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodePropertyReferenceExpression(targetObject, "PublicIntProperty");
 
             // Act
-            var cloned = _propertyReferenceExpression.Clone(expression) as CodePropertyReferenceExpression;
+            var cloned = _propertyReferenceExpression.Clone(expression) as CodePropertyReferenceExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
