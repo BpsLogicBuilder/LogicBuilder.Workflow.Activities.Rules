@@ -431,7 +431,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     // only allow equality on booleans
                     if ((lhsFlags == TypeFlags.Bool) && (comparison != CodeBinaryOperatorType.ValueEquality))
                     {
-                        string message = string.Format(CultureInfo.CurrentCulture, Messages.RelationalOpBadTypes, comparison.ToString(),
+                        string message = string.Format(CultureInfo.CurrentCulture, Messages.RelationalOpBadTypes, comparison,
                             RuleDecompiler.DecompileType(lhs),
                             RuleDecompiler.DecompileType(rhs));
                         error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
@@ -455,7 +455,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         error = null;
                         return new RuleBinaryExpressionInfo(lhs, rhs, typeof(bool));
                 }
-                string message2 = string.Format(CultureInfo.CurrentCulture, Messages.RelationalOpBadTypes, comparison.ToString(),
+                string message2 = string.Format(CultureInfo.CurrentCulture, Messages.RelationalOpBadTypes, comparison,
                     (lhs == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(lhs),
                     (rhs == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(rhs));
                 error = new ValidationError(message2, ErrorNumbers.Error_OperandTypesIncompatible);
@@ -547,8 +547,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     group = OperatorGrouping.Arithmetic;
                     break;
                 default:
-                    Debug.Assert(false, "Operator " + op.ToString() + " not implemented");
-                    message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, op.ToString());
+                    Debug.Assert(false, "Operator " + op + " not implemented");
+                    message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, op);
                     error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
                     return null;
             }
@@ -766,7 +766,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 // nothing matched
                 message = string.Format(CultureInfo.CurrentCulture,
                     (group == OperatorGrouping.Arithmetic) ? Messages.ArithOpBadTypes : Messages.RelationalOpBadTypes,
-                    op.ToString(),
+                    op,
                     (lhs == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(lhs),
                     (rhs == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(rhs));
                 error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
@@ -784,7 +784,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 // must be ambiguous. Since there are at least 2 choices, show only the first 2
                 message = string.Format(CultureInfo.CurrentCulture,
                     Messages.AmbiguousOperator,
-                    op.ToString(),
+                    op,
                     RuleDecompiler.DecompileMethod(candidates[0]),
                     RuleDecompiler.DecompileMethod(candidates[1]));
                 error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);

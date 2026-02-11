@@ -3393,7 +3393,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                             sb.Append(RuleDecompiler.DecompileType(t));
                         }
                         sb.Append(">");
-                        message = string.Format(CultureInfo.CurrentCulture, Messages.UnknownGenericType, sb.ToString());
+                        message = string.Format(CultureInfo.CurrentCulture, Messages.UnknownGenericType, sb);
                         ValidationError error = new(message, ErrorNumbers.Error_UnableToResolveType);
                         error.UserData[RuleUserDataKeys.ErrorObject] = typeRef;
                         Errors.Add(error);
