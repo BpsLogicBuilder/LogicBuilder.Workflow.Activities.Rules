@@ -316,7 +316,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 }
                 else
                 {
-                    string message = string.Format(CultureInfo.CurrentCulture, Messages.ArithOpBadTypes, operation.ToString(),
+                    string message = string.Format(CultureInfo.CurrentCulture, Messages.ArithOpBadTypes, operation,
                         (lhs == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(lhs),
                         (rhs == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(rhs));
                     error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);

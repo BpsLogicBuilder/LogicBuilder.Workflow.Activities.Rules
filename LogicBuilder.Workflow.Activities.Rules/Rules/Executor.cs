@@ -215,7 +215,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region RuleState internal class
     internal class RuleState : IComparable
     {
-        internal Rule Rule;
+        internal readonly Rule Rule;
         private ICollection<int> thenActionsActiveRules;
         private ICollection<int> elseActionsActiveRules;
 

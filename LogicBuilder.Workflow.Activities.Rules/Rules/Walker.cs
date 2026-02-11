@@ -61,8 +61,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         class TypeWrapperTuple
         {
-            internal Type codeDomType;
-            internal RuleExpressionInternal internalExpression;
+            internal readonly Type codeDomType;
+            internal readonly RuleExpressionInternal internalExpression;
 
             internal TypeWrapperTuple(Type type, RuleExpressionInternal internalExpression)
             {

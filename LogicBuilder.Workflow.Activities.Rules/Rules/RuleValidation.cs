@@ -288,7 +288,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
     internal abstract class BaseMethodInfo : MethodInfo
     {
-        protected MethodInfo actualMethod;
+        protected readonly MethodInfo actualMethod;
         protected ParameterInfo[] expectedParameters;
         protected Type resultType;
 
@@ -710,7 +710,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     rightLiteral = Literal.MakeLiteral(rhsRootType, parameters[1]);
                     return leftLiteral.GreaterThanOrEqual(rightLiteral);
             }
-            string message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, op.ToString());
+            string message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, op);
             throw new RuleEvaluationException(message);
         }
 
@@ -2089,9 +2089,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private class Argument
         {
-            internal CodeExpression expression;
-            internal FieldDirection direction;
-            internal Type type;
+            internal readonly CodeExpression expression;
+            internal readonly FieldDirection direction;
+            internal readonly Type type;
 
             internal Argument(CodeExpression expr, RuleValidation validation)
             {
@@ -2308,7 +2308,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 Expanded    // matched only after "params" expansion
             }
 
-            internal MemberInfo Member;
+            internal readonly MemberInfo Member;
             private readonly ParameterInfo[] memberParameters;
             private readonly List<CandidateParameter> signature;
             private readonly Form form;

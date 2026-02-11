@@ -38,7 +38,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 else if (primitiveType == typeof(decimal))
                     DecompileFloatingPointLiteral(decompilation, primitiveValue, 'm');
                 else
-                    decompilation.Append(primitiveValue.ToString());
+                    decompilation.Append(primitiveValue);
             }
         }
 
@@ -68,7 +68,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private static void DecompileSuffixedIntegerLiteral(StringBuilder decompilation, object value, string suffix)
         {
-            decompilation.Append(value.ToString());
+            decompilation.Append(value);
             decompilation.Append(suffix);
         }
 
@@ -479,7 +479,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     break;
 
                 default:
-                    string message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, binaryExpr.Operator.ToString());
+                    string message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, binaryExpr.Operator);
                     NotSupportedException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
                     throw exception;

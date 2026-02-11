@@ -19,9 +19,9 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         private class TestClass
         {
             public int[]? SingleDimArray = [1, 2, 3, 4, 5];
-            public string[] StringArray = ["a", "b", "c"];
-            public int[,] TwoDimArray = new int[3, 4];
-            public int[,,] ThreeDimArray = new int[2, 3, 4];
+            public readonly string[] StringArray = ["a", "b", "c"];
+            public readonly int[,] TwoDimArray = new int[3, 4];
+            public readonly int[,,] ThreeDimArray = new int[2, 3, 4];
         }
 
         #endregion
@@ -680,8 +680,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
         private class TestClassWithIndex
         {
-            public int[] SingleDimArray = [1, 2, 3, 4, 5];
-            public int PublicIntField = 2;
+            public readonly int[] SingleDimArray = [1, 2, 3, 4, 5];
+            public readonly int PublicIntField = 2;
         }
 
         #endregion
