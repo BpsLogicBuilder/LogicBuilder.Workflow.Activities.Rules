@@ -20,15 +20,15 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             public int PublicIntField = 42;
             public string PublicStringField = "test";
             public const int ConstField = 100;
-            internal int InternalField = 99;
+            internal readonly int InternalField = 99;
             
             public static int StaticPublicField = 123;
-            public static string StaticStringField = "static";
+            public static readonly string StaticStringField = "static";
         }
 
         private class TestRuleClass
         {
-            public TestClass TestInstance = new();
+            public readonly TestClass TestInstance = new();
             public int IntValue { get; set; } = 10;
         }
 

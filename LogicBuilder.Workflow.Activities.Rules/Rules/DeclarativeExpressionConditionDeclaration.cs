@@ -156,7 +156,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 valid = false;
 
-                string message = string.Format(CultureInfo.CurrentCulture, Messages.ConditionExpressionNull, typeof(CodePrimitiveExpression).ToString());
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.ConditionExpressionNull, typeof(CodePrimitiveExpression));
                 ValidationError error = new(message, ErrorNumbers.Error_EmptyExpression);
                 error.UserData[RuleUserDataKeys.ErrorObject] = this;
                 validation.AddError(error);

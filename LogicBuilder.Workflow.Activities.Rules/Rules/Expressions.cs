@@ -45,7 +45,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             if (isWritten)
             {
-                string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeThisReferenceExpression).ToString());
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeThisReferenceExpression));
                 ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = expression;
                 validation.Errors.Add(error);
@@ -114,7 +114,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             if (isWritten)
             {
-                string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodePrimitiveExpression).ToString());
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodePrimitiveExpression));
                 ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = expression;
                 validation.Errors.Add(error);
@@ -187,7 +187,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (isWritten)
             {
-                message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeBinaryOperatorExpression).ToString());
+                message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeBinaryOperatorExpression));
                 error = new ValidationError(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
                 validation.Errors.Add(error);
@@ -198,7 +198,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (binaryExpr.Left == null)
             {
-                message = string.Format(CultureInfo.CurrentCulture, Messages.NullBinaryOpLHS, binaryExpr.Operator.ToString());
+                message = string.Format(CultureInfo.CurrentCulture, Messages.NullBinaryOpLHS, binaryExpr.Operator);
                 error = new ValidationError(message, ErrorNumbers.Error_LeftOperandMissing);
                 error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
                 validation.Errors.Add(error);
@@ -219,7 +219,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (binaryExpr.Right == null)
             {
-                message = string.Format(CultureInfo.CurrentCulture, Messages.NullBinaryOpRHS, binaryExpr.Operator.ToString());
+                message = string.Format(CultureInfo.CurrentCulture, Messages.NullBinaryOpRHS, binaryExpr.Operator);
                 error = new ValidationError(message, ErrorNumbers.Error_RightOperandMissing);
                 error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
                 validation.Errors.Add(error);
@@ -322,7 +322,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         resultExprInfo = new RuleBinaryExpressionInfo(lhsType, rhsType, typeof(bool));
                         if (lhsType != typeof(bool))
                         {
-                            message = string.Format(CultureInfo.CurrentCulture, Messages.LogicalOpBadTypeLHS, binaryExpr.Operator.ToString(),
+                            message = string.Format(CultureInfo.CurrentCulture, Messages.LogicalOpBadTypeLHS, binaryExpr.Operator,
                                 (lhsType == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(lhsType));
                             error = new ValidationError(message, ErrorNumbers.Error_LeftOperandInvalidType);
                             error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
@@ -331,7 +331,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         }
                         if (rhsType != typeof(bool))
                         {
-                            message = string.Format(CultureInfo.CurrentCulture, Messages.LogicalOpBadTypeRHS, binaryExpr.Operator.ToString(),
+                            message = string.Format(CultureInfo.CurrentCulture, Messages.LogicalOpBadTypeRHS, binaryExpr.Operator,
                                 (rhsType == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(rhsType));
                             error = new ValidationError(message, ErrorNumbers.Error_RightOperandInvalidType);
                             error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
@@ -342,7 +342,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
                     default:
                         {
-                            message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, binaryExpr.Operator.ToString());
+                            message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, binaryExpr.Operator);
                             error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
                             error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
                             validation.Errors.Add(error);
@@ -613,7 +613,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     // should never happen
                     // BooleanAnd & BooleanOr short-circuited before call
                     // Assign disallowed at validation time
-                    message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, operation.ToString());
+                    message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, operation);
                     exception = new RuleEvaluationException(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
                     throw exception;
@@ -621,7 +621,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             message = string.Format(CultureInfo.CurrentCulture,
                 Messages.BinaryOpFails,
-                operation.ToString(),
+                operation,
                 RuleDecompiler.DecompileType(lhsType),
                 RuleDecompiler.DecompileType(rhsType));
             exception = new RuleEvaluationException(message);
@@ -638,14 +638,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (binaryExpr.Left == null)
             {
-                string message = string.Format(CultureInfo.CurrentCulture, Messages.NullBinaryOpLHS, binaryExpr.Operator.ToString());
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.NullBinaryOpLHS, binaryExpr.Operator);
                 RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
                 throw exception;
             }
             if (binaryExpr.Right == null)
             {
-                string message = string.Format(CultureInfo.CurrentCulture, Messages.NullBinaryOpRHS, binaryExpr.Operator.ToString());
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.NullBinaryOpRHS, binaryExpr.Operator);
                 RuleEvaluationException exception = new(message);
                 exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
                 throw exception;
@@ -710,7 +710,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     break;
 
                 default:
-                    string message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, binaryExpr.Operator.ToString());
+                    string message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, binaryExpr.Operator);
                     NotSupportedException exception = new(message);
                     exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
                     throw exception;
@@ -1247,7 +1247,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             ValidationError error;
             if (isWritten)
             {
-                message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeMethodInvokeExpression).ToString());
+                message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeMethodInvokeExpression));
                 error = new ValidationError(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = invokeExpr;
                 validation.Errors.Add(error);
@@ -1887,7 +1887,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (isWritten)
             {
-                string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeTypeReferenceExpression).ToString());
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeTypeReferenceExpression));
                 ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = typeRefExpr;
                 validation.Errors.Add(error);
@@ -1984,7 +1984,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (isWritten)
             {
-                message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeCastExpression).ToString());
+                message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeCastExpression));
                 ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = castExpr;
                 validation.Errors.Add(error);
@@ -2887,7 +2887,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (isWritten)
             {
-                message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeObjectCreateExpression).ToString());
+                message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeObjectCreateExpression));
                 error = new ValidationError(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
                 validation.Errors.Add(error);
@@ -3204,7 +3204,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (isWritten)
             {
-                message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeObjectCreateExpression).ToString());
+                message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeObjectCreateExpression));
                 ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
                 validation.Errors.Add(error);

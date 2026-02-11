@@ -8,8 +8,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
         private class TestClass
         {
-            public int InstanceField = 42;
-            public string StringField = "test";
+            public readonly int InstanceField = 42;
+            public readonly string StringField = "test";
             public static int StaticField = 100;
             public static string StaticStringField = "static test";
         }

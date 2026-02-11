@@ -480,7 +480,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             Relational
         }
 
-        internal static MethodInfo ObjectEquality = typeof(DefaultOperators).GetMethod("ObjectEquality");
+        internal static readonly MethodInfo ObjectEquality = typeof(DefaultOperators).GetMethod("ObjectEquality");
 
         internal static MethodInfo MapOperatorToMethod(
             CodeBinaryOperatorType op,
