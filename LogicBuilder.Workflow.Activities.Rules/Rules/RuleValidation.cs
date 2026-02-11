@@ -208,10 +208,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
             object[] actualParameters = new object[actualParameterLength];
             if (actualParameterLength > 1)
                 Array.Copy(parameters, 0, actualParameters, 1, actualParameterLength - 1);
-            if (obj == null)
-                actualParameters[0] = null;
-            else
-                actualParameters[0] = Executor.AdjustType(obj.GetType(), obj, assumedDeclaringType);
+            actualParameters[0] = obj == null
+                ? null
+                : Executor.AdjustType(obj.GetType(), obj, assumedDeclaringType);
             object result = actualMethod.Invoke(null, invokeAttr, binder, actualParameters, culture);
             // may be out/ref parameters, so copy back the results
             if (hasOutOrRefParameters)
@@ -567,15 +566,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
             lhsBaseType = (lhsNullable) ? Nullable.GetUnderlyingType(lhs) : lhs;
             rhsBaseType = (rhsNullable) ? Nullable.GetUnderlyingType(rhs) : rhs;
             // determine the underlying types for both sides
-            if (lhsBaseType.IsEnum)
-                lhsRootType = EnumHelper.GetUnderlyingType(lhsBaseType);
-            else
-                lhsRootType = lhsBaseType;
+            lhsRootType = lhsBaseType.IsEnum
+                ? EnumHelper.GetUnderlyingType(lhsBaseType)
+                : lhsBaseType;
 
-            if (rhsBaseType.IsEnum)
-                rhsRootType = EnumHelper.GetUnderlyingType(rhsBaseType);
-            else
-                rhsRootType = rhsBaseType;
+            rhsRootType = rhsBaseType.IsEnum
+                ? EnumHelper.GetUnderlyingType(rhsBaseType)
+                : rhsBaseType;
 
             switch (op)
             {
@@ -604,20 +601,18 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         // if 0 is the underlying type, then use E - U
                         // if not the underlying type, then 0 becomes E, use E - E
                         resultRootType = lhsRootType;
-                        if (isZero && rhsBaseType != lhsRootType)
-                            resultBaseType = lhsRootType;
-                        else
-                            resultBaseType = lhsBaseType;
+                        resultBaseType = isZero && rhsBaseType != lhsRootType
+                            ? lhsRootType
+                            : lhsBaseType;
                     }
                     else    // rhsType.IsEnum
                     {
                         // special case for 0 - E
                         // in all cases 0 becomes E, use E - E
                         resultRootType = rhsRootType;
-                        if (isZero)
-                            resultBaseType = rhsRootType;
-                        else
-                            resultBaseType = rhsBaseType;
+                        resultBaseType = isZero
+                            ? rhsRootType
+                            : rhsBaseType;
                     }
                     resultIsNullable = (lhsNullable || rhsNullable);
                     resultType = (resultIsNullable) ? typeof(Nullable<>).MakeGenericType(resultBaseType) : resultBaseType;
@@ -845,7 +840,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 {
                     return Assembly.Load(assemblyName);
                 }
-                catch (Exception)
+                catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
                 {
                     return null;
                 }
@@ -979,16 +974,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 return false;
 
             Type resultType = exprInfo.ExpressionType;
-            if (!IsValidBooleanResult(resultType))
+            if (!IsValidBooleanResult(resultType) && (resultType != null || Errors.Count == 0))
             {
                 // not a boolean, so complain unless another error may have caused this problem
-                if (resultType != null || Errors.Count == 0)
-                {
-                    string message = Messages.ConditionMustBeBoolean;
-                    ValidationError error = new(message, ErrorNumbers.Error_ConditionMustBeBoolean);
-                    error.UserData[RuleUserDataKeys.ErrorObject] = expression;
-                    Errors.Add(error);
-                }
+                string message = Messages.ConditionMustBeBoolean;
+                ValidationError error = new(message, ErrorNumbers.Error_ConditionMustBeBoolean);
+                error.UserData[RuleUserDataKeys.ErrorObject] = expression;
+                Errors.Add(error);
             }
 
             return Errors.Count == 0;
@@ -1168,11 +1160,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (fromType.IsInterface)
                     return true;
             }
-            if (fromType.IsInterface)
+            if (fromType.IsInterface
+                && (toType.IsClass && ((!toType.IsSealed) || InterfaceMatch(toType.GetInterfaces(), fromType))))
             {
                 // from any interface-type S to any class-type T, provided T is not sealed or provided T implements S.
-                if ((toType.IsClass) && ((!toType.IsSealed) || (InterfaceMatch(toType.GetInterfaces(), fromType))))
-                    return true;
+                return true;
             }
 
             // no look for user-defined conversions
@@ -1881,10 +1873,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     Type sourceType = mi.GetParameters()[0].ParameterType;
                     Type targetType = mi.ReturnType;
                     if (StandardImplicitConversion(source, sourceType, null, out _) &&
-                        StandardImplicitConversion(targetType, target, null, out _))
+                        StandardImplicitConversion(targetType, target, null, out _)
+                        && !methods.Contains(mi))
                     {
-                        if (!methods.Contains(mi))
-                            methods.Add(mi);
+                        methods.Add(mi);
                     }
                 }
             }
@@ -1903,10 +1895,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     Type sourceType = mi.GetParameters()[0].ParameterType;
                     Type targetType = mi.ReturnType;
                     if ((StandardImplicitConversion(source, sourceType, null, out _) || StandardImplicitConversion(sourceType, source, null, out _))
-                     && (StandardImplicitConversion(target, targetType, null, out _) || StandardImplicitConversion(targetType, target, null, out _)))
+                     && (StandardImplicitConversion(target, targetType, null, out _) || StandardImplicitConversion(targetType, target, null, out _))
+                     && !methods.Contains(mi))
                     {
-                        if (!methods.Contains(mi))
-                            methods.Add(mi);
+                        methods.Add(mi);
                     }
                 }
             }
@@ -1924,7 +1916,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     // If we get here without throwing, it's valid.
                     return true;
                 }
-                catch (Exception e)
+                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                 {
                     error = new ValidationError(e.Message, ErrorNumbers.Error_OperandTypesIncompatible);
                     return false;
@@ -2343,7 +2335,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 this.Member = member;
                 this.memberParameters = parameters;
-                this.signature = signature;
+                this.signature = signature != null ? [.. signature] : noSignature;
                 this.form = form;
             }
 
@@ -3033,26 +3025,25 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // when this method is called outside of this class, we must have tried 
             // getting ExtensionMethods. So we must have tried setting extensionAttributeType.
 
-            if (extensionAttribute != null)
+            if (extensionAttribute != null 
+                && (assembly != null) 
+                && (!seenAssemblies.Contains(assembly)))
             {
-                if ((assembly != null) && (!seenAssemblies.Contains(assembly)))
+                seenAssemblies.Add(assembly);
+                if (IsMarkedExtension(assembly))
                 {
-                    seenAssemblies.Add(assembly);
-                    if (IsMarkedExtension(assembly))
+                    Type[] types;
+                    try
                     {
-                        Type[] types;                        
-                        try
-                        {
-                            types = assembly.GetTypes();
-                        }
-                        catch (ReflectionTypeLoadException e)
-                        {
-                            // problems loading all the types, take what we can get
-                            // some types will be null
-                            types = e.Types;
-                        }
-                        DetermineExtensionMethods(types);
+                        types = assembly.GetTypes();
                     }
+                    catch (ReflectionTypeLoadException e)
+                    {
+                        // problems loading all the types, take what we can get
+                        // some types will be null
+                        types = e.Types;
+                    }
+                    DetermineExtensionMethods(types);
                 }
             }
         }
@@ -3081,8 +3072,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
                                 }
                             }
                             catch (TypeLoadException)
-                            {//We excluding the null types from ReflectionTypeLoadException
-                            }//so do the same when they show up as ParameterTypes
+                            {
+                                //We excluding the null types from ReflectionTypeLoadException
+                                //so do the same when they show up as ParameterTypes
+                                //Intentionally ignoring this exception to keep extension method discovery resilient.
+                                Debug.WriteLine("Skipped extension method due to TypeLoadException on parameter types.", "RuleValidation");
+                            }
                         }
                     }
                 }

@@ -3,16 +3,13 @@
 // ---------------------------------------------------------------------------
 
 #define CODE_ANALYSIS
+using LogicBuilder.Workflow.ComponentModel.Serialization;
+using System;
 using System.CodeDom;
-using System.Collections;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
-using LogicBuilder.Workflow.ComponentModel.Serialization;
 using System.Xml;
-using System;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
@@ -67,9 +64,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         // To improve performance, cache the RuleDefinitions deserialized from 
         // .rules resources keyed by the type of activity.
-        static readonly Hashtable cloneableOrNullRulesResources = [];
+        static readonly Dictionary<Type, RuleDefinitions> cloneableOrNullRulesResources = [];
         // It is unfortunate, however, that cloning might not always succeed, we will keep them here.
-        static readonly Hashtable uncloneableRulesResources = [];
+        static readonly Dictionary<Type, RuleDefinitions> uncloneableRulesResources = [];
 
         internal static RuleDefinitions GetRuleDefinitionsFromManifest(Type workflowType)
         {
@@ -78,9 +75,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             RuleDefinitions rules = null;
 
-            if (cloneableOrNullRulesResources.ContainsKey(workflowType))
+            if (cloneableOrNullRulesResources.TryGetValue(workflowType, out RuleDefinitions ruleDefinitions))
             {
-                rules = (RuleDefinitions)cloneableOrNullRulesResources[workflowType];
+                rules = ruleDefinitions;
                 if (rules != null)
                 {
                     // This should always succeed, since it is coming out of the cloneable cache
@@ -116,7 +113,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                             cloneableOrNullRulesResources[workflowType] = originalRules;
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
                     {
                         lock (uncloneableRulesResources)
                         {

@@ -25,7 +25,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
 #pragma warning disable IDE0060 // Unused parameter for testing purposes
             [RuleRead("Field1", RuleAttributeTarget.Parameter)]
-            public void MethodWithParameterAttribute(string Field1) { }
+            public void MethodWithParameterAttribute(string fieldName) { }
 #pragma warning restore IDE0060
 
             [RuleInvoke("MethodWithReadAttribute")]
