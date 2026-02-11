@@ -13,4 +13,5 @@ if ($Env:REPO_OWNER -ne "BpsLogicBuilder") {
 } else {
     dotnet pack $PROJECT_PATH --configuration Release -o ./nupkg --no-build
     dotnet nuget push $NUGET_PACKAGE_PATH --skip-duplicate --api-key $Env:GITHUB_NUGET_AUTH_TOKEN
+    dotnet nuget push $NUGET_PACKAGE_PATH --skip-duplicate --source $Env:NUGET_URL --api-key $Env:NUGET_API_KEY
 }
