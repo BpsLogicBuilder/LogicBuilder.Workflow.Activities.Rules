@@ -43,7 +43,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests
         {
             // Act
             var traceSource = WorkflowActivityTrace.Rules;
-            var sourceSwitch = traceSource.Switch as SourceSwitch;
+            var sourceSwitch = traceSource.Switch ?? throw new InvalidOperationException("Source switch is null.");
 
             // Assert
             Assert.NotNull(sourceSwitch);

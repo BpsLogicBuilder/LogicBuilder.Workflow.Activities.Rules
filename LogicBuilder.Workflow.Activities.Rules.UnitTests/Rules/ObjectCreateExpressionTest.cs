@@ -475,7 +475,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.NotNull(result.Value);
-            var instance = result.Value as ClassWithOutParams;
+            var instance = result.Value as ClassWithOutParams ?? throw new InvalidOperationException("Instance is null.");
             Assert.NotNull(instance);
             Assert.Equal(10, instance.Value);
             Assert.Equal(20, testClass.Value); // Out parameter should be set
@@ -537,7 +537,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expressionInternal = GetObjectCreateExpression();
 
             // Act
-            var cloned = expressionInternal.Clone(original) as CodeObjectCreateExpression;
+            var cloned = expressionInternal.Clone(original) as CodeObjectCreateExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
@@ -557,7 +557,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expressionInternal = GetObjectCreateExpression();
 
             // Act
-            var cloned = expressionInternal.Clone(original) as CodeObjectCreateExpression;
+            var cloned = expressionInternal.Clone(original) as CodeObjectCreateExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
@@ -583,7 +583,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expressionInternal = GetObjectCreateExpression();
 
             // Act
-            var cloned = expressionInternal.Clone(original) as CodeObjectCreateExpression;
+            var cloned = expressionInternal.Clone(original) as CodeObjectCreateExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);

@@ -3,9 +3,12 @@ $scriptName = $MyInvocation.MyCommand.Name
 Write-Host "Owner ${Env:REPO_OWNER}"
 Write-Host "Repository ${Env:REPO}"
 
+$PROJECT_PATH = "./$($Env:PROJECT_NAME)/$($Env:PROJECT_NAME).csproj"
+$NUGET_PACKAGE_PATH = "./nupkg/$($Env:PROJECT_NAME).*.nupkg"
+
 if ($Env:REPO_OWNER -ne "BpsLogicBuilder") {
     Write-Host "${scriptName}: Only create packages on BpsLogicBuilder repositories."
 } else {
-    dotnet pack --configuration Release -o ./nupkg --no-build
-    dotnet nuget push ./nupkg/*.nupkg --skip-duplicate --api-key $Env:GITHUB_NUGET_AUTH_TOKEN
+    dotnet pack $PROJECT_PATH --configuration Release -o ./nupkg --no-build
+    dotnet nuget push $NUGET_PACKAGE_PATH --skip-duplicate --api-key $Env:GITHUB_NUGET_AUTH_TOKEN
 }
