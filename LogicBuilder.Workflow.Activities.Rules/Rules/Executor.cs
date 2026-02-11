@@ -330,16 +330,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
                             foreach (int updatedRuleIndex in activeRules)
                             {
                                 RuleState rs = orderedRules[updatedRuleIndex];
-                                if (satisfied[updatedRuleIndex])
+                                if (satisfied[updatedRuleIndex]
+                                    && (executionCount[updatedRuleIndex] == 0 || rs.Rule.ReevaluationBehavior == RuleReevaluationBehavior.Always))
                                 {
                                     // evaluate at least once, or repeatedly if appropriate
-                                    if ((executionCount[updatedRuleIndex] == 0) || (rs.Rule.ReevaluationBehavior == RuleReevaluationBehavior.Always))
-                                    {
-                                        tracer?.TraceUpdate(ruleName, rs.Rule.Name);
-                                        satisfied[updatedRuleIndex] = false;
-                                        if (updatedRuleIndex < current)
-                                            current = updatedRuleIndex;
-                                    }
+                                    tracer?.TraceUpdate(ruleName, rs.Rule.Name);
+                                    satisfied[updatedRuleIndex] = false;
+                                    if (updatedRuleIndex < current)
+                                        current = updatedRuleIndex;
                                 }
                             }
                         }
@@ -768,14 +766,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     else if (currentType == typeof(float))
                     {
                         float f = (float)operandValue;
-                        if (resultType == typeof(char))
-                        {
-                            converted = (char)f;
-                        }
-                        else
-                        {
-                            converted = ((IConvertible)f).ToType(resultType, CultureInfo.CurrentCulture);
-                        }
+                        converted = resultType == typeof(char)
+                            ? (char)f
+                            : ((IConvertible)f).ToType(resultType, CultureInfo.CurrentCulture);
                         if (resultNullable)
                             converted = Activator.CreateInstance(toType, converted);
                         return true;
@@ -783,14 +776,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     else if (currentType == typeof(double))
                     {
                         double d = (double)operandValue;
-                        if (resultType == typeof(char))
-                        {
-                            converted = (char)d;
-                        }
-                        else
-                        {
-                            converted = ((IConvertible)d).ToType(resultType, CultureInfo.CurrentCulture);
-                        }
+                        converted = resultType == typeof(char)
+                            ? (char)d
+                            : ((IConvertible)d).ToType(resultType, CultureInfo.CurrentCulture);
                         if (resultNullable)
                             converted = Activator.CreateInstance(toType, converted);
                         return true;
@@ -798,14 +786,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     else if (currentType == typeof(decimal))
                     {
                         decimal d = (decimal)operandValue;
-                        if (resultType == typeof(char))
-                        {
-                            converted = (char)d;
-                        }
-                        else
-                        {
-                            converted = ((IConvertible)d).ToType(resultType, CultureInfo.CurrentCulture);
-                        }
+                        converted = resultType == typeof(char)
+                            ? (char)d
+                            : ((IConvertible)d).ToType(resultType, CultureInfo.CurrentCulture);
                         if (resultNullable)
                             converted = Activator.CreateInstance(toType, converted);
                         return true;

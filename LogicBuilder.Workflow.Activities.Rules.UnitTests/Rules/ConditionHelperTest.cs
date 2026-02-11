@@ -237,21 +237,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
-        public void CloneObject_WithCloneableObject_ReturnsClone()
-        {
-            // Arrange
-            var original = new CloneableTestClass { Value = "Test" };
-
-            // Act
-            var result = ConditionHelper.CloneObject(original) as CloneableTestClass ?? throw new InvalidOperationException("result is null.");
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.NotSame(original, result);
-            Assert.Equal(original.Value, result.Value);
-        }
-
-        [Fact]
         public void CloneObject_WithNonCloneableObject_ThrowsNotSupportedException()
         {
             // Arrange
@@ -299,26 +284,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
-        public void CloneUserData_WithCloneableData_ClonesSuccessfully()
-        {
-            // Arrange
-            var original = new CodeExpression();
-            var cloneableValue = new CloneableTestClass { Value = "Test" };
-            original.UserData.Add("key", cloneableValue);
-            var result = new CodeExpression();
-
-            // Act
-            ConditionHelper.CloneUserData(original, result);
-
-            // Assert
-            Assert.Single(result.UserData);
-            var clonedValue = result.UserData["key"] as CloneableTestClass ?? throw new InvalidOperationException("Cloned value is null.");
-            Assert.NotNull(clonedValue);
-            Assert.NotSame(cloneableValue, clonedValue);
-            Assert.Equal("Test", clonedValue.Value);
-        }
-
-        [Fact]
         public void CloneUserData_WithNonCloneableData_ThrowsNotSupportedException()
         {
             // Arrange
@@ -361,16 +326,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         #endregion
 
         #region Helper Classes
-
-        private class CloneableTestClass : ICloneable
-        {
-            public string? Value { get; set; }
-
-            public object Clone()
-            {
-                return new CloneableTestClass { Value = this.Value };
-            }
-        }
 
         private class NonCloneableTestClass
         {

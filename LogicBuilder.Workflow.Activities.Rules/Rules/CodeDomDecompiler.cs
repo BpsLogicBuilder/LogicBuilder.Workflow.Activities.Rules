@@ -510,23 +510,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (parentOperation == childOperation)
             {
-                if (parentExpr is CodeBinaryOperatorExpression parentBinary)
-                {
-                    if (childExpr == parentBinary.Right)
-                    {
-                        // Something like 2 - (3 - 4) needs parentheses.
-                        return true;
-                    }
-                    else
-                    {
-                        // Something like (2 - 3) - 4 doesn't need parentheses.
-                        return false;
-                    }
-                }
-                else
-                {
-                    return false;
-                }
+                return parentExpr is CodeBinaryOperatorExpression parentBinary
+                    ? childExpr == parentBinary.Right
+                    : false;
             }
             else if (parentOperation > childOperation)
             {

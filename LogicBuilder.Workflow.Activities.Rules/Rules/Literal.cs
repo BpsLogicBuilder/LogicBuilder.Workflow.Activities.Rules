@@ -725,22 +725,20 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 }
 
                 // if no candidates and ==, can we use object == object?
-                if ((candidates.Count == 0) && ("Equality" == methodName))
+                if ((candidates.Count == 0) 
+                    && ("Equality" == methodName) 
+                    && (!lhs.IsValueType) 
+                    && (!rhs.IsValueType)
+                    && ((lhs == typeof(NullLiteral)) || (rhs == typeof(NullLiteral)) ||
+                        (lhs.IsAssignableFrom(rhs)) || (rhs.IsAssignableFrom(lhs))))
                 {
                     // C# 7.9.6
                     // references must be compatible
                     // no boxing
                     // value types can't be compared
-                    if ((!lhs.IsValueType) && (!rhs.IsValueType))
-                    {
-                        // they are not classes, so references need to be compatible
-                        // also check for null (which is NullLiteral type) -- null is compatible with any object type
-                        if ((lhs == typeof(NullLiteral)) || (rhs == typeof(NullLiteral)) ||
-                            (lhs.IsAssignableFrom(rhs)) || (rhs.IsAssignableFrom(lhs)))
-                        {
-                            candidates.Add(ObjectEquality);
-                        }
-                    }
+                    // they are not classes, so references need to be compatible
+                    // also check for null (which is NullLiteral type) -- null is compatible with any object type
+                    candidates.Add(ObjectEquality);
                 }
 
                 // if no candidates and nullable, add lifted operators
@@ -819,14 +817,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
             foreach (MethodInfo mi in possible)
             {
                 ParameterInfo[] parameters = mi.GetParameters();
-                if ((mi.Name == methodName) && (parameters.Length == 2))
+                if ((mi.Name == methodName) 
+                    && (parameters.Length == 2) 
+                    && EvaluateMethod(parameters, arg1, arg2))
                 {
-                    if (EvaluateMethod(parameters, arg1, arg2))
-                    {
-                        ++numAdded;
-                        if (!candidates.Contains(mi))
-                            candidates.Add(mi);
-                    }
+                    ++numAdded;
+                    if (!candidates.Contains(mi))
+                        candidates.Add(mi);
                 }
             }
             if ((numAdded > 0) || (type == typeof(object)))
@@ -840,13 +837,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 foreach (MethodInfo mi in possible)
                 {
                     ParameterInfo[] parameters = mi.GetParameters();
-                    if ((mi.Name == methodName) && (parameters.Length == 2))
+                    if ((mi.Name == methodName) 
+                        && (parameters.Length == 2)
+                        && EvaluateMethod(parameters, arg1, arg2)
+                        && !candidates.Contains(mi))
                     {
-                        if (EvaluateMethod(parameters, arg1, arg2))
-                        {
-                            if (!candidates.Contains(mi))
-                                candidates.Add(mi);
-                        }
+                        candidates.Add(mi);
                     }
                 }
             }

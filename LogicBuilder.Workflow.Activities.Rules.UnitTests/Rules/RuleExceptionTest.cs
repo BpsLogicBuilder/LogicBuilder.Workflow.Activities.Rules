@@ -141,21 +141,13 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
-        public void CanBeCaught_AsException()
+        public async Task CanBeCaught_AsException()
         {
             // Arrange
             var message = "Test error message";
-            Exception? caughtException;
 
             // Act
-            try
-            {
-                throw new RuleException(message);
-            }
-            catch (Exception ex)
-            {
-                caughtException = ex;
-            }
+            Exception caughtException = await Assert.ThrowsAsync<RuleException>(() => throw new RuleException(message));
 
             // Assert
             Assert.NotNull(caughtException);

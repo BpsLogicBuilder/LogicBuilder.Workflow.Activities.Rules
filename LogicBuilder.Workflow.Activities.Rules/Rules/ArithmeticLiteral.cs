@@ -3,14 +3,13 @@
 // ---------------------------------------------------------------------------
 
 #define CODE_ANALYSIS
-using System.CodeDom;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Reflection;
 using LogicBuilder.Workflow.Activities.Common;
 using LogicBuilder.Workflow.ComponentModel.Compiler;
 using System;
+using System.CodeDom;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Reflection;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
@@ -328,10 +327,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 // not natively supported, see if user overrides operator
                 MethodInfo opOverload = Literal.MapOperatorToMethod(operation, lhs, lhsExpression, rhs, rhsExpression, validator, out error);
-                if (opOverload != null)
-                    return new RuleBinaryExpressionInfo(lhs, rhs, opOverload);
-                else
-                    return null;
+                return opOverload != null
+                    ? new RuleBinaryExpressionInfo(lhs, rhs, opOverload)
+                    : null;
             }
         }
 
@@ -3304,7 +3302,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override object BitAnd()
         {
             // special case from section 24.3.6 on bool? type
-            return (m_value == false) ? (object)false : null;
+            return (m_value == false) ? false : null;
         }
         internal override object BitAnd(bool v)
         {
@@ -3319,7 +3317,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override object BitOr()
         {
             // special case from section 24.3.6 on bool? type
-            return (m_value == true) ? (object)true : null;
+            return (m_value == true) ? true : null;
         }
         internal override object BitOr(bool v)
         {
@@ -3669,7 +3667,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override object BitAnd(bool v)
         {
             // special case from section 24.3.6 on bool? type
-            return (v == false) ? (object)false : null;
+            return (v == false) ? false : null;
         }
         #endregion
         #region BitOr
@@ -3704,7 +3702,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override object BitOr(bool v)
         {
             // special case from section 24.3.6 on bool? type
-            return (v == true) ? (object)true : null;
+            return (v == true) ? true : null;
         }
         #endregion
     }

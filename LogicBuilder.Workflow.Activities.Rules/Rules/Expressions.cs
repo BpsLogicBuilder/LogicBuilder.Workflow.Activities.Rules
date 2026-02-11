@@ -390,21 +390,15 @@ namespace LogicBuilder.Workflow.Activities.Rules
         private static bool PromotionPossible(Type type, CodeExpression expression)
         {
             // C# 2.0, section 6.1.6, int/long constants can be promoted to ulong as long as in range
-            if (type == typeof(int))
+            if (type == typeof(int) && expression is CodePrimitiveExpression intPrimitive)
             {
-                if (expression is CodePrimitiveExpression primitive)
-                {
-                    int i = (int)primitive.Value;
-                    return (i >= 0);
-                }
+                int i = (int)intPrimitive.Value;
+                return (i >= 0);
             }
-            else if (type == typeof(long))
+            else if (type == typeof(long) && expression is CodePrimitiveExpression longPrimitive)
             {
-                if (expression is CodePrimitiveExpression primitive)
-                {
-                    long l = (long)primitive.Value;
-                    return (l >= 0);
-                }
+                long l = (long)longPrimitive.Value;
+                return (l >= 0);
             }
             return false;
         }
@@ -742,105 +736,101 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (rightExpr is CodePrimitiveExpression rhsPrimitive)
                 {
                     object rhsValue = rhsPrimitive.Value;
-                    if (rhsValue != null)
+                    if (rhsValue != null && rhsValue.GetType() == typeof(bool) && !(bool)rhsValue)
                     {
                         // we don't have the comparison "==null"
-                        if (rhsValue.GetType() == typeof(bool) && (bool)rhsValue == false)
+                        // We have comparison "== false".
+
+                        if (leftExpr is CodeBinaryOperatorExpression lhsBinary && lhsBinary.Operator == CodeBinaryOperatorType.ValueEquality)
                         {
-                            // We have comparison "== false".
+                            // We have the pattern
+                            //      (expr1 == expr2) == false
+                            // Treat this as:
+                            //      expr1 != expr2
 
-                            if (leftExpr is CodeBinaryOperatorExpression lhsBinary && lhsBinary.Operator == CodeBinaryOperatorType.ValueEquality)
-                            {
-                                // We have the pattern
-                                //      (expr1 == expr2) == false
-                                // Treat this as:
-                                //      expr1 != expr2
+                            opString = " != ";
 
-                                opString = " != ";
+                            leftExpr = lhsBinary.Left;
+                            rightExpr = lhsBinary.Right;
+                        }
+                        else
+                        {
+                            // We have the pattern
+                            //      LHS == false
+                            // Treat this as:
+                            //      ! LHS
 
-                                leftExpr = lhsBinary.Left;
-                                rightExpr = lhsBinary.Right;
-                            }
-                            else
-                            {
-                                // We have the pattern
-                                //      LHS == false
-                                // Treat this as:
-                                //      ! LHS
+                            mustParenthesize = RuleDecompiler.MustParenthesize(leftExpr, parentExpression);
+                            if (mustParenthesize)
+                                stringBuilder.Append("(");
 
-                                mustParenthesize = RuleDecompiler.MustParenthesize(leftExpr, parentExpression);
-                                if (mustParenthesize)
-                                    stringBuilder.Append("(");
+                            // Note the "parentExpression" passed to the child decompile... cast is the only
+                            // built-in operation that has "unary" precedence, so pass that as the parent
+                            // to get the parenthesization right. .
+                            stringBuilder.Append("!");
+                            RuleExpressionWalker.Decompile(stringBuilder, leftExpr, new CodeCastExpression());
 
-                                // Note the "parentExpression" passed to the child decompile... cast is the only
-                                // built-in operation that has "unary" precedence, so pass that as the parent
-                                // to get the parenthesization right. .
-                                stringBuilder.Append("!");
-                                RuleExpressionWalker.Decompile(stringBuilder, leftExpr, new CodeCastExpression());
+                            if (mustParenthesize)
+                                stringBuilder.Append(")");
 
-                                if (mustParenthesize)
-                                    stringBuilder.Append(")");
-
-                                return;
-                            }
+                            return;
                         }
                     }
                 }
             }
-            else if (binaryExpr.Operator == CodeBinaryOperatorType.Subtract)
+            else if (binaryExpr.Operator == CodeBinaryOperatorType.Subtract 
+                && leftExpr is CodePrimitiveExpression lhsPrimitive 
+                && lhsPrimitive.Value != null)
             {
                 // Look for the special case:
                 //    0 - RHS       --> - RHS
 
-                if (leftExpr is CodePrimitiveExpression lhsPrimitive && lhsPrimitive.Value != null)
+                object lhsValue = lhsPrimitive.Value;
+
+                // Check if the LHS is zero.  We'll only check a few types (decimal,
+                // double, float, int, long), since these occur most often (and the 
+                // unsigned types are all illegal).
+                TypeCode tc = Type.GetTypeCode(lhsValue.GetType());
+                bool isZero = false;
+                switch (tc)
                 {
-                    object lhsValue = lhsPrimitive.Value;
+                    case TypeCode.Decimal:
+                        isZero = ((decimal)lhsValue) == 0;
+                        break;
 
-                    // Check if the LHS is zero.  We'll only check a few types (decimal,
-                    // double, float, int, long), since these occur most often (and the 
-                    // unsigned types are all illegal).
-                    TypeCode tc = Type.GetTypeCode(lhsValue.GetType());
-                    bool isZero = false;
-                    switch (tc)
-                    {
-                        case TypeCode.Decimal:
-                            isZero = ((decimal)lhsValue) == 0;
-                            break;
+                    case TypeCode.Double:
+                        isZero = Math.Abs((double)lhsValue) < double.Epsilon;
+                        break;
 
-                        case TypeCode.Double:
-                            isZero = Math.Abs((double)lhsValue) < double.Epsilon;
-                            break;
+                    case TypeCode.Single:
+                        isZero = Math.Abs((float)lhsValue) < float.Epsilon;
+                        break;
 
-                        case TypeCode.Single:
-                            isZero = Math.Abs((float)lhsValue) < float.Epsilon;
-                            break;
+                    case TypeCode.Int32:
+                        isZero = ((int)lhsValue) == 0;
+                        break;
 
-                        case TypeCode.Int32:
-                            isZero = ((int)lhsValue) == 0;
-                            break;
+                    case TypeCode.Int64:
+                        isZero = ((long)lhsValue) == 0;
+                        break;
+                }
 
-                        case TypeCode.Int64:
-                            isZero = ((long)lhsValue) == 0;
-                            break;
-                    }
+                if (isZero)
+                {
+                    mustParenthesize = RuleDecompiler.MustParenthesize(rightExpr, parentExpression);
+                    if (mustParenthesize)
+                        stringBuilder.Append("(");
 
-                    if (isZero)
-                    {
-                        mustParenthesize = RuleDecompiler.MustParenthesize(rightExpr, parentExpression);
-                        if (mustParenthesize)
-                            stringBuilder.Append("(");
+                    // Note the "parentExpression" passed to the child decompile... cast is the only
+                    // built-in operation that has "unary" precedence, so pass that as the parent
+                    // to get the parenthesization right.  
+                    stringBuilder.Append("-");
+                    RuleExpressionWalker.Decompile(stringBuilder, rightExpr, new CodeCastExpression());
 
-                        // Note the "parentExpression" passed to the child decompile... cast is the only
-                        // built-in operation that has "unary" precedence, so pass that as the parent
-                        // to get the parenthesization right.  
-                        stringBuilder.Append("-");
-                        RuleExpressionWalker.Decompile(stringBuilder, rightExpr, new CodeCastExpression());
+                    if (mustParenthesize)
+                        stringBuilder.Append(")");
 
-                        if (mustParenthesize)
-                            stringBuilder.Append(")");
-
-                        return;
-                    }
+                    return;
                 }
             }
 
@@ -1801,11 +1791,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (parameterType == null)
                 return null;
 
-            if (parameterType != typeof(NullLiteral))
+            if (parameterType != typeof(NullLiteral) && isRef && !parameterType.IsByRef)
             {
                 // adjust type if necessary
-                if (isRef && !parameterType.IsByRef)
-                    parameterType = parameterType.MakeByRefType();
+                parameterType = parameterType.MakeByRefType();
             }
             return new RuleExpressionInfo(parameterType);
         }
@@ -2106,7 +2095,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                             Convert.ChangeType(fromValueDefault, toType2, CultureInfo.CurrentCulture);
                             canConvert = true;
                         }
-                        catch (Exception)
+                        catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
                         {
                             canConvert = false;
                         }
