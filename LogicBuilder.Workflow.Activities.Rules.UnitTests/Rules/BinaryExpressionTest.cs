@@ -1,9 +1,5 @@
-using System;
 using System.CodeDom;
 using System.Text;
-using LogicBuilder.Workflow.Activities.Rules;
-using LogicBuilder.Workflow.ComponentModel.Compiler;
-using Xunit;
 
 namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 {
@@ -1118,9 +1114,9 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Assert
             Assert.NotNull(cloned);
             Assert.NotSame(expression, cloned);
-            Assert.Equal(expression.Operator, cloned.Operator);
-            Assert.NotSame(expression.Left, cloned.Left);
-            Assert.NotSame(expression.Right, cloned.Right);
+            Assert.Equal(expression.Operator, cloned?.Operator);
+            Assert.NotSame(expression.Left, cloned?.Left);
+            Assert.NotSame(expression.Right, cloned?.Right);
         }
 
         [Fact]
@@ -1140,8 +1136,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Assert
             Assert.NotNull(cloned);
             Assert.NotSame(expression, cloned);
-            Assert.NotSame(expression.Left, cloned.Left);
-            Assert.NotSame(expression.Right, cloned.Right);
+            Assert.NotSame(expression.Left, cloned?.Left);
+            Assert.NotSame(expression.Right, cloned?.Right);
         }
 
         #endregion

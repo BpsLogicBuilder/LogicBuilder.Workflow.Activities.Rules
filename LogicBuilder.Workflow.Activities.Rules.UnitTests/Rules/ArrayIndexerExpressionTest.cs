@@ -492,11 +492,11 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Assert
             Assert.NotNull(cloned);
             Assert.NotSame(expression, cloned);
-            Assert.NotSame(expression.TargetObject, cloned.TargetObject);
-            Assert.Equal(expression.Indices.Count, cloned.Indices.Count);
+            Assert.NotSame(expression.TargetObject, cloned?.TargetObject);
+            Assert.Equal(expression.Indices.Count, cloned?.Indices.Count);
             
             var originalTarget = expression.TargetObject as CodeFieldReferenceExpression ?? throw new InvalidOperationException();
-            var clonedTarget = cloned.TargetObject as CodeFieldReferenceExpression ?? throw new InvalidOperationException();
+            var clonedTarget = cloned?.TargetObject as CodeFieldReferenceExpression ?? throw new InvalidOperationException();
             Assert.Equal(originalTarget.FieldName, clonedTarget.FieldName);
         }
 
@@ -515,9 +515,9 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.NotNull(cloned);
-            Assert.Equal(2, cloned.Indices.Count);
-            Assert.NotSame(expression.Indices[0], cloned.Indices[0]);
-            Assert.NotSame(expression.Indices[1], cloned.Indices[1]);
+            Assert.Equal(2, cloned?.Indices.Count);
+            Assert.NotSame(expression.Indices[0], cloned?.Indices[0]);
+            Assert.NotSame(expression.Indices[1], cloned?.Indices[1]);
         }
 
         #endregion

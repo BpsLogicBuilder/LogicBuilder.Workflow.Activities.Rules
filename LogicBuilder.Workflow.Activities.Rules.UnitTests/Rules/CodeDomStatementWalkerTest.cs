@@ -586,7 +586,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.NotSame(statement, result);
 
             var clonedStatement = (CodeAssignStatement)result;
-            var clonedTarget = clonedStatement.Left as CodeFieldReferenceExpression;
+            var clonedTarget = clonedStatement.Left as CodeFieldReferenceExpression ?? throw new InvalidOperationException("Cloned target is null.");
             Assert.NotNull(clonedTarget);
             Assert.Equal("intField", clonedTarget.FieldName);
         }

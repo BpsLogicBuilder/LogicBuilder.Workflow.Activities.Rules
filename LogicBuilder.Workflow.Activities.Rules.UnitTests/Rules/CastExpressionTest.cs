@@ -466,7 +466,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var original = new CodeCastExpression(typeof(int), new CodePrimitiveExpression(5.5));
 
             // Act
-            var cloned = RuleExpressionWalker.Clone(original) as CodeCastExpression;
+            var cloned = RuleExpressionWalker.Clone(original) as CodeCastExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
@@ -501,7 +501,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var original = new CodeCastExpression(typeof(decimal), new CodePrimitiveExpression(5));
 
             // Act
-            var cloned = RuleExpressionWalker.Clone(original) as CodeCastExpression;
+            var cloned = RuleExpressionWalker.Clone(original) as CodeCastExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);

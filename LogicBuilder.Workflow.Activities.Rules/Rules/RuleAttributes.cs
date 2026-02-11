@@ -71,7 +71,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 // When target is "Parameter", the path must start with the name of a parameter.
                 bool found = false;
-                for (int p = 0; p < parameters.Length; ++p)
+                for (int p = 0; p < (parameters?.Length ?? 0); ++p)
                 {
                     ParameterInfo param = parameters[p];
                     if (param.Name == firstPart)

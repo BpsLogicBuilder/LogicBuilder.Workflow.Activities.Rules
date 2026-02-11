@@ -3,17 +3,16 @@
 // ---------------------------------------------------------------------------
 
 #define CODE_ANALYSIS
+using LogicBuilder.Workflow.Activities.Common;
+using LogicBuilder.Workflow.ComponentModel.Compiler;
+using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using LogicBuilder.Workflow.Activities.Common;
-using LogicBuilder.Workflow.ComponentModel.Compiler;
-using System;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
@@ -2037,8 +2036,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         System.Diagnostics.Debug.Assert(member.MemberType == MemberTypes.Property, "only properties can be overloaded");
 
                         PropertyInfo pi = (PropertyInfo)member;
-                        ParameterInfo[] parms = pi.GetIndexParameters();
-                        if (parms == null || parms.Length == 0)
+                        ParameterInfo[] parms = pi?.GetIndexParameters() ?? [];
+                        if (parms.Length == 0)
                         {
                             if (pi != null)
                             {
@@ -3261,11 +3260,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             // We found the best match.
-            PropertyInfo pi = (PropertyInfo)bestCandidate.Member;
-            if (pi != null)
-            {
-                IsAuthorized(pi.PropertyType);
-            }
+            PropertyInfo pi = ((PropertyInfo)bestCandidate.Member) ?? throw new InvalidOperationException("PropertyInfo cannot be null here.");
+            IsAuthorized(pi.PropertyType);
             return new RulePropertyExpressionInfo(pi, pi.PropertyType, bestCandidate.IsExpanded);
         }
 

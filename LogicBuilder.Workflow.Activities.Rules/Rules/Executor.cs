@@ -237,7 +237,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
         int IComparable.CompareTo(object obj)
         {
             RuleState other = obj as RuleState;
-            int compare = other.Rule.Priority.CompareTo(Rule.Priority);
+            int compare = other?.Rule?.Priority.CompareTo(Rule.Priority) ?? -1; 
+            //using other to compare.  thisRule.Priority is greater than null (result is 1) - so return -1 for descending order.
             if (compare == 0)
                 // if the priorities are the same, compare names (in ascending order)
                 compare = -other.Rule.Name.CompareTo(Rule.Name);

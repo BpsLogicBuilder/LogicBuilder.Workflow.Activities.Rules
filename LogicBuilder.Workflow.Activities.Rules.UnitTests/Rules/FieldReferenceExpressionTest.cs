@@ -385,7 +385,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodeFieldReferenceExpression(targetObject, "PublicIntField");
 
             // Act
-            var cloned = _fieldReferenceExpression.Clone(expression) as CodeFieldReferenceExpression;
+            var cloned = _fieldReferenceExpression.Clone(expression) as CodeFieldReferenceExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
@@ -402,7 +402,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodeFieldReferenceExpression(targetObject, "StaticPublicField");
 
             // Act
-            var cloned = _fieldReferenceExpression.Clone(expression) as CodeFieldReferenceExpression;
+            var cloned = _fieldReferenceExpression.Clone(expression) as CodeFieldReferenceExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
@@ -418,7 +418,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodeFieldReferenceExpression(targetObject, "PublicStringField");
 
             // Act
-            var cloned = _fieldReferenceExpression.Clone(expression) as CodeFieldReferenceExpression;
+            var cloned = _fieldReferenceExpression.Clone(expression) as CodeFieldReferenceExpression ?? throw new InvalidOperationException("Cloned expression is null.");
 
             // Assert
             Assert.NotNull(cloned);
