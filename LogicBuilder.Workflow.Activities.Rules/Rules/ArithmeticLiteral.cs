@@ -3302,7 +3302,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override object BitAnd()
         {
             // special case from section 24.3.6 on bool? type
-            return (m_value == false) ? false : null;
+            return m_value ? null : false;
         }
         internal override object BitAnd(bool v)
         {
@@ -3317,7 +3317,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override object BitOr()
         {
             // special case from section 24.3.6 on bool? type
-            return (m_value == true) ? true : null;
+            return m_value ? true : null;
         }
         internal override object BitOr(bool v)
         {
@@ -3667,7 +3667,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override object BitAnd(bool v)
         {
             // special case from section 24.3.6 on bool? type
-            return (v == false) ? false : null;
+            return v ? null : false;
         }
         #endregion
         #region BitOr
@@ -3702,7 +3702,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override object BitOr(bool v)
         {
             // special case from section 24.3.6 on bool? type
-            return (v == true) ? true : null;
+            return v ? true : null;
         }
         #endregion
     }

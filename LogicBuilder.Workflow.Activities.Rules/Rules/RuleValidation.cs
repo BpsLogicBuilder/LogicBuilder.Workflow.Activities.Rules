@@ -168,10 +168,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
             {
                 expectedParameters = new ParameterInfo[actualParameterLength - 1];
                 Array.Copy(actualParameters, 1, expectedParameters, 0, actualParameterLength - 1);
-                foreach (ParameterInfo pi in expectedParameters)
+                foreach (ParameterInfo pi in expectedParameters.Where(p => p.ParameterType.IsByRef))
                 {
-                    if (pi.ParameterType.IsByRef)
-                        hasOutOrRefParameters = true;
+                    hasOutOrRefParameters = true;
                 }
             }
             // get the type we pretend this method is on (which happens to be the first actual parameter)
@@ -857,9 +856,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
             catch (ReflectionTypeLoadException e)
             {
                 // problems loading all the types, take what we can get
-                foreach (Type type in e.Types)
-                    if (type != null)
-                        types.Add(type);
+                foreach (Type type in e.Types.Where(t => t != null))
+                    types.Add(type);
             }
             foreach (Assembly a in ReferencedAssemblies)
             {
@@ -870,9 +868,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 catch (ReflectionTypeLoadException e)
                 {
                     // problems loading all the types, take what we can get
-                    foreach (Type type in e.Types)
-                        if (type != null)
-                            types.Add(type);
+                    foreach (Type type in e.Types.Where(t => t != null))
+                        types.Add(type);
                 }
             }
             return [.. types];
@@ -1177,12 +1174,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private static bool InterfaceMatch(Type[] types, Type fromType)
         {
-            foreach (Type t in types)
-            {
-                if (t == fromType)
-                    return true;
-            }
-            return false;
+            return types.FirstOrDefault(t => t == fromType) != null;
         }
 
         internal static MethodInfo FindImplicitConversion(Type fromType, Type toType, out ValidationError error)
@@ -1866,18 +1858,16 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // s is the source type, so the parameter must encompass it
             // t is the target type, so it must encompass the result
             MethodInfo[] possible = t.GetMethods(BindingFlags.Static | BindingFlags.Public);
-            foreach (MethodInfo mi in possible)
+            foreach (MethodInfo mi in possible
+                .Where(m => m.Name == "op_Implicit" && m.GetParameters().Length == 1))
             {
-                if ((mi.Name == "op_Implicit") && (mi.GetParameters().Length == 1))
+                Type sourceType = mi.GetParameters()[0].ParameterType;
+                Type targetType = mi.ReturnType;
+                if (StandardImplicitConversion(source, sourceType, null, out _) &&
+                    StandardImplicitConversion(targetType, target, null, out _)
+                    && !methods.Contains(mi))
                 {
-                    Type sourceType = mi.GetParameters()[0].ParameterType;
-                    Type targetType = mi.ReturnType;
-                    if (StandardImplicitConversion(source, sourceType, null, out _) &&
-                        StandardImplicitConversion(targetType, target, null, out _)
-                        && !methods.Contains(mi))
-                    {
-                        methods.Add(mi);
-                    }
+                    methods.Add(mi);
                 }
             }
         }
@@ -1888,18 +1878,16 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // s is the source type, so the parameter must encompass it
             // t is the target type, so it must encompass the result
             MethodInfo[] possible = t.GetMethods(BindingFlags.Static | BindingFlags.Public);
-            foreach (MethodInfo mi in possible)
+            foreach (MethodInfo mi in possible
+                .Where(m => (m.Name == "op_Implicit" || m.Name == "op_Explicit") && m.GetParameters().Length == 1))
             {
-                if (((mi.Name == "op_Implicit") || (mi.Name == "op_Explicit")) && (mi.GetParameters().Length == 1))
+                Type sourceType = mi.GetParameters()[0].ParameterType;
+                Type targetType = mi.ReturnType;
+                if ((StandardImplicitConversion(source, sourceType, null, out _) || StandardImplicitConversion(sourceType, source, null, out _))
+                 && (StandardImplicitConversion(target, targetType, null, out _) || StandardImplicitConversion(targetType, target, null, out _))
+                 && !methods.Contains(mi))
                 {
-                    Type sourceType = mi.GetParameters()[0].ParameterType;
-                    Type targetType = mi.ReturnType;
-                    if ((StandardImplicitConversion(source, sourceType, null, out _) || StandardImplicitConversion(sourceType, source, null, out _))
-                     && (StandardImplicitConversion(target, targetType, null, out _) || StandardImplicitConversion(targetType, target, null, out _))
-                     && !methods.Contains(mi))
-                    {
-                        methods.Add(mi);
-                    }
+                    methods.Add(mi);
                 }
             }
         }
@@ -2946,15 +2934,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 }
 
                 // add in any extension methods that match
-                foreach (ExtensionMethodInfo extension in currentExtensionMethods)
+                foreach (ExtensionMethodInfo extension in currentExtensionMethods
+                    .Where(e => e.Name == methodName && TypesAreAssignable(targetType, e.AssumedDeclaringType, null, out _)))
                 {
                     // does it have the right name and is the type compatible
-                    if ((extension.Name == methodName) &&
-                        TypesAreAssignable(targetType, extension.AssumedDeclaringType, null, out ValidationError error))
-                    {
-                        // possible match
-                        methods.Add(extension);
-                    }
+                    // possible match
+                    methods.Add(extension);
                 }
             }
 
@@ -3050,35 +3035,31 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         private void DetermineExtensionMethods(Type[] types)
         {
-            foreach (Type type in types)
+            foreach (Type type in types
+                .Where(t => t != null && (t.IsPublic || t.IsNestedPublic) && t.IsSealed && IsMarkedExtension(t)))
             {
                 // static classes are defined as "abstract sealed"
                 // Note: VB doesn't support static classes, so the modules are only defined as "sealed"
-                if ((type != null) && (type.IsPublic || type.IsNestedPublic) && (type.IsSealed) && (IsMarkedExtension(type)))
+                // looks like a class containing extension methods, let's find them
+                MethodInfo[] staticMethods = type.GetMethods(BindingFlags.Static | BindingFlags.Public);
+                foreach (MethodInfo mi in staticMethods
+                    .Where(m => m.IsStatic && !m.IsGenericMethod && IsMarkedExtension(m)))
                 {
-                    // looks like a class containing extension methods, let's find them
-                    MethodInfo[] staticMethods = type.GetMethods(BindingFlags.Static | BindingFlags.Public);
-                    foreach (MethodInfo mi in staticMethods)
+                    // skip generic methods
+                    try
                     {
-                        // skip generic methods
-                        if ((mi.IsStatic) && !(mi.IsGenericMethod) && (IsMarkedExtension(mi)))
+                        ParameterInfo[] parms = mi.GetParameters();
+                        if (parms.Length > 0 && parms[0].ParameterType != null)
                         {
-                            try
-                            {
-                                ParameterInfo[] parms = mi.GetParameters();
-                                if (parms.Length > 0 && parms[0].ParameterType != null)
-                                {
-                                    extensionMethods.Add(new ExtensionMethodInfo(mi, parms));
-                                }
-                            }
-                            catch (TypeLoadException)
-                            {
-                                //We excluding the null types from ReflectionTypeLoadException
-                                //so do the same when they show up as ParameterTypes
-                                //Intentionally ignoring this exception to keep extension method discovery resilient.
-                                Debug.WriteLine("Skipped extension method due to TypeLoadException on parameter types.", "RuleValidation");
-                            }
+                            extensionMethods.Add(new ExtensionMethodInfo(mi, parms));
                         }
+                    }
+                    catch (TypeLoadException)
+                    {
+                        //We excluding the null types from ReflectionTypeLoadException
+                        //so do the same when they show up as ParameterTypes
+                        //Intentionally ignoring this exception to keep extension method discovery resilient.
+                        Debug.WriteLine("Skipped extension method due to TypeLoadException on parameter types.", "RuleValidation");
                     }
                 }
             }

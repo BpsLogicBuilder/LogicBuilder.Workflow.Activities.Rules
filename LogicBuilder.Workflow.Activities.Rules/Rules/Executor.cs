@@ -3,13 +3,15 @@
 // ---------------------------------------------------------------------------
 
 #define CODE_ANALYSIS
+using LogicBuilder.Workflow.ComponentModel.Compiler;
+using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
-using LogicBuilder.Workflow.ComponentModel.Compiler;
-using System;
+using static System.Collections.Specialized.BitVector32;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
@@ -258,10 +260,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             // start by taking the active rules and make them into a list sorted by priority
             List<RuleState> orderedRules = new(rules.Count);
-            foreach (Rule r in rules)
+            foreach (Rule r in rules.Where(r => r.Active))
             {
-                if (r.Active)
-                    orderedRules.Add(new RuleState(r));
+                orderedRules.Add(new RuleState(r));
             }
             orderedRules.Sort();
 
@@ -546,17 +547,17 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // Man, I wish there were a Set<T> class...
             Dictionary<string, object> symbols = [];
 
-            foreach (RuleAction action in actions)
+            foreach (RuleAction action in actions.Where
+                        (
+                            a => behavior == RuleChainingBehavior.Full 
+                                || (behavior == RuleChainingBehavior.UpdateOnly && a is RuleUpdateAction)
+                        ))
             {
-                if ((behavior == RuleChainingBehavior.Full) ||
-                    ((behavior == RuleChainingBehavior.UpdateOnly) && (action is RuleUpdateAction)))
+                ICollection<string> sideEffects = action.GetSideEffects(validation);
+                if (sideEffects != null)
                 {
-                    ICollection<string> sideEffects = action.GetSideEffects(validation);
-                    if (sideEffects != null)
-                    {
-                        foreach (string symbol in sideEffects)
-                            symbols[symbol] = null;
-                    }
+                    foreach (string symbol in sideEffects)
+                        symbols[symbol] = null;
                 }
             }
 
