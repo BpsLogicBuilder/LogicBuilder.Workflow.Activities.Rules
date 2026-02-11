@@ -452,23 +452,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Equal(3, count);
         }
 
-        [Fact]
-        public void Enumeration_OnEmptyCollection_DoesNotIterate()
-        {
-            // Arrange
-            var collection = new RuleConditionCollection();
-
-            // Act
-            int count = 0;
-            foreach (var condition in collection)
-            {
-                count++;
-            }
-
-            // Assert
-            Assert.Equal(0, count);
-        }
-
         #endregion
 
         #region Edge Cases

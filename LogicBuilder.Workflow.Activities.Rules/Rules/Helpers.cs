@@ -133,24 +133,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         public static Type GetUnderlyingType(Type type)
         {
-            Type underlyingType = typeof(int);
-            if (type.GetType().FullName.Equals("LogicBuilder.Workflow.ComponentModel.Compiler.DesignTimeType", StringComparison.Ordinal))// designTimeType = type as LogicBuilder.Workflow.ComponentModel.Compiler.DesignTimeType;
-            {
-                //this is a design time type, need to get the enum type data out of it
-                MethodInfo methodInfo = type.GetType().GetMethod("GetEnumType");
-                Debug.Assert(methodInfo != null, "Missing GetEnumType method on the DesignTimeType!");
-                if (methodInfo != null)
-                {
-                    Type result = methodInfo.Invoke(type, []) as Type;
-                    underlyingType = result ?? underlyingType;
-                }
-            }
-            else
-            {
-                underlyingType = Enum.GetUnderlyingType(type);
-            }
-
-            return underlyingType;
+            return Enum.GetUnderlyingType(type);
         }
     }
 }

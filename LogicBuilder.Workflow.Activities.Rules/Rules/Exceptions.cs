@@ -225,21 +225,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (qualifiedTypeString != "null")
                 m_rightType = Type.GetType(qualifiedTypeString);
         }
-
-        /// <summary>
-        /// Implements the ISerializable interface
-        /// </summary>
-        /// <param name="info">Reference to the object that holds the data needed to serialize/deserialize the exception</param>
-        /// <param name="context">Provides the means for serialiing the exception data</param>
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            if (info == null)
-                throw new ArgumentNullException("info");
-            base.GetObjectData(info, context);
-            info.AddValue("left", (m_leftType != null) ? m_leftType.AssemblyQualifiedName : "null");
-            info.AddValue("op", m_op);
-            info.AddValue("right", (m_rightType != null) ? m_rightType.AssemblyQualifiedName : "null");
-        }
     }
     #endregion
 

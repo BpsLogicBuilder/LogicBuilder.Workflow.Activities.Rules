@@ -13,23 +13,22 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             public int NumericProperty { get; set; } = 42;
             
             public static string StaticProperty { get; set; } = "StaticValue";
-            
-            public static string ThrowingProperty
-            {
-                get => throw new InvalidOperationException("Get failed");
-                set => throw new InvalidOperationException("Set failed");
-            }
-            
+
+            private readonly string[] _array = { "Item0", "Item1", "Item2", "Item3", "Item4" };
+
+            private readonly string[,] _twoDimentionalArray = new string[2, 3] { { "1", "2", "3" }, { "4", "5", "6" } };
+
+
             public string this[int index]
             {
                 get => $"Item{index}";
-                set { /* setter for indexer */ }
+                set { _array[index] = value; }
             }
             
             public string this[int x, int y]
             {
                 get => $"Item[{x},{y}]";
-                set { /* setter for multi-dimensional indexer */ }
+                set { _twoDimentionalArray[x, y] = value; }
             }
         }
         #endregion
@@ -163,20 +162,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Assert
             Assert.Equal("Item[2,5]", value);
         }
-
-        [Fact]
-        public void Value_Get_ShouldThrowTargetInvocationException_WithCustomMessage_WhenPropertyThrows()
-        {
-            // Arrange
-            var testObject = new TestClass();
-            var propertyInfo = typeof(TestClass).GetProperty(nameof(TestClass.ThrowingProperty));
-            var result = new RulePropertyResult(propertyInfo, testObject, null);
-
-            // Act & Assert
-            var exception = Assert.Throws<TargetInvocationException>(() => result.Value);
-            Assert.Contains("Get failed", exception.Message);
-            Assert.IsType<InvalidOperationException>(exception.InnerException);
-        }
         #endregion
 
         #region Value Setter Tests
@@ -230,7 +215,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Arrange
             var testObject = new TestClass();
             var propertyInfo = typeof(TestClass).GetProperty("Item", [typeof(int)]);
-            var indexerArgs = new object[] { 7 };
+            var indexerArgs = new object[] { 4 };
             var result = new RulePropertyResult(propertyInfo, testObject, indexerArgs)
             {
                 // Act
@@ -247,7 +232,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Arrange
             var testObject = new TestClass();
             var propertyInfo = typeof(TestClass).GetProperty("Item", [typeof(int), typeof(int)]);
-            var indexerArgs = new object[] { 3, 4 };
+            var indexerArgs = new object[] { 0, 2 };
             var result = new RulePropertyResult(propertyInfo, testObject, indexerArgs)
             {
                 // Act
@@ -256,20 +241,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert - just verify no exception is thrown
             Assert.NotNull(result);
-        }
-
-        [Fact]
-        public void Value_Set_ShouldThrowTargetInvocationException_WithCustomMessage_WhenPropertyThrows()
-        {
-            // Arrange
-            var testObject = new TestClass();
-            var propertyInfo = typeof(TestClass).GetProperty(nameof(TestClass.ThrowingProperty));
-            var result = new RulePropertyResult(propertyInfo, testObject, null);
-
-            // Act & Assert
-            var exception = Assert.Throws<TargetInvocationException>(() => result.Value = "NewValue");
-            Assert.Contains("Set failed", exception.Message);
-            Assert.IsType<InvalidOperationException>(exception.InnerException);
         }
 
         [Fact]

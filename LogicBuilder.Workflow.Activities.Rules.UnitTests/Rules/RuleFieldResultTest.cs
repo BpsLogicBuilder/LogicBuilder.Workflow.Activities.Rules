@@ -101,7 +101,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Act & Assert
             var exception = Assert.Throws<RuleEvaluationException>(() => 
             {
-                var value = result.Value;
+                _ = result.Value;
             });
             Assert.Contains(fieldInfo?.Name ?? "", exception.Message);
             Assert.Equal(fieldInfo, exception.Data[RuleUserDataKeys.ErrorObject]);

@@ -34,6 +34,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             private readonly int[] _array = [10, 20, 30, 40, 50];
 
+            private readonly int[,] _twoDimentionalArray = new int [2, 3] { { 1, 2, 3 }, { 4, 5, 6 } };
+
             public string this[int index]
             {
                 get => _intIndex.TryGetValue(index, out var value) ? value : "not found";
@@ -48,8 +50,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             public int this[int x, int y]
             {
-                get => x + y;
-                set { }
+                get => _twoDimentionalArray[x, y];
+                set { _twoDimentionalArray[x, y] = value; }
             }
 
             public int ArrayValue(int index) => _array[index];
@@ -76,10 +78,20 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
         private class TestClassWithParamsIndexer
         {
+            private readonly Dictionary<int, string> _intIndex = new()
+            {
+                { 0, "zero" },
+                { 1, "one" },
+                { 2, "two" }
+            };
+
             public string this[int x, params string[] args]
             {
                 get => $"{x}: {string.Join(", ", args)}";
-                set { }
+                set 
+                {
+                    _intIndex[x] = string.Join(", ", args);
+                }
             }
         }
 
@@ -508,8 +520,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Arrange
             var testInstance = new TestClass();
             var targetObject = new CodeThisReferenceExpression();
-            var indexExpr1 = new CodePrimitiveExpression(5);
-            var indexExpr2 = new CodePrimitiveExpression(10);
+            var indexExpr1 = new CodePrimitiveExpression(1);
+            var indexExpr2 = new CodePrimitiveExpression(0);
             var expression = new CodeIndexerExpression(targetObject, indexExpr1, indexExpr2);
 
             CodeAssignStatement assignStatement = new(expression, new CodePrimitiveExpression(100));
@@ -529,7 +541,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(15, result.Value); // 5 + 10
+            Assert.Equal(4, result.Value);
         }
 
         [Fact]

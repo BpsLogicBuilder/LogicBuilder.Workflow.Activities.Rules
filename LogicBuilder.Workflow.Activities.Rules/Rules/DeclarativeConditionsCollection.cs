@@ -48,7 +48,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (this._runtimeInitialized)
                 throw new InvalidOperationException(SR.GetString(SR.Error_CanNotChangeAtRuntime));
 
-            if (item.Name != null && item.Name.Length >= 0 && this.Contains(item.Name))
+            if (!string.IsNullOrEmpty(item.Name) && this.Contains(item.Name))
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.ConditionExists, item.Name);
                 throw new ArgumentException(message);

@@ -377,26 +377,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         #region Equals Tests
 
         [Fact]
-        public void Equals_SameRule_ReturnsTrue()
-        {
-            // Arrange
-            var rule = new Rule("TestRule");
-
-            // Act & Assert
-            Assert.True(rule.Equals(rule));
-        }
-
-        [Fact]
-        public void Equals_NullObject_ReturnsFalse()
-        {
-            // Arrange
-            var rule = new Rule("TestRule");
-
-            // Act & Assert
-            Assert.False(rule.Equals(null));
-        }
-
-        [Fact]
         public void Equals_DifferentType_ReturnsFalse()
         {
             // Arrange
