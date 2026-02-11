@@ -429,7 +429,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.NotNull(result.Value);
-            var instance = result.Value as SimpleClass;
+            var instance = result.Value as SimpleClass ?? throw new InvalidOperationException("Instance is null.");
             Assert.NotNull(instance);
             Assert.Equal(42, instance.Value);
             Assert.Equal("test", instance.Name);
