@@ -1719,7 +1719,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (isWritten)
             {
-                string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeDirectionExpression).ToString());
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeDirectionExpression));
                 ValidationError error = new(message, ErrorNumbers.Error_InvalidAssignTarget);
                 error.UserData[RuleUserDataKeys.ErrorObject] = directionExpr;
                 validation.Errors.Add(error);
