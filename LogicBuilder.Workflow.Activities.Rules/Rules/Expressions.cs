@@ -808,11 +808,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
                             break;
 
                         case TypeCode.Double:
-                            isZero = ((double)lhsValue) == 0;
+                            isZero = Math.Abs((double)lhsValue) < double.Epsilon;
                             break;
 
                         case TypeCode.Single:
-                            isZero = ((float)lhsValue) == 0;
+                            isZero = Math.Abs((float)lhsValue) < float.Epsilon;
                             break;
 
                         case TypeCode.Int32:
