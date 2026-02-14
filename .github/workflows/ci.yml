@@ -77,10 +77,6 @@ jobs:
       - name: Build project
         run: dotnet build --no-restore --configuration Release
 
-      - name: Make script executable
-        run: chmod +x ./CI_Pack_Push.ps1
-        shell: bash
-
       - name: Publish to GitHub Packages
         shell: pwsh
         run: |
