@@ -3,6 +3,7 @@
 [![Build Status](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.Activities.Rules/actions/workflows/ci.yml/badge.svg)](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.Activities.Rules/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.Activities.Rules/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.Activities.Rules/actions/workflows/github-code-scanning/codeql)
 [![codecov](https://codecov.io/gh/BpsLogicBuilder/LogicBuilder.Workflow.Activities.Rules/graph/badge.svg?token=4LC956TUIF)](https://codecov.io/gh/BpsLogicBuilder/LogicBuilder.Workflow.Activities.Rules)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=BpsLogicBuilder_LogicBuilder.Workflow.Activities.Rules&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=BpsLogicBuilder_LogicBuilder.Workflow.Activities.Rules)
 [![NuGet](https://img.shields.io/nuget/v/LogicBuilder.Workflow.Activities.Rules.svg)](https://www.nuget.org/packages/LogicBuilder.Workflow.Activities.Rules)
 
 A powerful, forward-chaining rules engine for .NET that enables dynamic business rule evaluation and execution without recompilation. This library provides a flexible framework for defining, validating, and executing business rules using CodeDOM expressions.
