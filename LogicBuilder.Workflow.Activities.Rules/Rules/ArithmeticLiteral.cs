@@ -3306,7 +3306,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override object BitAnd(bool v)
         {
-            return (v & m_value);
+            return (v && m_value);
         }
         #endregion
         #region BitOr
@@ -3321,7 +3321,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         internal override object BitOr(bool v)
         {
-            return (v | m_value);
+            return (v || m_value);
         }
         #endregion
     }

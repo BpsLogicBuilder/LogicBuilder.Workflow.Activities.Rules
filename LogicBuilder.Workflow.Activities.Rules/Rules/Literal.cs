@@ -354,13 +354,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
             public static uint BitwiseAnd(uint x, uint y) { return x & y; }
             public static long BitwiseAnd(long x, long y) { return x & y; }
             public static ulong BitwiseAnd(ulong x, ulong y) { return x & y; }
-            public static bool BitwiseAnd(bool x, bool y) { return x & y; }
+            public static bool BitwiseAnd(bool x, bool y) { return x && y; }
 
             public static int BitwiseOr(int x, int y) { return x | y; }
             public static uint BitwiseOr(uint x, uint y) { return x | y; }
             public static long BitwiseOr(long x, long y) { return x | y; }
             public static ulong BitwiseOr(ulong x, ulong y) { return x | y; }
-            public static bool BitwiseOr(bool x, bool y) { return x | y; }
+            public static bool BitwiseOr(bool x, bool y) { return x || y; }
 
             public static bool Equality(int x, int y) { return x == y; }
             public static bool Equality(uint x, uint y) { return x == y; }
