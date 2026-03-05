@@ -273,6 +273,70 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Theory]
+        [InlineData((byte)100, (short)100, true)]
+        [InlineData((byte)100, (short)99, false)]
+        [InlineData((byte)0, (short)0, true)]
+        public void Equal_WithShort_DirectCall_ReturnsExpectedResult(byte byteValue, short shortValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.Equal(shortValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData((byte)100, (ushort)100, true)]
+        [InlineData((byte)100, (ushort)99, false)]
+        [InlineData((byte)0, (ushort)0, true)]
+        public void Equal_WithUShort_DirectCall_ReturnsExpectedResult(byte byteValue, ushort ushortValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.Equal(ushortValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData((byte)100, 100U, true)]
+        [InlineData((byte)100, 99U, false)]
+        [InlineData((byte)0, 0U, true)]
+        public void Equal_WithUInt_DirectCall_ReturnsExpectedResult(byte byteValue, uint uintValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.Equal(uintValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData((byte)100, 100L, true)]
+        [InlineData((byte)100, 99L, false)]
+        [InlineData((byte)0, 0L, true)]
+        public void Equal_WithLong_DirectCall_ReturnsExpectedResult(byte byteValue, long longValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.Equal(longValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
         [InlineData((byte)100, 100UL, true)]
         [InlineData((byte)100, 99UL, false)]
         [InlineData((byte)0, 0UL, true)]
@@ -286,6 +350,55 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData((byte)100, 100.0f, true)]
+        [InlineData((byte)100, 99.0f, false)]
+        [InlineData((byte)0, 0.0f, true)]
+        public void Equal_WithFloat_DirectCall_ReturnsExpectedResult(byte byteValue, float floatValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.Equal(floatValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData((byte)100, 100.0, true)]
+        [InlineData((byte)100, 99.0, false)]
+        [InlineData((byte)0, 0.0, true)]
+        public void Equal_WithDouble_DirectCall_ReturnsExpectedResult(byte byteValue, double doubleValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.Equal(doubleValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void Equal_WithDecimal_DirectCall_ReturnsExpectedResult()
+        {
+            // Arrange
+            var literal = new ByteLiteral(100);
+
+            // Act
+            bool resultEqual = literal.Equal(100m);
+            bool resultNotEqual = literal.Equal(99m);
+            bool resultZero = literal.Equal(0m);
+
+            // Assert
+            Assert.True(resultEqual);
+            Assert.False(resultNotEqual);
+            Assert.False(resultZero);
         }
         #endregion
 
@@ -469,6 +582,38 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Act
             bool result = literal.LessThan(floatValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData((byte)5, 10.0, true)]
+        [InlineData((byte)10, 5.0, false)]
+        [InlineData((byte)10, 10.0, false)]
+        public void LessThan_WithDouble_DirectCall_ReturnsExpectedResult(byte byteValue, double doubleValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.LessThan(doubleValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData((byte)5, 10, true)]
+        [InlineData((byte)10, 5, false)]
+        [InlineData((byte)10, 10, false)]
+        public void LessThan_WithInt_DirectCall_ReturnsExpectedResult(byte byteValue, int intValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.LessThan(intValue);
 
             // Assert
             Assert.Equal(expected, result);
@@ -675,6 +820,38 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Equal(expected, result);
         }
 
+        [Theory]
+        [InlineData((byte)10, 5.0, true)]
+        [InlineData((byte)5, 10.0, false)]
+        [InlineData((byte)10, 10.0, false)]
+        public void GreaterThan_WithDouble_DirectCall_ReturnsExpectedResult(byte byteValue, double doubleValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.GreaterThan(doubleValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData((byte)10, 5, true)]
+        [InlineData((byte)5, 10, false)]
+        [InlineData((byte)10, 10, false)]
+        public void GreaterThan_WithInt_DirectCall_ReturnsExpectedResult(byte byteValue, int intValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.GreaterThan(intValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
         [Fact]
         public void GreaterThan_WithDecimal_ReturnsExpectedResult()
         {
@@ -875,6 +1052,38 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Equal(expected, result);
         }
 
+        [Theory]
+        [InlineData((byte)5, 10.0, true)]
+        [InlineData((byte)10, 10.0, true)]
+        [InlineData((byte)10, 5.0, false)]
+        public void LessThanOrEqual_WithDouble_DirectCall_ReturnsExpectedResult(byte byteValue, double doubleValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.LessThanOrEqual(doubleValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData((byte)5, 10, true)]
+        [InlineData((byte)10, 10, true)]
+        [InlineData((byte)10, 5, false)]
+        public void LessThanOrEqual_WithInt_DirectCall_ReturnsExpectedResult(byte byteValue, int intValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.LessThanOrEqual(intValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
         [Fact]
         public void LessThanOrEqual_WithDecimal_ReturnsExpectedResult()
         {
@@ -1070,6 +1279,38 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Act
             bool result = literal.GreaterThanOrEqual(floatValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData((byte)10, 5.0, true)]
+        [InlineData((byte)10, 10.0, true)]
+        [InlineData((byte)5, 10.0, false)]
+        public void GreaterThanOrEqual_WithDouble_DirectCall_ReturnsExpectedResult(byte byteValue, double doubleValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.GreaterThanOrEqual(doubleValue);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData((byte)10, 5, true)]
+        [InlineData((byte)10, 10, true)]
+        [InlineData((byte)5, 10, false)]
+        public void GreaterThanOrEqual_WithInt_DirectCall_ReturnsExpectedResult(byte byteValue, int intValue, bool expected)
+        {
+            // Arrange
+            var literal = new ByteLiteral(byteValue);
+
+            // Act
+            bool result = literal.GreaterThanOrEqual(intValue);
 
             // Assert
             Assert.Equal(expected, result);
