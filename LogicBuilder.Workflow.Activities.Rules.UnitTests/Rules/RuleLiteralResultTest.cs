@@ -51,7 +51,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(true, result.Value);
+            Assert.True((bool)result.Value);
         }
 
         [Fact]

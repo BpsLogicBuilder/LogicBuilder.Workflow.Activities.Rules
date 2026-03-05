@@ -34,7 +34,7 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="LogicBuilder.Workflow.ComponentModel.Serialization" Version="2.0.7" />
+    <PackageReference Include="LogicBuilder.Workflow.ComponentModel.Serialization" Version="2.0.8" />
     <PackageReference Include="MinVer" Version="7.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

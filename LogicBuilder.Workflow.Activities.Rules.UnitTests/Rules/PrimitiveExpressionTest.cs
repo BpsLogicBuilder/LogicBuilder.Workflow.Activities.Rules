@@ -125,6 +125,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Act & Assert - Should not throw
             _primitiveExpression.AnalyzeUsage(expression, analysis, true, false, null);
+            Assert.True(true); // If we reach this point, the test has passed
         }
 
         #endregion
@@ -196,7 +197,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(true, result.Value);
+            Assert.True((bool)result.Value);
         }
 
         #endregion
@@ -444,9 +445,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
         private class TestClass
         {
-            public int IntProperty { get; set; }
             public string StringProperty { get; set; } = string.Empty;
-            public bool BoolProperty { get; set; }
         }
 
         #endregion

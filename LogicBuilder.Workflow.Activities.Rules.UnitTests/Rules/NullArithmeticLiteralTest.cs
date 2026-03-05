@@ -863,7 +863,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(false, result);
+            Assert.False((bool)result);
         }
         #endregion
 
@@ -984,7 +984,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(true, result);
+            Assert.True((bool)result);
         }
         #endregion
 
@@ -1057,7 +1057,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(false, result);
+            Assert.False((bool)result);
         }
 
         [Fact]
@@ -1086,7 +1086,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(true, result);
+            Assert.True((bool)result);
         }
 
         [Fact]

@@ -51,7 +51,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         /// Group types by characteristics so we can check if operation is allowed
         /// </summary>
         [Flags()]
-        private enum TypeFlags
+        private enum TypeBits
         {
             UInt16 = 0x01,
             Int32 = 0x02,
@@ -69,7 +69,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         /// <summary>
         /// Collection of TypeFlags for the supported value types indexed by type
         /// </summary>
-        private static readonly Dictionary<Type, TypeFlags> supportedTypes = CreateSupportedTypesDictionary();
+        private static readonly Dictionary<Type, TypeBits> supportedTypes = CreateSupportedTypesDictionary();
 
         private static Dictionary<Type, LiteralMaker> CreateTypesDictionary()
         {
@@ -108,37 +108,37 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return dictionary;
         }
 
-        static private Dictionary<Type, TypeFlags> CreateSupportedTypesDictionary()
+        static private Dictionary<Type, TypeBits> CreateSupportedTypesDictionary()
         {
-            Dictionary<Type, TypeFlags> dictionary = new(26)
+            Dictionary<Type, TypeBits> dictionary = new(26)
             {
-                { typeof(byte), TypeFlags.UInt16 },
-                { typeof(byte?), TypeFlags.Nullable | TypeFlags.UInt16 },
-                { typeof(sbyte), TypeFlags.Int32 },
-                { typeof(sbyte?), TypeFlags.Nullable | TypeFlags.Int32 },
-                { typeof(char), TypeFlags.UInt16 },
-                { typeof(char?), TypeFlags.Nullable | TypeFlags.UInt16 },
-                { typeof(short), TypeFlags.Int32 },
-                { typeof(short?), TypeFlags.Nullable | TypeFlags.Int32 },
-                { typeof(int), TypeFlags.Int32 },
-                { typeof(int?), TypeFlags.Nullable | TypeFlags.Int32 },
-                { typeof(long), TypeFlags.Int64 },
-                { typeof(long?), TypeFlags.Nullable | TypeFlags.Int64 },
-                { typeof(ushort), TypeFlags.UInt16 },
-                { typeof(ushort?), TypeFlags.Nullable | TypeFlags.UInt16 },
-                { typeof(uint), TypeFlags.UInt32 },
-                { typeof(uint?), TypeFlags.Nullable | TypeFlags.UInt32 },
-                { typeof(ulong), TypeFlags.UInt64 },
-                { typeof(ulong?), TypeFlags.Nullable | TypeFlags.UInt64 },
-                { typeof(float), TypeFlags.Single },
-                { typeof(float?), TypeFlags.Nullable | TypeFlags.Single },
-                { typeof(double), TypeFlags.Double },
-                { typeof(double?), TypeFlags.Nullable | TypeFlags.Double },
-                { typeof(decimal), TypeFlags.Decimal },
-                { typeof(decimal?), TypeFlags.Nullable | TypeFlags.Decimal },
-                { typeof(bool), TypeFlags.Boolean },
-                { typeof(bool?), TypeFlags.Nullable | TypeFlags.Boolean },
-                { typeof(string), TypeFlags.String }
+                { typeof(byte), TypeBits.UInt16 },
+                { typeof(byte?), TypeBits.Nullable | TypeBits.UInt16 },
+                { typeof(sbyte), TypeBits.Int32 },
+                { typeof(sbyte?), TypeBits.Nullable | TypeBits.Int32 },
+                { typeof(char), TypeBits.UInt16 },
+                { typeof(char?), TypeBits.Nullable | TypeBits.UInt16 },
+                { typeof(short), TypeBits.Int32 },
+                { typeof(short?), TypeBits.Nullable | TypeBits.Int32 },
+                { typeof(int), TypeBits.Int32 },
+                { typeof(int?), TypeBits.Nullable | TypeBits.Int32 },
+                { typeof(long), TypeBits.Int64 },
+                { typeof(long?), TypeBits.Nullable | TypeBits.Int64 },
+                { typeof(ushort), TypeBits.UInt16 },
+                { typeof(ushort?), TypeBits.Nullable | TypeBits.UInt16 },
+                { typeof(uint), TypeBits.UInt32 },
+                { typeof(uint?), TypeBits.Nullable | TypeBits.UInt32 },
+                { typeof(ulong), TypeBits.UInt64 },
+                { typeof(ulong?), TypeBits.Nullable | TypeBits.UInt64 },
+                { typeof(float), TypeBits.Single },
+                { typeof(float?), TypeBits.Nullable | TypeBits.Single },
+                { typeof(double), TypeBits.Double },
+                { typeof(double?), TypeBits.Nullable | TypeBits.Double },
+                { typeof(decimal), TypeBits.Decimal },
+                { typeof(decimal?), TypeBits.Nullable | TypeBits.Decimal },
+                { typeof(bool), TypeBits.Boolean },
+                { typeof(bool?), TypeBits.Nullable | TypeBits.Boolean },
+                { typeof(string), TypeBits.String }
             };
             return dictionary;
         }
@@ -306,7 +306,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             out ValidationError error)
         {
             // do we support the types natively?
-            if (supportedTypes.TryGetValue(lhs, out TypeFlags lhsType) && supportedTypes.TryGetValue(rhs, out TypeFlags rhsType))
+            if (supportedTypes.TryGetValue(lhs, out TypeBits lhsType) && supportedTypes.TryGetValue(rhs, out TypeBits rhsType))
             {
                 Type resultType = ResultType(operation, lhsType, rhsType);
                 if (resultType != null)
@@ -333,96 +333,113 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        private static Type ResultType(CodeBinaryOperatorType operation, TypeFlags lhsType, TypeFlags rhsType)
+        private static Type ResultType(CodeBinaryOperatorType operation, TypeBits lhsType, TypeBits rhsType)
         {
-            TypeFlags combined = (lhsType | rhsType);
-            bool nullable = (combined & TypeFlags.Nullable) == TypeFlags.Nullable;
-            if (nullable) combined ^= TypeFlags.Nullable;
+            TypeBits combined = (lhsType | rhsType);
+            bool nullable = (combined & TypeBits.Nullable) == TypeBits.Nullable;
+            if (nullable) combined ^= TypeBits.Nullable;
 
             switch (operation)
             {
                 case CodeBinaryOperatorType.Add:
                     // string + anything or anything + string always work
-                    if ((lhsType == TypeFlags.String) || (rhsType == TypeFlags.String))
+                    if ((lhsType == TypeBits.String) || (rhsType == TypeBits.String))
                         return typeof(string);
-                    goto case CodeBinaryOperatorType.Divide;
+
+                    return GetResultTypeForArithmeticOperations(combined, nullable);
 
                 case CodeBinaryOperatorType.Divide:
                 case CodeBinaryOperatorType.Modulus:
                 case CodeBinaryOperatorType.Multiply:
                 case CodeBinaryOperatorType.Subtract:
-                    switch (combined)
-                    {
-                        case TypeFlags.Decimal:
-                        case TypeFlags.Decimal | TypeFlags.UInt16:
-                        case TypeFlags.Decimal | TypeFlags.Int32:
-                        case TypeFlags.Decimal | TypeFlags.UInt32:
-                        case TypeFlags.Decimal | TypeFlags.Int64:
-                        case TypeFlags.Decimal | TypeFlags.UInt64:
-                            return (nullable) ? typeof(decimal?) : typeof(decimal);
-                        case TypeFlags.Double:
-                        case TypeFlags.Double | TypeFlags.UInt16:
-                        case TypeFlags.Double | TypeFlags.Int32:
-                        case TypeFlags.Double | TypeFlags.UInt32:
-                        case TypeFlags.Double | TypeFlags.Int64:
-                        case TypeFlags.Double | TypeFlags.UInt64:
-                        case TypeFlags.Double | TypeFlags.Single:
-                            return (nullable) ? typeof(double?) : typeof(double);
-                        case TypeFlags.Single:
-                        case TypeFlags.Single | TypeFlags.UInt16:
-                        case TypeFlags.Single | TypeFlags.Int32:
-                        case TypeFlags.Single | TypeFlags.UInt32:
-                        case TypeFlags.Single | TypeFlags.Int64:
-                        case TypeFlags.Single | TypeFlags.UInt64:
-                            return (nullable) ? typeof(float?) : typeof(float);
-                        case TypeFlags.Int64:
-                        case TypeFlags.Int64 | TypeFlags.UInt16:
-                        case TypeFlags.Int64 | TypeFlags.Int32:
-                        case TypeFlags.Int64 | TypeFlags.UInt32:
-                        case TypeFlags.Int32 | TypeFlags.UInt32:
-                            return (nullable) ? typeof(long?) : typeof(long);
-                        case TypeFlags.UInt64:
-                        case TypeFlags.UInt64 | TypeFlags.UInt16:
-                        case TypeFlags.UInt64 | TypeFlags.UInt32:
-                            return (nullable) ? typeof(ulong?) : typeof(ulong);
-                        case TypeFlags.Int32:
-                        case TypeFlags.UInt16:
-                        case TypeFlags.Int32 | TypeFlags.UInt16:
-                            return (nullable) ? typeof(int?) : typeof(int);
-                        case TypeFlags.UInt32:
-                        case TypeFlags.UInt32 | TypeFlags.UInt16:
-                            return (nullable) ? typeof(uint?) : typeof(uint);
-                    }
-                    break;
+                    return GetResultTypeForArithmeticOperations(combined, nullable);
 
                 case CodeBinaryOperatorType.BitwiseAnd:
                 case CodeBinaryOperatorType.BitwiseOr:
-                    switch (combined)
-                    {
-                        case TypeFlags.Int64:
-                        case TypeFlags.Int64 | TypeFlags.UInt16:
-                        case TypeFlags.Int64 | TypeFlags.Int32:
-                        case TypeFlags.Int64 | TypeFlags.UInt32:
-                        case TypeFlags.Int32 | TypeFlags.UInt32:
-                            return (nullable) ? typeof(long?) : typeof(long);
-                        case TypeFlags.UInt64:
-                        case TypeFlags.UInt64 | TypeFlags.UInt16:
-                        case TypeFlags.UInt64 | TypeFlags.UInt32:
-                            return (nullable) ? typeof(ulong?) : typeof(ulong);
-                        case TypeFlags.Int32:
-                        case TypeFlags.UInt16:
-                        case TypeFlags.Int32 | TypeFlags.UInt16:
-                            return (nullable) ? typeof(int?) : typeof(int);
-                        case TypeFlags.UInt32:
-                        case TypeFlags.UInt32 | TypeFlags.UInt16:
-                            return (nullable) ? typeof(uint?) : typeof(uint);
-                        case TypeFlags.Boolean:
-                            return (nullable) ? typeof(bool?) : typeof(bool);
-                    }
-                    break;
+                    return GetResultTypeForBitwiseOperations(combined, nullable);
             }
+
+            return null;
+
+            
+        }
+
+        private static Type GetResultTypeForBitwiseOperations(TypeBits combined, bool nullable)
+        {
+            switch (combined)
+            {
+                case TypeBits.Int64:
+                case TypeBits.Int64 | TypeBits.UInt16:
+                case TypeBits.Int64 | TypeBits.Int32:
+                case TypeBits.Int64 | TypeBits.UInt32:
+                case TypeBits.Int32 | TypeBits.UInt32:
+                    return (nullable) ? typeof(long?) : typeof(long);
+                case TypeBits.UInt64:
+                case TypeBits.UInt64 | TypeBits.UInt16:
+                case TypeBits.UInt64 | TypeBits.UInt32:
+                    return (nullable) ? typeof(ulong?) : typeof(ulong);
+                case TypeBits.Int32:
+                case TypeBits.UInt16:
+                case TypeBits.Int32 | TypeBits.UInt16:
+                    return (nullable) ? typeof(int?) : typeof(int);
+                case TypeBits.UInt32:
+                case TypeBits.UInt32 | TypeBits.UInt16:
+                    return (nullable) ? typeof(uint?) : typeof(uint);
+                case TypeBits.Boolean:
+                    return (nullable) ? typeof(bool?) : typeof(bool);
+            }
+
             return null;
         }
+
+        private static Type GetResultTypeForArithmeticOperations(TypeBits combined, bool nullable)
+        {
+            switch (combined)
+            {
+                case TypeBits.Decimal:
+                case TypeBits.Decimal | TypeBits.UInt16:
+                case TypeBits.Decimal | TypeBits.Int32:
+                case TypeBits.Decimal | TypeBits.UInt32:
+                case TypeBits.Decimal | TypeBits.Int64:
+                case TypeBits.Decimal | TypeBits.UInt64:
+                    return (nullable) ? typeof(decimal?) : typeof(decimal);
+                case TypeBits.Double:
+                case TypeBits.Double | TypeBits.UInt16:
+                case TypeBits.Double | TypeBits.Int32:
+                case TypeBits.Double | TypeBits.UInt32:
+                case TypeBits.Double | TypeBits.Int64:
+                case TypeBits.Double | TypeBits.UInt64:
+                case TypeBits.Double | TypeBits.Single:
+                    return (nullable) ? typeof(double?) : typeof(double);
+                case TypeBits.Single:
+                case TypeBits.Single | TypeBits.UInt16:
+                case TypeBits.Single | TypeBits.Int32:
+                case TypeBits.Single | TypeBits.UInt32:
+                case TypeBits.Single | TypeBits.Int64:
+                case TypeBits.Single | TypeBits.UInt64:
+                    return (nullable) ? typeof(float?) : typeof(float);
+                case TypeBits.Int64:
+                case TypeBits.Int64 | TypeBits.UInt16:
+                case TypeBits.Int64 | TypeBits.Int32:
+                case TypeBits.Int64 | TypeBits.UInt32:
+                case TypeBits.Int32 | TypeBits.UInt32:
+                    return (nullable) ? typeof(long?) : typeof(long);
+                case TypeBits.UInt64:
+                case TypeBits.UInt64 | TypeBits.UInt16:
+                case TypeBits.UInt64 | TypeBits.UInt32:
+                    return (nullable) ? typeof(ulong?) : typeof(ulong);
+                case TypeBits.Int32:
+                case TypeBits.UInt16:
+                case TypeBits.Int32 | TypeBits.UInt16:
+                    return (nullable) ? typeof(int?) : typeof(int);
+                case TypeBits.UInt32:
+                case TypeBits.UInt32 | TypeBits.UInt16:
+                    return (nullable) ? typeof(uint?) : typeof(uint);
+            }
+
+            return null;
+        }
+
         #endregion
 
         #region Value Type Dispatch Methods

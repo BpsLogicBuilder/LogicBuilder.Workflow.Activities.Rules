@@ -29,6 +29,24 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Value3 = 3
         }
 
+        // Helper class with implicit conversion operator
+        private class ConvertibleType
+        {
+            public int Value { get; set; }
+
+            public static implicit operator int(ConvertibleType c) => c.Value;
+            public static implicit operator ConvertibleType(int i) => new ConvertibleType { Value = i };
+        }
+
+        // Helper class with explicit conversion operator
+        private class ExplicitConvertibleType
+        {
+            public int Value { get; set; }
+
+            public static explicit operator int(ExplicitConvertibleType c) => c.Value;
+            public static explicit operator ExplicitConvertibleType(int i) => new ExplicitConvertibleType { Value = i };
+        }
+
         #endregion
 
         #region Preprocess Tests
@@ -115,6 +133,75 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Equal(2, result.Count);
             Assert.Equal("Active1", result[0].Rule.Name);
             Assert.Equal("Active2", result[1].Rule.Name);
+        }
+
+        [Fact]
+        public void Preprocess_WithFullChaining_AnalyzesRuleDependencies()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            
+            var condition1 = new RuleExpressionCondition
+            {
+                Expression = new CodePropertyReferenceExpression(
+                    new CodeThisReferenceExpression(), "IntProperty")
+            };
+            condition1.Validate(validation);
+
+            var action1 = new RuleStatementAction
+            {
+                CodeDomStatement = new CodeAssignStatement(
+                    new CodePropertyReferenceExpression(
+                        new CodeThisReferenceExpression(), "StringProperty"),
+                    new CodePrimitiveExpression("modified"))
+            };
+            action1.Validate(validation);
+
+            var rule1 = new Rule("Rule1", condition1, [action1]) { Active = true, Priority = 10 };
+
+            var condition2 = new RuleExpressionCondition
+            {
+                Expression = new CodePropertyReferenceExpression(
+                    new CodeThisReferenceExpression(), "StringProperty")
+            };
+            condition2.Validate(validation);
+
+            var rule2 = new Rule("Rule2", condition2, null) { Active = true, Priority = 5 };
+
+            var rules = new List<Rule> { rule1, rule2 };
+
+            // Act
+            var result = Executor.Preprocess(RuleChainingBehavior.Full, rules, validation, null);
+
+            // Assert
+            Assert.Equal(2, result.Count);
+            Assert.NotNull(result[0].ThenActionsActiveRules);
+        }
+
+        [Fact]
+        public void Preprocess_WithUpdateOnlyChaining_AnalyzesOnlyUpdateActions()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            
+            var condition = new RuleExpressionCondition
+            {
+                Expression = new CodePrimitiveExpression(true)
+            };
+            condition.Validate(validation);
+
+            var updateAction = new RuleUpdateAction("IntProperty");
+            updateAction.Validate(validation);
+
+            var rule = new Rule("UpdateRule", condition, [updateAction]) { Active = true, Priority = 10 };
+
+            var rules = new List<Rule> { rule };
+
+            // Act
+            var result = Executor.Preprocess(RuleChainingBehavior.UpdateOnly, rules, validation, null);
+
+            // Assert
+            Assert.Single(result);
         }
 
         #endregion
@@ -228,6 +315,51 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.True(execution.Halted);
+        }
+
+        [Fact]
+        public void ExecuteRuleSet_WithReevaluationAlways_RerunsRule()
+        {
+            // Arrange
+            var testObject = new TestClass { IntProperty = 0 };
+            var validation = new RuleValidation(typeof(TestClass));
+            var execution = new RuleExecution(validation, testObject);
+
+            var condition = new RuleExpressionCondition
+            {
+                Expression = new CodeBinaryOperatorExpression(
+                    new CodePropertyReferenceExpression(
+                        new CodeThisReferenceExpression(), "IntProperty"),
+                    CodeBinaryOperatorType.LessThan,
+                    new CodePrimitiveExpression(3))
+            };
+            condition.Validate(validation);
+
+            var action = new RuleStatementAction
+            {
+                CodeDomStatement = new CodeAssignStatement(
+                    new CodePropertyReferenceExpression(
+                        new CodeThisReferenceExpression(), "IntProperty"),
+                    new CodeBinaryOperatorExpression(
+                        new CodePropertyReferenceExpression(
+                            new CodeThisReferenceExpression(), "IntProperty"),
+                        CodeBinaryOperatorType.Add,
+                        new CodePrimitiveExpression(1)))
+            };
+            action.Validate(validation);
+
+            var rule = new Rule("CounterRule", condition, [action]) 
+            { 
+                ReevaluationBehavior = RuleReevaluationBehavior.Always 
+            };
+
+            var orderedRules = Executor.Preprocess(RuleChainingBehavior.Full, [rule], validation, null);
+
+            // Act
+            Executor.ExecuteRuleSet(orderedRules, execution, null);
+
+            // Assert - Rule should execute multiple times
+            Assert.Equal(3, testObject.IntProperty);
         }
 
         #endregion
@@ -497,6 +629,153 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Equal('A', result);
         }
 
+        [Fact]
+        public void AdjustType_CharToFloat_ConvertsSuccessfully()
+        {
+            // Arrange
+            char value = 'A';
+
+            // Act
+            var result = Executor.AdjustType(typeof(char), value, typeof(float));
+
+            // Assert
+            Assert.IsType<float>(result);
+            Assert.Equal(65.0f, result);
+        }
+
+        [Fact]
+        public void AdjustType_CharToDecimal_ConvertsSuccessfully()
+        {
+            // Arrange
+            char value = 'B';
+
+            // Act
+            var result = Executor.AdjustType(typeof(char), value, typeof(decimal));
+
+            // Assert
+            Assert.IsType<decimal>(result);
+            Assert.Equal(66m, result);
+        }
+
+        [Fact]
+        public void AdjustType_FloatToChar_ConvertsSuccessfully()
+        {
+            // Arrange
+            float value = 66.0f;
+
+            // Act
+            var result = Executor.AdjustType(typeof(float), value, typeof(char));
+
+            // Assert
+            Assert.IsType<char>(result);
+            Assert.Equal('B', result); // Rounds to 66
+        }
+
+        [Fact]
+        public void AdjustType_DoubleToChar_ConvertsSuccessfully()
+        {
+            // Arrange
+            double value = 90.2;
+
+            // Act
+            var result = Executor.AdjustType(typeof(double), value, typeof(char));
+
+            // Assert
+            Assert.IsType<char>(result);
+            Assert.Equal('Z', result);
+        }
+
+        [Fact]
+        public void AdjustType_DecimalToFloat_ConvertsSuccessfully()
+        {
+            // Arrange
+            decimal value = 123.45m;
+
+            // Act
+            var result = Executor.AdjustType(typeof(decimal), value, typeof(float));
+
+            // Assert
+            Assert.IsType<float>(result);
+            Assert.Equal(123.45f, (float)result, 2);
+        }
+
+        [Fact]
+        public void AdjustType_ByteToNullableInt_ConvertsSuccessfully()
+        {
+            // Arrange
+            byte value = 100;
+
+            // Act
+            var result = Executor.AdjustType(typeof(byte), value, typeof(int?));
+
+            // Assert
+            Assert.IsType<int>(result);
+            Assert.Equal(100, result);
+        }
+
+        [Fact]
+        public void AdjustType_NullableIntToNullableInt_WithNull_ReturnsNull()
+        {
+            // Act
+            var result = Executor.AdjustType(typeof(int?), null, typeof(int?));
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void AdjustType_ShortToLong_ConvertsSuccessfully()
+        {
+            // Arrange
+            short value = 1000;
+
+            // Act
+            var result = Executor.AdjustType(typeof(short), value, typeof(long));
+
+            // Assert
+            Assert.IsType<long>(result);
+            Assert.Equal(1000L, result);
+        }
+
+        [Fact]
+        public void AdjustType_SByteToInt_ConvertsSuccessfully()
+        {
+            // Arrange
+            sbyte value = -50;
+
+            // Act
+            var result = Executor.AdjustType(typeof(sbyte), value, typeof(int));
+
+            // Assert
+            Assert.IsType<int>(result);
+            Assert.Equal(-50, result);
+        }
+
+        [Fact]
+        public void AdjustType_UIntToLong_ConvertsSuccessfully()
+        {
+            // Arrange
+            uint value = 5000;
+
+            // Act
+            var result = Executor.AdjustType(typeof(uint), value, typeof(long));
+
+            // Assert
+            Assert.IsType<long>(result);
+            Assert.Equal(5000L, result);
+        }
+
+        [Fact]
+        public void AdjustType_IncompatibleTypes_ThrowsRuleEvaluationException()
+        {
+            // Arrange
+            string value = "test";
+
+            // Act & Assert
+            Assert.Throws<RuleEvaluationException>(() =>
+                Executor.AdjustType(typeof(string), value, typeof(int)));
+        }
+
         #endregion
 
         #region AdjustTypeWithCast Tests
@@ -606,6 +885,95 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Assert
             Assert.IsType<short>(result);
             Assert.Equal((short)90, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_DecimalToByte_ConvertsSuccessfully()
+        {
+            // Arrange
+            decimal value = 200m;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(decimal), value, typeof(byte));
+
+            // Assert
+            Assert.IsType<byte>(result);
+            Assert.Equal((byte)200, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_DoubleToFloat_ConvertsSuccessfully()
+        {
+            // Arrange
+            double value = 3.14159;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(double), value, typeof(float));
+
+            // Assert
+            Assert.IsType<float>(result);
+            Assert.Equal(3.14159f, (float)result, 5);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_LongToByte_ConvertsSuccessfully()
+        {
+            // Arrange
+            long value = 128L;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(long), value, typeof(byte));
+
+            // Assert
+            Assert.IsType<byte>(result);
+            Assert.Equal((byte)128, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_FloatToByte_ConvertsSuccessfully()
+        {
+            // Arrange
+            float value = 99.5f;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(float), value, typeof(byte));
+
+            // Assert
+            Assert.IsType<byte>(result);
+            Assert.Equal((byte)100, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_IntToSByte_ConvertsSuccessfully()
+        {
+            // Arrange
+            int value = -100;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(int), value, typeof(sbyte));
+
+            // Assert
+            Assert.IsType<sbyte>(result);
+            Assert.Equal((sbyte)-100, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_NullToValueType_ThrowsInvalidCastException()
+        {
+            // Act & Assert
+            Assert.Throws<InvalidCastException>(() =>
+                Executor.AdjustTypeWithCast(typeof(object), null, typeof(int)));
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_IncompatibleTypes_ThrowsRuleEvaluationException()
+        {
+            // Arrange
+            string value = "test";
+
+            // Act & Assert
+            Assert.Throws<RuleEvaluationException>(() =>
+                Executor.AdjustTypeWithCast(typeof(string), value, typeof(int)));
         }
 
         #endregion

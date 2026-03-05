@@ -10,7 +10,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var literal = new BooleanArithmeticLiteral(true);
 
             // Assert
-            Assert.Equal(true, literal.Value);
+            Assert.True((bool)literal.Value);
             Assert.Equal(typeof(bool), literal.m_type);
         }
 
@@ -21,7 +21,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var literal = new BooleanArithmeticLiteral(false);
 
             // Assert
-            Assert.Equal(false, literal.Value);
+            Assert.False((bool)literal.Value);
             Assert.Equal(typeof(bool), literal.m_type);
         }
 
@@ -36,7 +36,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.IsType<bool>(value);
-            Assert.Equal(true, value);
+            Assert.True((bool)value);
         }
         #endregion
 
@@ -232,7 +232,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var result = literal.BitAnd();
 
             // Assert
-            Assert.Equal(false, result);
+            Assert.False((bool)result);
         }
 
         [Theory]
@@ -263,7 +263,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var result = literal1.BitAnd(literal2);
 
             // Assert
-            Assert.Equal(true, result);
+            Assert.True((bool)result);
         }
 
         [Fact]
@@ -277,7 +277,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var result = literal1.BitAnd(literal2);
 
             // Assert
-            Assert.Equal(false, result);
+            Assert.False((bool)result);
         }
 
         [Fact]
@@ -305,7 +305,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var result = boolLiteral.BitAnd(nullLiteral);
 
             // Assert
-            Assert.Equal(false, result);
+            Assert.False((bool)result);
         }
 
         [Fact]
@@ -353,7 +353,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var result = literal.BitOr();
 
             // Assert
-            Assert.Equal(true, result);
+            Assert.True((bool)result);
         }
 
         [Fact]
@@ -397,7 +397,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var result = literal1.BitOr(literal2);
 
             // Assert
-            Assert.Equal(false, result);
+            Assert.False((bool)result);
         }
 
         [Fact]
@@ -411,7 +411,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var result = literal1.BitOr(literal2);
 
             // Assert
-            Assert.Equal(true, result);
+            Assert.True((bool)result);
         }
 
         [Fact]
@@ -425,7 +425,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var result = boolLiteral.BitOr(nullLiteral);
 
             // Assert
-            Assert.Equal(true, result);
+            Assert.True((bool)result);
         }
 
         [Fact]
