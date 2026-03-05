@@ -34,7 +34,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             public int Value { get; set; }
 
             public static implicit operator int(ConvertibleType c) => c.Value;
-            public static implicit operator ConvertibleType(int i) => new ConvertibleType { Value = i };
+            public static implicit operator ConvertibleType(int i) => new() { Value = i };
         }
 
         // Helper class with explicit conversion operator
@@ -43,7 +43,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             public int Value { get; set; }
 
             public static explicit operator int(ExplicitConvertibleType c) => c.Value;
-            public static explicit operator ExplicitConvertibleType(int i) => new ExplicitConvertibleType { Value = i };
+            public static explicit operator ExplicitConvertibleType(int i) => new() { Value = i };
         }
 
         #endregion
@@ -2042,6 +2042,657 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Assert
             Assert.IsType<ushort>(result);
             Assert.Equal((ushort)5000, result);
+        }
+
+        #endregion
+
+        #region Wildcard Path Matching Tests for AnalyzeSideEffects
+
+        [Fact]
+        public void Preprocess_WithWildcardSideEffectAndWildcardDependency_BothShorterString_MatchesCorrectly()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Rule 1: Updates "this/IntProperty/*"
+            var condition1 = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(true) };
+            condition1.Validate(validation);
+            var updateAction1 = new RuleUpdateAction("this/IntProperty/*");
+            updateAction1.Validate(validation);
+            var rule1 = new Rule("Rule1", condition1, [updateAction1]) { Active = true, Priority = 20 };
+
+            // Rule 2: Depends on "this/IntProperty/SubProperty/*"
+            var condition2 = new RuleExpressionCondition
+            {
+                Expression = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "IntProperty")
+            };
+            condition2.Validate(validation);
+            var rule2 = new Rule("Rule2", condition2, null) { Active = true, Priority = 10 };
+
+            // Act
+            var result = Executor.Preprocess(RuleChainingBehavior.UpdateOnly, [rule1, rule2], validation, null);
+
+            // Assert - Rule1's update should trigger Rule2
+            Assert.Equal(2, result.Count);
+            Assert.NotNull(result[0].ThenActionsActiveRules);
+        }
+
+        [Fact]
+        public void Preprocess_WithWildcardSideEffectMatchingNonWildcardDependency_MatchesCorrectly()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Rule 1: Updates "this/IntProperty/*" (wildcard)
+            var condition1 = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(true) };
+            condition1.Validate(validation);
+            var updateAction1 = new RuleUpdateAction("this/IntProperty/*");
+            updateAction1.Validate(validation);
+            var rule1 = new Rule("Rule1", condition1, [updateAction1]) { Active = true, Priority = 20 };
+
+            // Rule 2: Depends on "this/IntProperty/Value" (non-wildcard, with trailing slash)
+            var condition2 = new RuleExpressionCondition
+            {
+                Expression = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "IntProperty")
+            };
+            condition2.Validate(validation);
+            var rule2 = new Rule("Rule2", condition2, null) { Active = true, Priority = 10 };
+
+            // Act
+            var result = Executor.Preprocess(RuleChainingBehavior.UpdateOnly, [rule1, rule2], validation, null);
+
+            // Assert
+            Assert.Equal(2, result.Count);
+        }
+
+        [Fact]
+        public void Preprocess_WithNonWildcardSideEffectMatchingWildcardDependency_LongerString_MatchesCorrectly()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Rule 1: Updates "this/IntProperty/SubProperty" (non-wildcard, longer)
+            var condition1 = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(true) };
+            condition1.Validate(validation);
+            var updateAction1 = new RuleUpdateAction("this/IntProperty/SubProperty");
+            updateAction1.Validate(validation);
+            var rule1 = new Rule("Rule1", condition1, [updateAction1]) { Active = true, Priority = 20 };
+
+            // Rule 2: Depends on "this/*" (wildcard, shorter)
+            var condition2 = new RuleExpressionCondition
+            {
+                Expression = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "IntProperty")
+            };
+            condition2.Validate(validation);
+            var rule2 = new Rule("Rule2", condition2, null) { Active = true, Priority = 10 };
+
+            // Act
+            var result = Executor.Preprocess(RuleChainingBehavior.UpdateOnly, [rule1, rule2], validation, null);
+
+            // Assert
+            Assert.Equal(2, result.Count);
+        }
+
+        [Fact]
+        public void Preprocess_WithNonWildcardSideEffectMatchingWildcardDependency_ShorterString_MatchesCorrectly()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Rule 1: Updates "this/Int" (non-wildcard, shorter)
+            var condition1 = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(true) };
+            condition1.Validate(validation);
+            var updateAction1 = new RuleUpdateAction("this/Int");
+            updateAction1.Validate(validation);
+            var rule1 = new Rule("Rule1", condition1, [updateAction1]) { Active = true, Priority = 20 };
+
+            // Rule 2: Depends on "this/IntProperty/*" (wildcard, longer)
+            var condition2 = new RuleExpressionCondition
+            {
+                Expression = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "IntProperty")
+            };
+            condition2.Validate(validation);
+            var rule2 = new Rule("Rule2", condition2, null) { Active = true, Priority = 10 };
+
+            // Act
+            var result = Executor.Preprocess(RuleChainingBehavior.UpdateOnly, [rule1, rule2], validation, null);
+
+            // Assert
+            Assert.Equal(2, result.Count);
+        }
+
+        [Fact]
+        public void Preprocess_WithNonWildcardSideEffectAsExactPrefixOfDependency_MatchesCorrectly()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Rule 1: Updates "this/IntProperty" (exact prefix)
+            var condition1 = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(true) };
+            condition1.Validate(validation);
+            var updateAction1 = new RuleUpdateAction("this/IntProperty");
+            updateAction1.Validate(validation);
+            var rule1 = new Rule("Rule1", condition1, [updateAction1]) { Active = true, Priority = 20 };
+
+            // Rule 2: Depends on "this/IntProperty/Value"
+            var condition2 = new RuleExpressionCondition
+            {
+                Expression = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "IntProperty")
+            };
+            condition2.Validate(validation);
+            var rule2 = new Rule("Rule2", condition2, null) { Active = true, Priority = 10 };
+
+            // Act
+            var result = Executor.Preprocess(RuleChainingBehavior.UpdateOnly, [rule1, rule2], validation, null);
+
+            // Assert
+            Assert.Equal(2, result.Count);
+        }
+
+        [Fact]
+        public void Preprocess_WithMultipleRulesAndComplexWildcardMatching_IdentifiesAllMatches()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Rule 1: Updates "this/IntProperty/*"
+            var condition1 = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(true) };
+            condition1.Validate(validation);
+            var updateAction1 = new RuleUpdateAction("this/IntProperty/*");
+            updateAction1.Validate(validation);
+            var rule1 = new Rule("Rule1", condition1, [updateAction1]) { Active = true, Priority = 30 };
+
+            // Rule 2: Depends on "this/IntProperty"
+            var condition2 = new RuleExpressionCondition
+            {
+                Expression = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "IntProperty")
+            };
+            condition2.Validate(validation);
+            var rule2 = new Rule("Rule2", condition2, null) { Active = true, Priority = 20 };
+
+            // Rule 3: Depends on "this/*"
+            var condition3 = new RuleExpressionCondition
+            {
+                Expression = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "StringProperty")
+            };
+            condition3.Validate(validation);
+            var rule3 = new Rule("Rule3", condition3, null) { Active = true, Priority = 10 };
+
+            // Act
+            var result = Executor.Preprocess(RuleChainingBehavior.UpdateOnly, [rule1, rule2, rule3], validation, null);
+
+            // Assert
+            Assert.Equal(3, result.Count);
+            Assert.NotNull(result[0].ThenActionsActiveRules);
+        }
+
+        [Fact]
+        public void Preprocess_WithNoMatchingDependencies_ReturnsNoActiveRules()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Rule 1: Updates "this/UnrelatedProperty"
+            var condition1 = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(true) };
+            condition1.Validate(validation);
+            var updateAction1 = new RuleUpdateAction("this/UnrelatedProperty");
+            updateAction1.Validate(validation);
+            var rule1 = new Rule("Rule1", condition1, [updateAction1]) { Active = true, Priority = 20 };
+
+            // Rule 2: Depends on "this/IntProperty"
+            var condition2 = new RuleExpressionCondition
+            {
+                Expression = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "IntProperty")
+            };
+            condition2.Validate(validation);
+            var rule2 = new Rule("Rule2", condition2, null) { Active = true, Priority = 10 };
+
+            // Act
+            var result = Executor.Preprocess(RuleChainingBehavior.UpdateOnly, [rule1, rule2], validation, null);
+
+            // Assert
+            Assert.Equal(2, result.Count);
+        }
+
+        [Fact]
+        public void Preprocess_WithElseActionsContainingUpdates_AnalyzesElseActions()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Rule 1: Has else action with update
+            var condition1 = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(false) };
+            condition1.Validate(validation);
+            var updateAction1 = new RuleUpdateAction("IntProperty");
+            updateAction1.Validate(validation);
+            var rule1 = new Rule("Rule1", condition1, null, [updateAction1]) { Active = true, Priority = 20 };
+
+            // Rule 2: Depends on IntProperty
+            var condition2 = new RuleExpressionCondition
+            {
+                Expression = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "IntProperty")
+            };
+            condition2.Validate(validation);
+            var rule2 = new Rule("Rule2", condition2, null) { Active = true, Priority = 10 };
+
+            // Act
+            var result = Executor.Preprocess(RuleChainingBehavior.UpdateOnly, [rule1, rule2], validation, null);
+
+            // Assert
+            Assert.Equal(2, result.Count);
+            Assert.NotNull(result[0].ElseActionsActiveRules);
+        }
+
+        #endregion
+
+        #region Additional Type Conversion Edge Cases
+
+        [Fact]
+        public void AdjustType_NullableIntToNullableEnum_WithValue_ConvertsSuccessfully()
+        {
+            // Arrange
+            int? value = 2;
+
+            // Act
+            var result = Executor.AdjustType(typeof(int?), value, typeof(ValuesType?));
+
+            // Assert
+            Assert.IsType<ValuesType>(result);
+            Assert.Equal(ValuesType.Value2, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_NullableEnumToNullableInt_ConvertsSuccessfully()
+        {
+            // Arrange
+            ValuesType? value = ValuesType.Value3;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(ValuesType?), value, typeof(int?));
+
+            // Assert
+            Assert.IsType<int>(result);
+            Assert.Equal(3, result);
+        }
+
+        [Fact]
+        public void AdjustType_IntToNullableDouble_ConvertsSuccessfully()
+        {
+            // Arrange
+            int value = 100;
+
+            // Act
+            var result = Executor.AdjustType(typeof(int), value, typeof(double?));
+
+            // Assert
+            Assert.IsType<double>(result);
+            Assert.Equal(100.0, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_LongToNullableFloat_ConvertsSuccessfully()
+        {
+            // Arrange
+            long value = 50000L;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(long), value, typeof(float?));
+
+            // Assert
+            Assert.IsType<float>(result);
+            Assert.Equal(50000f, result);
+        }
+
+        [Fact]
+        public void AdjustType_NullableCharToInt_ConvertsSuccessfully()
+        {
+            // Arrange
+            char? value = 'M';
+
+            // Act
+            var result = Executor.AdjustType(typeof(char?), value, typeof(int));
+
+            // Assert
+            Assert.IsType<int>(result);
+            Assert.Equal(77, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_NullableByteToChar_ConvertsSuccessfully()
+        {
+            // Arrange
+            byte? value = 65;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(byte?), value, typeof(char));
+
+            // Assert
+            Assert.IsType<char>(result);
+            Assert.Equal('A', result);
+        }
+
+        [Fact]
+        public void AdjustType_CharToNullableDouble_ConvertsSuccessfully()
+        {
+            // Arrange
+            char value = 'Z';
+
+            // Act
+            var result = Executor.AdjustType(typeof(char), value, typeof(double?));
+
+            // Assert
+            Assert.IsType<double>(result);
+            Assert.Equal(90.0, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_FloatToNullableChar_ConvertsSuccessfully()
+        {
+            // Arrange
+            float value = 72.5f;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(float), value, typeof(char?));
+
+            // Assert
+            Assert.IsType<char>(result);
+            Assert.Equal('H', result); // Rounds to 72
+        }
+
+        [Fact]
+        public void AdjustType_DoubleToNullableChar_ConvertsSuccessfully()
+        {
+            // Arrange
+            double value = 66.8;
+
+            // Act
+            var result = Executor.AdjustType(typeof(double), value, typeof(char?));
+
+            // Assert
+            Assert.IsType<char>(result);
+            Assert.Equal('B', result); // Banker's rounding: 66.8 rounds to 66
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_DecimalToNullableChar_ConvertsSuccessfully()
+        {
+            // Arrange
+            decimal value = 88.2m;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(decimal), value, typeof(char?));
+
+            // Assert
+            Assert.IsType<char>(result);
+            Assert.Equal('X', result); // Rounds to 88
+        }
+
+        [Fact]
+        public void AdjustType_CharToNullableFloat_ConvertsSuccessfully()
+        {
+            // Arrange
+            char value = 'K';
+
+            // Act
+            var result = Executor.AdjustType(typeof(char), value, typeof(float?));
+
+            // Assert
+            Assert.IsType<float>(result);
+            Assert.Equal(75.0f, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_SByteToNullableLong_ConvertsSuccessfully()
+        {
+            // Arrange
+            sbyte value = -75;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(sbyte), value, typeof(long?));
+
+            // Assert
+            Assert.IsType<long>(result);
+            Assert.Equal(-75L, result);
+        }
+
+        [Fact]
+        public void AdjustType_UShortToNullableFloat_ConvertsSuccessfully()
+        {
+            // Arrange
+            ushort value = 32000;
+
+            // Act
+            var result = Executor.AdjustType(typeof(ushort), value, typeof(float?));
+
+            // Assert
+            Assert.IsType<float>(result);
+            Assert.Equal(32000f, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_ULongToNullableDouble_ConvertsSuccessfully()
+        {
+            // Arrange
+            ulong value = 999999999UL;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(ulong), value, typeof(double?));
+
+            // Assert
+            Assert.IsType<double>(result);
+            Assert.Equal(999999999.0, result);
+        }
+
+        [Fact]
+        public void AdjustType_NullableFloatToDecimal_ConvertsSuccessfully()
+        {
+            // Arrange
+            float? value = 456.78f;
+
+            // Act
+            var result = Executor.AdjustType(typeof(float?), value, typeof(decimal));
+
+            // Assert
+            Assert.IsType<decimal>(result);
+            Assert.Equal(456.78m, (decimal)result, 2);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_NullableDoubleToFloat_ConvertsSuccessfully()
+        {
+            // Arrange
+            double? value = 12345.6789;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(double?), value, typeof(float));
+
+            // Assert
+            Assert.IsType<float>(result);
+            Assert.Equal(12345.6789f, (float)result, 3);
+        }
+
+        [Fact]
+        public void AdjustType_NullableDecimalToFloat_ConvertsSuccessfully()
+        {
+            // Arrange
+            decimal? value = 777.88m;
+
+            // Act
+            var result = Executor.AdjustType(typeof(decimal?), value, typeof(float));
+
+            // Assert
+            Assert.IsType<float>(result);
+            Assert.Equal(777.88f, (float)result, 2);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_NullableDecimalToNullableFloat_ConvertsSuccessfully()
+        {
+            // Arrange
+            decimal? value = 333.44m;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(decimal?), value, typeof(float?));
+
+            // Assert
+            Assert.IsType<float>(result);
+            Assert.Equal(333.44f, (float)result, 2);
+        }
+
+        [Fact]
+        public void AdjustType_NullableShortToNullableLong_ConvertsSuccessfully()
+        {
+            // Arrange
+            short? value = 15000;
+
+            // Act
+            var result = Executor.AdjustType(typeof(short?), value, typeof(long?));
+
+            // Assert
+            Assert.IsType<long>(result);
+            Assert.Equal(15000L, result);
+        }
+
+        [Fact]
+        public void AdjustTypeWithCast_NullableUIntToNullableULong_ConvertsSuccessfully()
+        {
+            // Arrange
+            uint? value = 4000000000;
+
+            // Act
+            var result = Executor.AdjustTypeWithCast(typeof(uint?), value, typeof(ulong?));
+
+            // Assert
+            Assert.IsType<ulong>(result);
+            Assert.Equal(4000000000UL, result);
+        }
+
+        [Fact]
+        public void AdjustType_NullableByteToNullableDecimal_ConvertsSuccessfully()
+        {
+            // Arrange
+            byte? value = 255;
+
+            // Act
+            var result = Executor.AdjustType(typeof(byte?), value, typeof(decimal?));
+
+            // Assert
+            Assert.IsType<decimal>(result);
+            Assert.Equal(255m, result);
+        }
+
+        #endregion
+
+        #region ExecuteRuleSet Additional Edge Cases
+
+        [Fact]
+        public void ExecuteRuleSet_WithHaltInElseAction_StopsExecution()
+        {
+            // Arrange
+            var testObject = new TestClass { IntProperty = 10 };
+            var validation = new RuleValidation(typeof(TestClass));
+            var execution = new RuleExecution(validation, testObject);
+
+            var condition = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(false) };
+            condition.Validate(validation);
+
+            var haltAction = new RuleHaltAction();
+            haltAction.Validate(validation);
+
+            var rule = new Rule("HaltInElseRule", condition, null, [haltAction]);
+            var orderedRules = new List<RuleState> { new(rule) };
+
+            // Act
+            Executor.ExecuteRuleSet(orderedRules, execution, null);
+
+            // Assert
+            Assert.True(execution.Halted);
+        }
+
+        [Fact]
+        public void ExecuteRuleSet_WithMultipleActionsAndHalt_StopsAfterHalt()
+        {
+            // Arrange
+            var testObject = new TestClass { IntProperty = 10, StringProperty = "initial" };
+            var validation = new RuleValidation(typeof(TestClass));
+            var execution = new RuleExecution(validation, testObject);
+
+            var condition = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(true) };
+            condition.Validate(validation);
+
+            var action1 = new RuleStatementAction
+            {
+                CodeDomStatement = new CodeAssignStatement(
+                    new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "IntProperty"),
+                    new CodePrimitiveExpression(99))
+            };
+            action1.Validate(validation);
+
+            var haltAction = new RuleHaltAction();
+            haltAction.Validate(validation);
+
+            var action2 = new RuleStatementAction
+            {
+                CodeDomStatement = new CodeAssignStatement(
+                    new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "StringProperty"),
+                    new CodePrimitiveExpression("modified"))
+            };
+            action2.Validate(validation);
+
+            var rule = new Rule("MultiActionHaltRule", condition, [action1, haltAction, action2]);
+            var orderedRules = new List<RuleState> { new(rule) };
+
+            // Act
+            Executor.ExecuteRuleSet(orderedRules, execution, null);
+
+            // Assert
+            Assert.True(execution.Halted);
+            Assert.Equal(99, testObject.IntProperty); // First action executed
+            Assert.Equal("initial", testObject.StringProperty); // Action after halt didn't execute
+        }
+
+        [Fact]
+        public void ExecuteRuleSet_WithMultipleRulesAndHalt_StopsAllExecution()
+        {
+            // Arrange
+            var testObject = new TestClass { IntProperty = 10 };
+            var validation = new RuleValidation(typeof(TestClass));
+            var execution = new RuleExecution(validation, testObject);
+
+            // Rule 1: Sets IntProperty to 1 and halts
+            var condition1 = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(true) };
+            condition1.Validate(validation);
+            var action1 = new RuleStatementAction
+            {
+                CodeDomStatement = new CodeAssignStatement(
+                    new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "IntProperty"),
+                    new CodePrimitiveExpression(1))
+            };
+            action1.Validate(validation);
+            var haltAction = new RuleHaltAction();
+            haltAction.Validate(validation);
+            var rule1 = new Rule("Rule1", condition1, [action1, haltAction]) { Priority = 20 };
+
+            // Rule 2: Would set IntProperty to 2 but shouldn't execute
+            var condition2 = new RuleExpressionCondition { Expression = new CodePrimitiveExpression(true) };
+            condition2.Validate(validation);
+            var action2 = new RuleStatementAction
+            {
+                CodeDomStatement = new CodeAssignStatement(
+                    new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "IntProperty"),
+                    new CodePrimitiveExpression(2))
+            };
+            action2.Validate(validation);
+            var rule2 = new Rule("Rule2", condition2, [action2]) { Priority = 10 };
+
+            var orderedRules = new List<RuleState> { new(rule1), new(rule2) };
+
+            // Act
+            Executor.ExecuteRuleSet(orderedRules, execution, null);
+
+            // Assert
+            Assert.True(execution.Halted);
+            Assert.Equal(1, testObject.IntProperty); // Only Rule1 executed
         }
 
         #endregion
