@@ -319,7 +319,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var exception = new RuleSetValidationException("No errors", errors);
 
             Assert.NotNull(exception.Errors);
-            Assert.Equal(0, exception.Errors.Count);
+            Assert.Empty(exception.Errors);
         }
 
         #endregion

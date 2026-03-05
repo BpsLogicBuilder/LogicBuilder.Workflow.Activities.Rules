@@ -505,6 +505,192 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.False(result);
         }
 
+        #endregion
+
+        #region DecompileObjectLiteral Tests - Testing escape sequences through public API
+
+        [Fact]
+        public void DecompileObjectLiteral_WithStringContainingNullChar_EscapesAsBackslashZero()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            string value = "test\0value";
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("\"test\\0value\"", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithStringContainingBackslash_EscapesAsDoubleBackslash()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            string value = "test\\value";
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("\"test\\\\value\"", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithStringContainingFormFeed_EscapesAsBackslashF()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            string value = "test\fvalue";
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("\"test\\fvalue\"", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithStringContainingVerticalTab_EscapesAsBackslashV()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            string value = "test\vvalue";
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("\"test\\vvalue\"", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithStringContainingBackspace_EscapesAsBackslashB()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            string value = "test\bvalue";
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("\"test\\bvalue\"", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithStringContainingAlert_EscapesAsBackslashA()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            string value = "test\avalue";
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("\"test\\avalue\"", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithCharNullChar_EscapesAsBackslashZero()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            char value = '\0';
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("'\\0'", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithCharSingleQuote_EscapesAsBackslashQuote()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            char value = '\'';
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("'\\''", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithCharBackslash_EscapesAsDoubleBackslash()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            char value = '\\';
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("'\\\\'", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithCharFormFeed_EscapesAsBackslashF()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            char value = '\f';
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("'\\f'", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithCharVerticalTab_EscapesAsBackslashV()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            char value = '\v';
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("'\\v'", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithCharBackspace_EscapesAsBackslashB()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            char value = '\b';
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("'\\b'", sb.ToString());
+        }
+
+        [Fact]
+        public void DecompileObjectLiteral_WithCharAlert_EscapesAsBackslashA()
+        {
+            // Arrange
+            StringBuilder sb = new();
+            char value = '\a';
+
+            // Act
+            RuleDecompiler.DecompileObjectLiteral(sb, value);
+
+            // Assert
+            Assert.Equal("'\\a'", sb.ToString());
+        }
+
         [Fact]
         public void MustParenthesize_WithCastExpression_ChecksPrecedence()
         {
