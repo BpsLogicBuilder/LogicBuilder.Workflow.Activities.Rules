@@ -1991,11 +1991,1939 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
         #endregion
 
+        #region Virtual Equal Methods - Default Return False Tests
+        [Fact]
+        public void BoolLiteral_Equal_WithByte_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act
+            bool result = boolLiteral.Equal((byte)10);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void BoolLiteral_Equal_WithInt_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act
+            bool result = boolLiteral.Equal(42);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void BoolLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act
+            bool result = boolLiteral.Equal("test");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void StringLiteral_Equal_WithInt_ReturnsFalse()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("hello");
+
+            // Act
+            bool result = stringLiteral.Equal(42);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void StringLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("true");
+
+            // Act
+            bool result = stringLiteral.Equal(true);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void StringLiteral_Equal_WithDecimal_ReturnsFalse()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("100.5");
+
+            // Act
+            bool result = stringLiteral.Equal(100.5m);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void DecimalLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var decimalLiteral = new DecimalLiteral(123.45m);
+
+            // Act
+            bool result = decimalLiteral.Equal("123.45");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void DecimalLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var decimalLiteral = new DecimalLiteral(1m);
+
+            // Act
+            bool result = decimalLiteral.Equal(true);
+
+            // Assert
+            Assert.False(result);
+        }
+        #endregion
+
+        #region Virtual LessThan Methods - Exception Tests
+        [Fact]
+        public void BoolLiteral_LessThan_WithByte_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan((byte)10));
+            Assert.NotNull(exception);
+            Assert.Equal(typeof(byte), exception.Left);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+            Assert.Equal(typeof(bool), exception.Right);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThan_WithInt_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan(42));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThan_WithDecimal_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan(99.99m));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void StringLiteral_LessThan_WithInt_ThrowsException()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("hello");
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => stringLiteral.LessThan(100));
+            Assert.NotNull(exception);
+            Assert.Equal(typeof(int), exception.Left);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+            Assert.Equal(typeof(string), exception.Right);
+        }
+
+        [Fact]
+        public void StringLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("test");
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => stringLiteral.LessThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void StringLiteral_LessThan_WithDecimal_ThrowsException()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("100");
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => stringLiteral.LessThan(100.5m));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DecimalLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var decimalLiteral = new DecimalLiteral(50.5m);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => decimalLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DecimalLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var decimalLiteral = new DecimalLiteral(1m);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => decimalLiteral.LessThan(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DoubleLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var doubleLiteral = new DoubleLiteral(3.14);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => doubleLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DoubleLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var doubleLiteral = new DoubleLiteral(2.71);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => doubleLiteral.LessThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void FloatLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var floatLiteral = new FloatLiteral(1.5f);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => floatLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void FloatLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var floatLiteral = new FloatLiteral(0.5f);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => floatLiteral.LessThan(false));
+            Assert.NotNull(exception);
+        }
+        #endregion
+
+        #region Virtual GreaterThan Methods - Exception Tests
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithByte_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan((byte)5));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithInt_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan(100));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void StringLiteral_GreaterThan_WithInt_ThrowsException()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("hello");
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => stringLiteral.GreaterThan(50));
+            Assert.NotNull(exception);
+            Assert.Equal(typeof(int), exception.Left);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+            Assert.Equal(typeof(string), exception.Right);
+        }
+
+        [Fact]
+        public void StringLiteral_GreaterThan_WithDecimal_ThrowsException()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("test");
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => stringLiteral.GreaterThan(123.45m));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DecimalLiteral_GreaterThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var decimalLiteral = new DecimalLiteral(100m);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => decimalLiteral.GreaterThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DecimalLiteral_GreaterThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var decimalLiteral = new DecimalLiteral(5.5m);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => decimalLiteral.GreaterThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void IntLiteral_GreaterThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var intLiteral = new IntLiteral(42);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => intLiteral.GreaterThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void IntLiteral_GreaterThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var intLiteral = new IntLiteral(1);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => intLiteral.GreaterThan(false));
+            Assert.NotNull(exception);
+        }
+        #endregion
+
+        #region Virtual LessThanOrEqual Methods - Exception Tests
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithByte_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual((byte)10));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithInt_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual(100));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void StringLiteral_LessThanOrEqual_WithInt_ThrowsException()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("test");
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => stringLiteral.LessThanOrEqual(50));
+            Assert.NotNull(exception);
+            Assert.Equal(typeof(int), exception.Left);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void StringLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("hello");
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => stringLiteral.LessThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DecimalLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var decimalLiteral = new DecimalLiteral(75.25m);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => decimalLiteral.LessThanOrEqual("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DecimalLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var decimalLiteral = new DecimalLiteral(0m);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => decimalLiteral.LessThanOrEqual(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void FloatLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var floatLiteral = new FloatLiteral(2.5f);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => floatLiteral.LessThanOrEqual("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DoubleLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var doubleLiteral = new DoubleLiteral(1.5);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => doubleLiteral.LessThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+        #endregion
+
+        #region Virtual GreaterThanOrEqual Methods - Exception Tests
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithByte_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual((byte)25));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithInt_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual(0));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void StringLiteral_GreaterThanOrEqual_WithInt_ThrowsException()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("abc");
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => stringLiteral.GreaterThanOrEqual(10));
+            Assert.NotNull(exception);
+            Assert.Equal(typeof(int), exception.Left);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void StringLiteral_GreaterThanOrEqual_WithDecimal_ThrowsException()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("value");
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => stringLiteral.GreaterThanOrEqual(50.5m));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DecimalLiteral_GreaterThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var decimalLiteral = new DecimalLiteral(99.99m);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => decimalLiteral.GreaterThanOrEqual("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DecimalLiteral_GreaterThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var decimalLiteral = new DecimalLiteral(10m);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => decimalLiteral.GreaterThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void FloatLiteral_GreaterThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var floatLiteral = new FloatLiteral(5.5f);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => floatLiteral.GreaterThanOrEqual(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DoubleLiteral_GreaterThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var doubleLiteral = new DoubleLiteral(7.77);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => doubleLiteral.GreaterThanOrEqual("text"));
+            Assert.NotNull(exception);
+        }
+        #endregion
+
+        #region Virtual Methods - Cross Type Tests
+        [Fact]
+        public void IntLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var intLiteral = new IntLiteral(100);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => intLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void LongLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var longLiteral = new LongLiteral(1000L);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => longLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ByteLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var byteLiteral = new ByteLiteral(50);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => byteLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ShortLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var shortLiteral = new ShortLiteral(200);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => shortLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UShortLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var ushortLiteral = new UShortLiteral(300);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ushortLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UIntLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var uintLiteral = new UIntLiteral(500U);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => uintLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ULongLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var ulongLiteral = new ULongLiteral(1000UL);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ulongLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void CharLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var charLiteral = new CharLiteral('A');
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => charLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void SByteLiteral_LessThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var sbyteLiteral = new SByteLiteral(-10);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => sbyteLiteral.LessThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void IntLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var intLiteral = new IntLiteral(1);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => intLiteral.LessThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void LongLiteral_GreaterThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var longLiteral = new LongLiteral(500L);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => longLiteral.GreaterThan(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ByteLiteral_GreaterThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var byteLiteral = new ByteLiteral(100);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => byteLiteral.GreaterThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UShortLiteral_GreaterThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var ushortLiteral = new UShortLiteral(250);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ushortLiteral.GreaterThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UIntLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var uintLiteral = new UIntLiteral(1000U);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => uintLiteral.LessThanOrEqual(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ULongLiteral_GreaterThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var ulongLiteral = new ULongLiteral(9999UL);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ulongLiteral.GreaterThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void CharLiteral_GreaterThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var charLiteral = new CharLiteral('Z');
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => charLiteral.GreaterThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void SByteLiteral_GreaterThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var sbyteLiteral = new SByteLiteral(50);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => sbyteLiteral.GreaterThanOrEqual("test"));
+            Assert.NotNull(exception);
+        }
+        #endregion
+
+        #region NullLiteral Virtual Methods Tests
+        [Fact]
+        public void NullLiteral_LessThan_WithByte_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(int));
+
+            // Act
+            bool result = nullLiteral.LessThan((byte)10);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_LessThan_WithInt_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(int));
+
+            // Act
+            bool result = nullLiteral.LessThan(42);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_LessThan_WithString_ReturnsTrue()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(string));
+
+            // Act
+            bool result = nullLiteral.LessThan("test");
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void NullLiteral_LessThan_WithDecimal_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(decimal));
+
+            // Act
+            bool result = nullLiteral.LessThan(100.5m);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_GreaterThan_WithByte_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(int));
+
+            // Act
+            bool result = nullLiteral.GreaterThan((byte)50);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_GreaterThan_WithInt_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(long));
+
+            // Act
+            bool result = nullLiteral.GreaterThan(100);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_GreaterThan_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(string));
+
+            // Act
+            bool result = nullLiteral.GreaterThan("test");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_LessThanOrEqual_WithByte_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(int));
+
+            // Act
+            bool result = nullLiteral.LessThanOrEqual((byte)10);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_LessThanOrEqual_WithInt_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(int));
+
+            // Act
+            bool result = nullLiteral.LessThanOrEqual(42);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_LessThanOrEqual_WithString_ReturnsTrue()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(string));
+
+            // Act
+            bool result = nullLiteral.LessThanOrEqual("test");
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void NullLiteral_LessThanOrEqual_NoParameters_WithStringType_ReturnsTrue()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(string));
+
+            // Act
+            bool result = nullLiteral.LessThanOrEqual();
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void NullLiteral_LessThanOrEqual_NoParameters_WithIntType_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(int));
+
+            // Act
+            bool result = nullLiteral.LessThanOrEqual();
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_GreaterThanOrEqual_WithInt_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(int));
+
+            // Act
+            bool result = nullLiteral.GreaterThanOrEqual(100);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_GreaterThanOrEqual_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(string));
+
+            // Act
+            bool result = nullLiteral.GreaterThanOrEqual("test");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_GreaterThanOrEqual_NoParameters_WithStringType_ReturnsTrue()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(string));
+
+            // Act
+            bool result = nullLiteral.GreaterThanOrEqual();
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void NullLiteral_GreaterThanOrEqual_NoParameters_WithIntType_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(int));
+
+            // Act
+            bool result = nullLiteral.GreaterThanOrEqual();
+
+            // Assert
+            Assert.False(result);
+        }
+        #endregion
+
+        #region StringLiteral Special Methods Tests
+        [Fact]
+        public void StringLiteral_GreaterThan_NoParameters_ReturnsTrue()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("test");
+
+            // Act
+            bool result = stringLiteral.GreaterThan();
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void StringLiteral_GreaterThanOrEqual_NoParameters_ReturnsTrue()
+        {
+            // Arrange
+            var stringLiteral = new StringLiteral("hello");
+
+            // Act
+            bool result = stringLiteral.GreaterThanOrEqual();
+
+            // Assert
+            Assert.True(result);
+        }
+        #endregion
+
+        #region Literal Base Class Virtual Methods Tests
+        [Fact]
+        public void NullLiteral_LessThan_NoParameters_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(int));
+
+            // Act
+            bool result = nullLiteral.LessThan();
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void NullLiteral_GreaterThan_NoParameters_ReturnsFalse()
+        {
+            // Arrange
+            var nullLiteral = new NullLiteral(typeof(int));
+
+            // Act
+            bool result = nullLiteral.GreaterThan();
+
+            // Assert
+            Assert.False(result);
+        }
+        #endregion
+
+        #region Additional Coverage Tests - More Type Combinations
+        [Fact]
+        public void IntLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var intLiteral = new IntLiteral(1);
+
+            // Act
+            bool result = intLiteral.Equal(true);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void LongLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var longLiteral = new LongLiteral(0L);
+
+            // Act
+            bool result = longLiteral.Equal(false);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void FloatLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var floatLiteral = new FloatLiteral(1.0f);
+
+            // Act
+            bool result = floatLiteral.Equal(true);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void DoubleLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var doubleLiteral = new DoubleLiteral(0.0);
+
+            // Act
+            bool result = doubleLiteral.Equal(false);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void CharLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var charLiteral = new CharLiteral('T');
+
+            // Act
+            bool result = charLiteral.Equal(true);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void ByteLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var byteLiteral = new ByteLiteral(65);
+
+            // Act
+            bool result = byteLiteral.Equal("A");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void ShortLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var shortLiteral = new ShortLiteral(0);
+
+            // Act
+            bool result = shortLiteral.Equal(false);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void UShortLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var ushortLiteral = new UShortLiteral(100);
+
+            // Act
+            bool result = ushortLiteral.Equal("100");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void UIntLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var uintLiteral = new UIntLiteral(500U);
+
+            // Act
+            bool result = uintLiteral.Equal("500");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void SByteLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var sbyteLiteral = new SByteLiteral(-1);
+
+            // Act
+            bool result = sbyteLiteral.Equal(true);
+
+            // Assert
+            Assert.False(result);
+        }
+        #endregion
+
+        #region Additional LessThan Exception Tests - More Combinations
+        [Fact]
+        public void ByteLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var byteLiteral = new ByteLiteral(1);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => byteLiteral.LessThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ShortLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var shortLiteral = new ShortLiteral(10);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => shortLiteral.LessThan(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UShortLiteral_GreaterThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var ushortLiteral = new UShortLiteral(500);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ushortLiteral.GreaterThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UIntLiteral_GreaterThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var uintLiteral = new UIntLiteral(100U);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => uintLiteral.GreaterThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ULongLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var ulongLiteral = new ULongLiteral(500UL);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ulongLiteral.LessThanOrEqual("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void CharLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var charLiteral = new CharLiteral('X');
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => charLiteral.LessThanOrEqual(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void SByteLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var sbyteLiteral = new SByteLiteral(5);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => sbyteLiteral.LessThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void FloatLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var floatLiteral = new FloatLiteral(3.14f);
+
+            // Act
+            bool result = floatLiteral.Equal("3.14");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void DoubleLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var doubleLiteral = new DoubleLiteral(2.71828);
+
+            // Act
+            bool result = doubleLiteral.Equal("2.71828");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void FloatLiteral_GreaterThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var floatLiteral = new FloatLiteral(9.9f);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => floatLiteral.GreaterThanOrEqual("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DoubleLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var doubleLiteral = new DoubleLiteral(5.5);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => doubleLiteral.LessThanOrEqual("test"));
+            Assert.NotNull(exception);
+        }
+        #endregion
+
+        #region Additional Coverage - Numeric Type Mismatches
+        [Fact]
+        public void IntLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var intLiteral = new IntLiteral(0);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => intLiteral.LessThanOrEqual(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void LongLiteral_GreaterThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var longLiteral = new LongLiteral(999L);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => longLiteral.GreaterThanOrEqual("999"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ByteLiteral_GreaterThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var byteLiteral = new ByteLiteral(1);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => byteLiteral.GreaterThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void CharLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var charLiteral = new CharLiteral('A');
+
+            // Act
+            bool result = charLiteral.Equal("A");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void ULongLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var ulongLiteral = new ULongLiteral(12345UL);
+
+            // Act
+            bool result = ulongLiteral.Equal("12345");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void ULongLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var ulongLiteral = new ULongLiteral(100UL);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ulongLiteral.LessThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ULongLiteral_GreaterThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var ulongLiteral = new ULongLiteral(0UL);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ulongLiteral.GreaterThanOrEqual(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void SByteLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var sbyteLiteral = new SByteLiteral(65);
+
+            // Act
+            bool result = sbyteLiteral.Equal("A");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void SByteLiteral_GreaterThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var sbyteLiteral = new SByteLiteral(1);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => sbyteLiteral.GreaterThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void SByteLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var sbyteLiteral = new SByteLiteral(-50);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => sbyteLiteral.LessThanOrEqual("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void CharLiteral_GreaterThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var charLiteral = new CharLiteral('M');
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => charLiteral.GreaterThanOrEqual("M"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void CharLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var charLiteral = new CharLiteral('N');
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => charLiteral.LessThanOrEqual("N"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ShortLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var shortLiteral = new ShortLiteral(500);
+
+            // Act
+            bool result = shortLiteral.Equal("500");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void ShortLiteral_GreaterThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var shortLiteral = new ShortLiteral(100);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => shortLiteral.GreaterThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ShortLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var shortLiteral = new ShortLiteral(-100);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => shortLiteral.LessThanOrEqual(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UShortLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var ushortLiteral = new UShortLiteral(1);
+
+            // Act
+            bool result = ushortLiteral.Equal(true);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void UShortLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var ushortLiteral = new UShortLiteral(0);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ushortLiteral.LessThan(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UIntLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var uintLiteral = new UIntLiteral(0U);
+
+            // Act
+            bool result = uintLiteral.Equal(false);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void UIntLiteral_GreaterThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var uintLiteral = new UIntLiteral(777U);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => uintLiteral.GreaterThanOrEqual("777"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ULongLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var ulongLiteral = new ULongLiteral(1UL);
+
+            // Act
+            bool result = ulongLiteral.Equal(true);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void LongLiteral_Equal_WithString_ReturnsFalse()
+        {
+            // Arrange
+            var longLiteral = new LongLiteral(12345L);
+
+            // Act
+            bool result = longLiteral.Equal("12345");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void LongLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var longLiteral = new LongLiteral(0L);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => longLiteral.LessThan(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void LongLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var longLiteral = new LongLiteral(1L);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => longLiteral.LessThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+        #endregion
+
+        #region Additional GreaterThan Exception Tests
+        [Fact]
+        public void ByteLiteral_GreaterThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var byteLiteral = new ByteLiteral(255);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => byteLiteral.GreaterThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ShortLiteral_GreaterThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var shortLiteral = new ShortLiteral(1000);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => shortLiteral.GreaterThanOrEqual("1000"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UShortLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var ushortLiteral = new UShortLiteral(2000);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ushortLiteral.LessThanOrEqual("2000"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UIntLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var uintLiteral = new UIntLiteral(1U);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => uintLiteral.LessThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void CharLiteral_GreaterThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var charLiteral = new CharLiteral('B');
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => charLiteral.GreaterThan("B"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void SByteLiteral_GreaterThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var sbyteLiteral = new SByteLiteral(-25);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => sbyteLiteral.GreaterThan("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void LongLiteral_GreaterThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var longLiteral = new LongLiteral(9999L);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => longLiteral.GreaterThan("9999"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ByteLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var byteLiteral = new ByteLiteral(0);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => byteLiteral.LessThanOrEqual(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void IntLiteral_GreaterThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var intLiteral = new IntLiteral(1);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => intLiteral.GreaterThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void LongLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var longLiteral = new LongLiteral(-1000L);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => longLiteral.LessThanOrEqual("test"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UIntLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var uintLiteral = new UIntLiteral(3000U);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => uintLiteral.LessThanOrEqual("3000"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ULongLiteral_GreaterThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var ulongLiteral = new ULongLiteral(1UL);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ulongLiteral.GreaterThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void CharLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var charLiteral = new CharLiteral('1');
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => charLiteral.LessThan(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void SByteLiteral_LessThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var sbyteLiteral = new SByteLiteral(0);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => sbyteLiteral.LessThan(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ShortLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var shortLiteral = new ShortLiteral(750);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => shortLiteral.LessThanOrEqual("750"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ByteLiteral_Equal_WithBool_ReturnsFalse()
+        {
+            // Arrange
+            var byteLiteral = new ByteLiteral(1);
+
+            // Act
+            bool result = byteLiteral.Equal(true);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void UIntLiteral_GreaterThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var uintLiteral = new UIntLiteral(9999U);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => uintLiteral.GreaterThan("9999"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ByteLiteral_GreaterThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var byteLiteral = new ByteLiteral(200);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => byteLiteral.GreaterThanOrEqual("200"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ByteLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var byteLiteral = new ByteLiteral(150);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => byteLiteral.LessThanOrEqual("150"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ShortLiteral_GreaterThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var shortLiteral = new ShortLiteral(1);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => shortLiteral.GreaterThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void UShortLiteral_GreaterThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var ushortLiteral = new UShortLiteral(4444);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ushortLiteral.GreaterThanOrEqual("4444"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void ULongLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var ulongLiteral = new ULongLiteral(1UL);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => ulongLiteral.LessThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void CharLiteral_GreaterThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var charLiteral = new CharLiteral('1');
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => charLiteral.GreaterThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void FloatLiteral_LessThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var floatLiteral = new FloatLiteral(0.5f);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => floatLiteral.LessThanOrEqual(false));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DoubleLiteral_GreaterThanOrEqual_WithBool_ThrowsException()
+        {
+            // Arrange
+            var doubleLiteral = new DoubleLiteral(1.0);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => doubleLiteral.GreaterThanOrEqual(true));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void FloatLiteral_GreaterThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var floatLiteral = new FloatLiteral(8.8f);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => floatLiteral.GreaterThan("8.8"));
+            Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void DoubleLiteral_GreaterThan_WithBool_ThrowsException()
+        {
+            // Arrange
+            var doubleLiteral = new DoubleLiteral(0.0);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => doubleLiteral.GreaterThan(false));
+            Assert.NotNull(exception);
+        }
+        #endregion
+
         #region Helper Test Class
         private class TestClass
         {
             public int IntValue { get; set; }//NOSONAR needed for testing
-            public string StringValue { get; set; }//NOSONAR needed for testing
+            public string? StringValue { get; set; }//NOSONAR needed for testing
         }
         #endregion
     }

@@ -769,12 +769,12 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
                 return Value;
             }
 #pragma warning disable CA1822
-            public int Add(int a, int b)
+            public int Add(int a, int b)//NOSONAR - needs to be instance method for testing purposes
             {
                 return a + b;
             }
 
-            public int GetLength(string s)
+            public int GetLength(string s) //NOSONAR - needs to be instance method for testing purposes
             {
                 return s?.Length ?? 0;
             }
@@ -801,7 +801,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
                     value = 0;
             }
 
-            public bool TryGetValue(out int value)
+            public bool TryGetValue(out int value) //NOSONAR - needs to be instance method for testing purposes
             {
                 value = 100;
                 return true;
