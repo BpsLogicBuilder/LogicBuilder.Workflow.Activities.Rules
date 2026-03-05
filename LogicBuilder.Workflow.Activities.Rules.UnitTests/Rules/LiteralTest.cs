@@ -2006,6 +2006,45 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
+        public void BoolLiteral_Equal_WithSByte_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act
+            bool result = boolLiteral.Equal((sbyte)10);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void BoolLiteral_Equal_WithShort_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act
+            bool result = boolLiteral.Equal((short)100);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void BoolLiteral_Equal_WithUShort_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act
+            bool result = boolLiteral.Equal((ushort)200);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
         public void BoolLiteral_Equal_WithInt_ReturnsFalse()
         {
             // Arrange
@@ -2013,6 +2052,97 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Act
             bool result = boolLiteral.Equal(42);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void BoolLiteral_Equal_WithUInt_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act
+            bool result = boolLiteral.Equal(300U);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void BoolLiteral_Equal_WithLong_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act
+            bool result = boolLiteral.Equal(500L);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void BoolLiteral_Equal_WithULong_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act
+            bool result = boolLiteral.Equal(1000UL);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void BoolLiteral_Equal_WithChar_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act
+            bool result = boolLiteral.Equal('A');
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void BoolLiteral_Equal_WithFloat_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act
+            bool result = boolLiteral.Equal(3.14f);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void BoolLiteral_Equal_WithDouble_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act
+            bool result = boolLiteral.Equal(2.71);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void BoolLiteral_Equal_WithDecimal_ReturnsFalse()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act
+            bool result = boolLiteral.Equal(99.99m);
 
             // Assert
             Assert.False(result);
@@ -2114,6 +2244,45 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
+        public void BoolLiteral_LessThan_WithSByte_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan((sbyte)5));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThan_WithShort_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan((short)100));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThan_WithUShort_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan((ushort)200));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+        }
+
+        [Fact]
         public void BoolLiteral_LessThan_WithInt_ThrowsException()
         {
             // Arrange
@@ -2122,6 +2291,84 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Act & Assert
             var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
                 () => boolLiteral.LessThan(42));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThan_WithUInt_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan(300U));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThan_WithLong_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan(500L));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThan_WithULong_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan(1000UL));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThan_WithChar_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan('Z'));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThan_WithFloat_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan(3.14f));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThan_WithDouble_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThan(2.71));
             Assert.NotNull(exception);
             Assert.Equal(CodeBinaryOperatorType.LessThan, exception.Operator);
         }
@@ -2277,6 +2524,45 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
+        public void BoolLiteral_GreaterThan_WithSByte_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan((sbyte)10));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithShort_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan((short)50));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithUShort_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan((ushort)150));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+        }
+
+        [Fact]
         public void BoolLiteral_GreaterThan_WithInt_ThrowsException()
         {
             // Arrange
@@ -2286,6 +2572,110 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
                 () => boolLiteral.GreaterThan(100));
             Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithUInt_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan(250U));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithLong_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan(750L));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithULong_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan(2000UL));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithChar_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan('M'));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithFloat_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan(5.5f));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithDouble_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan(7.77));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithString_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan("value"));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThan_WithDecimal_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThan(123.45m));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThan, exception.Operator);
         }
 
         [Fact]
@@ -2379,6 +2769,45 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithSByte_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual((sbyte)20));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithShort_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual((short)50));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithUShort_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual((ushort)75));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
         public void BoolLiteral_LessThanOrEqual_WithInt_ThrowsException()
         {
             // Arrange
@@ -2388,6 +2817,110 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
                 () => boolLiteral.LessThanOrEqual(100));
             Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithUInt_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual(150U));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithLong_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual(200L));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithULong_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual(500UL));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithChar_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual('Q'));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithFloat_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual(4.5f));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithDouble_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual(6.28));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual("hello"));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_LessThanOrEqual_WithDecimal_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.LessThanOrEqual(75.25m));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.LessThanOrEqual, exception.Operator);
         }
 
         [Fact]
@@ -2480,6 +3013,45 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithSByte_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual((sbyte)15));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithShort_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual((short)100));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithUShort_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual((ushort)200));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
         public void BoolLiteral_GreaterThanOrEqual_WithInt_ThrowsException()
         {
             // Arrange
@@ -2489,6 +3061,110 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
                 () => boolLiteral.GreaterThanOrEqual(0));
             Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithUInt_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual(300U));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithLong_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual(400L));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithULong_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual(600UL));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithChar_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual('X'));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithFloat_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual(8.8f));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithDouble_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual(9.9));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithString_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(true);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual("value"));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
+        }
+
+        [Fact]
+        public void BoolLiteral_GreaterThanOrEqual_WithDecimal_ThrowsException()
+        {
+            // Arrange
+            var boolLiteral = new BoolLiteral(false);
+
+            // Act & Assert
+            var exception = Assert.Throws<RuleEvaluationIncompatibleTypesException>(
+                () => boolLiteral.GreaterThanOrEqual(50.5m));
+            Assert.NotNull(exception);
+            Assert.Equal(CodeBinaryOperatorType.GreaterThanOrEqual, exception.Operator);
         }
 
         [Fact]
