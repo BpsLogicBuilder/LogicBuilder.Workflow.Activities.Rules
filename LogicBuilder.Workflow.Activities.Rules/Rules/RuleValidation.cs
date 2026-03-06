@@ -389,7 +389,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             int result = actualMethod.GetHashCode() ^ resultType.GetHashCode();
             for (int i = 0; i < expectedParameters.Length; ++i)
-                result ^= expectedParameters[i].GetHashCode();
+                result ^= expectedParameters[i].ParameterType.GetHashCode();
             return result;
         }
     }
