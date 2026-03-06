@@ -441,8 +441,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.NotNull(result);
-            var testResult = result as TestResult;
-            Assert.NotNull(testResult);
+            var testResult = (TestResult)result;
             Assert.Equal(50, testResult.ResultValue);
             Assert.Equal("Original_Result", testResult.ResultName);
         }

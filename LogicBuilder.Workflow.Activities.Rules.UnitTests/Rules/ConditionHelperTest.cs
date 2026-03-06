@@ -334,7 +334,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var original = new CloneableTestClass { Value = "Original" };
 
             // Act
-            var result = ConditionHelper.CloneObject(original) as CloneableTestClass;
+            var result = (CloneableTestClass)ConditionHelper.CloneObject(original);
 
             // Assert
             Assert.NotNull(result);
@@ -478,7 +478,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Equal(3, result.UserData.Count);
             Assert.Equal(42, result.UserData["key2"]);
             Assert.Equal("text", result.UserData["key3"]);
-            var clonedObj = result.UserData["key1"] as CloneableTestClass;
+            var clonedObj = (CloneableTestClass)result.UserData["key1"]!;
             Assert.NotNull(clonedObj);
             Assert.Equal("Value1", clonedObj.Value);
         }

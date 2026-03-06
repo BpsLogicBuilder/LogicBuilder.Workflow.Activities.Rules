@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 
 namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
@@ -1205,12 +1206,11 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             };
 
             // Act & Assert
-            foreach (var method in methods)
+            foreach (var liftedMethod in methods.Select(m => new LiftedRelationalOperatorMethodInfo(m)))
             {
-                var liftedMethod = new LiftedRelationalOperatorMethodInfo(method);
                 object?[] parameters = [null, null];
                 object result = liftedMethod.Invoke(null, BindingFlags.Default, null, parameters, CultureInfo.InvariantCulture);
-                Assert.False((bool)result, $"{method.Name} should return false for null parameters");
+                Assert.False((bool)result, $"{liftedMethod.Name} should return false for null parameters");
             }
         }
 
@@ -1227,9 +1227,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             };
 
             // Act & Assert
-            foreach (var method in methods)
+            foreach (var liftedMethod in methods.Select(m => new LiftedRelationalOperatorMethodInfo(m)))
             {
-                var liftedMethod = new LiftedRelationalOperatorMethodInfo(method);
                 Assert.Equal(typeof(bool), liftedMethod.ReturnType);
             }
         }
