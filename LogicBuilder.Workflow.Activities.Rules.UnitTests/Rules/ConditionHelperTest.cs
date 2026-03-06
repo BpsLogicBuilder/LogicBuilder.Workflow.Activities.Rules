@@ -439,7 +439,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.Single(result.UserData);
-            var clonedObj = result.UserData["key"] as CloneableTestClass;
+            var clonedObj = (CloneableTestClass)result.UserData["key"]!;
             Assert.NotNull(clonedObj);
             Assert.NotSame(cloneableObj, clonedObj);
             Assert.Equal("Test", clonedObj.Value);
