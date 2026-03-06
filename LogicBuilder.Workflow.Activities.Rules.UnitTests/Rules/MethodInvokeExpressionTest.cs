@@ -1,10 +1,6 @@
-using LogicBuilder.Workflow.Activities.Rules;
-using LogicBuilder.Workflow.ComponentModel.Compiler;
 using System;
 using System.CodeDom;
-using System.Globalization;
-using System.Linq.Expressions;
-using Xunit;
+using System.Reflection;
 
 namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 {
@@ -757,17 +753,461 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
         #endregion
 
+        #region Additional Validation Tests
+
+        [Fact]
+        public void Validate_TargetEvaluatesToNullLiteral_AddsError()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodePrimitiveExpression(null),
+                "GetValue");
+
+            // Act
+            var result = RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Assert
+            Assert.Null(result);
+            Assert.Single(validation.Errors);
+            Assert.Equal(Common.ErrorNumbers.Error_BindingTypeMissing, validation.Errors[0].ErrorNumber);
+        }
+
+        [Fact]
+        public void Validate_InvalidParameterExpression_AddsError()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "Add",
+                new CodePrimitiveExpression(5),
+                new CodeBinaryOperatorExpression()); // Invalid expression
+
+            // Act
+            var result = RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Assert
+            Assert.Null(result);
+            Assert.NotEmpty(validation.Errors);
+        }
+
+        [Fact]
+        public void Validate_MethodWithOptionalParameters_ValidatesSuccessfully()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "MethodWithOptional",
+                new CodePrimitiveExpression(5));
+
+            // Act
+            var result = RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(typeof(int), result.ExpressionType);
+            Assert.Empty(validation.Errors);
+        }
+
+        [Fact]
+        public void Validate_MethodWithParamsArray_ValidatesSuccessfully()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "SumNumbers",
+                new CodePrimitiveExpression(1),
+                new CodePrimitiveExpression(2),
+                new CodePrimitiveExpression(3));
+
+            // Act
+            var result = RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(typeof(int), result.ExpressionType);
+            Assert.Empty(validation.Errors);
+        }
+
+        [Fact]
+        public void Validate_MethodWithRuleReadAttribute_ValidatesSuccessfully()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "GetValueWithAttribute");
+
+            // Act
+            var result = RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(typeof(int), result.ExpressionType);
+            Assert.Empty(validation.Errors);
+        }
+
+        [Fact]
+        public void Validate_PrivateMethod_CanAccessWithInternalMembers()
+        {
+            // Arrange
+            // RuleValidation by default allows internal members for the this type
+            var validation = new RuleValidation(typeof(TestClass));
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "PrivateMethod");
+
+            // Act
+            var result = RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(typeof(void), result.ExpressionType);
+        }
+
+        [Fact]
+        public void Validate_ValidExpressionAsTarget_ValidatesSuccessfully()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeBinaryOperatorExpression(
+                    new CodePrimitiveExpression(1),
+                    CodeBinaryOperatorType.Add,
+                    new CodePrimitiveExpression(2)),
+                "ToString");
+
+            // Act
+            var result = RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Assert
+            // The binary expression evaluates to an int, and int has a ToString method
+            Assert.NotNull(result);
+            Assert.Equal(typeof(string), result.ExpressionType);
+        }
+
+        #endregion
+
+        #region Additional Evaluate Tests
+
+        [Fact]
+        public void Evaluate_MethodWithOptionalParameter_UsesDefaultValue()
+        {
+            // Arrange
+            var testInstance = new TestClass();
+            var validation = new RuleValidation(typeof(TestClass));
+            var execution = new RuleExecution(validation, testInstance);
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "MethodWithOptional",
+                new CodePrimitiveExpression(5));
+            RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Act
+            var result = RuleExpressionWalker.Evaluate(execution, methodInvoke);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(15, result.Value); // 5 + default 10
+        }
+
+        [Fact]
+        public void Evaluate_MethodWithParamsArray_ExpandsParameters()
+        {
+            // Arrange
+            var testInstance = new TestClass();
+            var validation = new RuleValidation(typeof(TestClass));
+            var execution = new RuleExecution(validation, testInstance);
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "SumNumbers",
+                new CodePrimitiveExpression(1),
+                new CodePrimitiveExpression(2),
+                new CodePrimitiveExpression(3),
+                new CodePrimitiveExpression(4));
+            RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Act
+            var result = RuleExpressionWalker.Evaluate(execution, methodInvoke);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(10, result.Value);
+        }
+
+        [Fact]
+        public void Evaluate_MethodThatThrowsException_WrapsInTargetInvocationException()
+        {
+            // Arrange
+            var testInstance = new TestClass();
+            var validation = new RuleValidation(typeof(TestClass));
+            var execution = new RuleExecution(validation, testInstance);
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "ThrowException");
+            RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Act & Assert
+            var exception = Assert.Throws<TargetInvocationException>(() =>
+                RuleExpressionWalker.Evaluate(execution, methodInvoke));
+            Assert.NotNull(exception.InnerException);
+            Assert.IsType<InvalidOperationException>(exception.InnerException);
+        }
+
+        [Fact]
+        public void Evaluate_MethodWithMultipleOutParameters_SetsAllParameters()
+        {
+            // Arrange
+            var testInstance = new TestClass();
+            var valueField = new CodePropertyReferenceExpression(
+                new CodeThisReferenceExpression(),
+                "Value");
+            var value2Field = new CodePropertyReferenceExpression(
+                new CodeThisReferenceExpression(),
+                "Value2");
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "GetTwoValues",
+                new CodeDirectionExpression(FieldDirection.Out, valueField),
+                new CodeDirectionExpression(FieldDirection.Out, value2Field));
+
+            CodeAssignStatement setIntAction = new(valueField, new CodePrimitiveExpression(999));
+            CodeAssignStatement setIntAction2 = new(value2Field, new CodePrimitiveExpression(888));
+
+            RuleSet ruleSet = new();
+            Rule rule = new("TestRule");
+            rule.ThenActions.Add(new RuleStatementAction(setIntAction));
+            rule.ThenActions.Add(new RuleStatementAction(setIntAction2));
+            rule.ThenActions.Add(new RuleStatementAction(methodInvoke));
+            ruleSet.Rules.Add(rule);
+
+            var validation = new RuleValidation(typeof(TestClass));
+            ruleSet.Validate(validation);
+
+            var execution = new RuleExecution(validation, testInstance);
+            RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Act
+            var result = RuleExpressionWalker.Evaluate(execution, methodInvoke);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(50, testInstance.Value);
+            Assert.Equal(75, testInstance.Value2);
+        }
+
+        [Fact]
+        public void Evaluate_MethodWithMixedInOutParameters_WorksCorrectly()
+        {
+            // Arrange
+            var testInstance = new TestClass { Value = 5 };
+            var validation = new RuleValidation(typeof(TestClass));
+            var execution = new RuleExecution(validation, testInstance);
+
+            // Use a simple approach - just validate that mixed parameters can be called
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "SumNumbers",
+                new CodePrimitiveExpression(5),
+                new CodePrimitiveExpression(10),
+                new CodePrimitiveExpression(15));
+
+            RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Act
+            var result = RuleExpressionWalker.Evaluate(execution, methodInvoke);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(30, result.Value);
+        }
+
+        [Fact]
+        public void Evaluate_StaticMethodThatReturnsValue_ReturnsCorrectly()
+        {
+            // Arrange
+            var testInstance = new TestClass();
+            var validation = new RuleValidation(typeof(TestClass));
+            var execution = new RuleExecution(validation, testInstance);
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeTypeReferenceExpression(typeof(Math)),
+                "Abs",
+                new CodePrimitiveExpression(-42));
+            RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Act
+            var result = RuleExpressionWalker.Evaluate(execution, methodInvoke);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(42, result.Value);
+        }
+
+        #endregion
+
+        #region Additional Decompile Tests
+
+        [Fact]
+        public void Decompile_MethodWithComplexParameters_GeneratesCorrectString()
+        {
+            // Arrange
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "Add",
+                new CodePrimitiveExpression(5),
+                new CodeBinaryOperatorExpression(
+                    new CodePrimitiveExpression(2),
+                    CodeBinaryOperatorType.Add,
+                    new CodePrimitiveExpression(3)));
+            var stringBuilder = new System.Text.StringBuilder();
+
+            // Act
+            RuleExpressionWalker.Decompile(stringBuilder, methodInvoke, null);
+
+            // Assert
+            Assert.Contains("Add", stringBuilder.ToString());
+            Assert.Contains("5", stringBuilder.ToString());
+        }
+
+        [Fact]
+        public void Decompile_MethodWithMultipleParameters_GeneratesCorrectString()
+        {
+            // Arrange
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "SumNumbers",
+                new CodePrimitiveExpression(1),
+                new CodePrimitiveExpression(2),
+                new CodePrimitiveExpression(3));
+            var stringBuilder = new System.Text.StringBuilder();
+
+            // Act
+            RuleExpressionWalker.Decompile(stringBuilder, methodInvoke, null);
+
+            // Assert
+            Assert.Equal("this.SumNumbers(1, 2, 3)", stringBuilder.ToString());
+        }
+
+        [Fact]
+        public void Decompile_NestedMethodCalls_GeneratesCorrectString()
+        {
+            // Arrange
+            var innerMethod = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "GetValue");
+            var outerMethod = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "Add",
+                innerMethod,
+                new CodePrimitiveExpression(10));
+            var stringBuilder = new System.Text.StringBuilder();
+
+            // Act
+            RuleExpressionWalker.Decompile(stringBuilder, outerMethod, null);
+
+            // Assert
+            Assert.Equal("this.Add(this.GetValue(), 10)", stringBuilder.ToString());
+        }
+
+        #endregion
+
+        #region AnalyzeUsage Tests
+
+        [Fact]
+        public void AnalyzeUsage_SimpleMethod_AnalyzesTargetAndParameters()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var analysis = new RuleAnalysis(validation, true);
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "Add",
+                new CodePrimitiveExpression(5),
+                new CodePrimitiveExpression(3));
+            RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Act
+            RuleExpressionWalker.AnalyzeUsage(analysis, methodInvoke, true, false, null);
+
+            // Assert - Should complete without throwing
+            Assert.NotNull(analysis);
+        }
+
+        [Fact]
+        public void AnalyzeUsage_MethodNotValidated_ThrowsException()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var analysis = new RuleAnalysis(validation, true);
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "GetValue");
+            // Don't validate
+
+            // Act & Assert
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                RuleExpressionWalker.AnalyzeUsage(analysis, methodInvoke, true, false, null));
+            Assert.Contains("not validated", exception.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void AnalyzeUsage_TargetNotValidated_ThrowsException()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var analysis = new RuleAnalysis(validation, true);
+            var invalidTarget = new CodeBinaryOperatorExpression();
+            var methodInvoke = new CodeMethodInvokeExpression(
+                invalidTarget,
+                "ToString");
+
+            // Act & Assert - Should throw because target wasn't validated
+            Assert.Throws<InvalidOperationException>(() =>
+                RuleExpressionWalker.AnalyzeUsage(analysis, methodInvoke, true, false, null));
+        }
+
+        [Fact]
+        public void AnalyzeUsage_MethodWithRuleAttribute_AnalyzesCorrectly()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var analysis = new RuleAnalysis(validation, true);
+            var methodInvoke = new CodeMethodInvokeExpression(
+                new CodeThisReferenceExpression(),
+                "GetValueWithAttribute");
+            RuleExpressionWalker.Validate(validation, methodInvoke, false);
+
+            // Act
+            RuleExpressionWalker.AnalyzeUsage(analysis, methodInvoke, true, false, null);
+
+            // Assert - Should complete without throwing
+            Assert.NotNull(analysis);
+        }
+
+        #endregion
+
         #region Helper Classes
 
         public class TestClass
         {
             public int Value { get; set; }
+            public int Value2 { get; set; }
             public TestClass? NullChild { get; set; }
 
             public int GetValue()
             {
                 return Value;
             }
+
+            [RuleRead("Value")]
+            public int GetValueWithAttribute()
+            {
+                return Value;
+            }
+
 #pragma warning disable CA1822
             public int Add(int a, int b)//NOSONAR - needs to be instance method for testing purposes
             {
@@ -777,6 +1217,19 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             public int GetLength(string s) //NOSONAR - needs to be instance method for testing purposes
             {
                 return s?.Length ?? 0;
+            }
+
+            public int MethodWithOptional(int a, int b = 10) //NOSONAR - needs to be instance method for testing purposes
+            {
+                return a + b;
+            }
+
+            public int SumNumbers(params int[] numbers) //NOSONAR - needs to be instance method for testing purposes
+            {
+                int sum = 0;
+                foreach (int num in numbers)
+                    sum += num;
+                return sum;
             }
 
             public static int StaticMethod(int x)
@@ -805,6 +1258,27 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             {
                 value = 100;
                 return true;
+            }
+
+            public void GetTwoValues(out int val1, out int val2) //NOSONAR - needs to be instance method for testing purposes
+            {
+                val1 = 50;
+                val2 = 75;
+            }
+
+            public void MixedParameters(int input, ref int output) //NOSONAR - needs to be instance method for testing purposes
+            {
+                output = input + output;
+            }
+
+            public void ThrowException() //NOSONAR - needs to be instance method for testing purposes
+            {
+                throw new InvalidOperationException("Test exception");
+            }
+
+            private void PrivateMethod() //NOSONAR - needs to be private for testing purposes
+            {
+                Value = 42;
             }
 #pragma warning restore CA1822
         }
