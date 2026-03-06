@@ -18,7 +18,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     public interface IRuleExpression
     {
         RuleExpressionInfo Validate(RuleValidation validation, bool isWritten);
-        RuleExpressionResult Evaluate(RuleExecution execution);
+        IRuleExpressionResult Evaluate(RuleExecution execution);
         void AnalyzeUsage(RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier);
         void Decompile(StringBuilder stringBuilder, CodeExpression parentExpression);
         bool Match(CodeExpression expression);
@@ -28,7 +28,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     internal abstract class RuleExpressionInternal
     {
         internal abstract RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten);
-        internal abstract RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution);
+        internal abstract IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution);
         internal abstract void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier);
         internal abstract void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression);
         internal abstract bool Match(CodeExpression leftExpression, CodeExpression rightExpression);
@@ -81,7 +81,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             analysis.AddSymbol(sb.ToString());
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             return execution.ThisLiteralResult;
         }
@@ -131,7 +131,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // Literal values have no interesting dependencies or side-effects.
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodePrimitiveExpression primitiveExpr = (CodePrimitiveExpression)expression;
             return new RuleLiteralResult(primitiveExpr.Value);
@@ -427,7 +427,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
 
         #region Evaluate
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)expression;
 
@@ -964,7 +964,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             RuleExpressionWalker.AnalyzeUsage(analysis, targetObject, isRead, isWritten, new RulePathQualifier(fieldRefExpr.FieldName, qualifier));
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodeFieldReferenceExpression fieldRefExpr = (CodeFieldReferenceExpression)expression;
             object target = RuleExpressionWalker.Evaluate(execution, fieldRefExpr.TargetObject).Value;
@@ -1170,7 +1170,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodePropertyReferenceExpression propGetExpr = (CodePropertyReferenceExpression)expression;
 
@@ -1470,7 +1470,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             string message;
 
@@ -1497,7 +1497,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             object[] arguments = null;
-            RuleExpressionResult[] outArgumentResults = null;
+            IRuleExpressionResult[] outArgumentResults = null;
 
             if (invokeExpr.Parameters != null && invokeExpr.Parameters.Count > 0)
             {
@@ -1539,13 +1539,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     }
 
                     Type argType = execution.Validation.ExpressionInfo(invokeExpr.Parameters[i]).ExpressionType;
-                    RuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, invokeExpr.Parameters[i]);
+                    IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, invokeExpr.Parameters[i]);
 
                     // Special procesing of direction expressions to keep track of out arguments (& ref).
                     if (invokeExpr.Parameters[i] is CodeDirectionExpression direction && (direction.Direction == FieldDirection.Ref || direction.Direction == FieldDirection.Out))
                     {
                         // lazy creation of fieldsToSet
-                        outArgumentResults ??= new RuleExpressionResult[invokeExpr.Parameters.Count];
+                        outArgumentResults ??= new IRuleExpressionResult[invokeExpr.Parameters.Count];
                         // keep track of this out expression so we can set it later
                         outArgumentResults[i] = argResult;
 
@@ -1580,7 +1580,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     for (; i < actualArgCount; ++i)
                     {
                         Type argType = execution.Validation.ExpressionInfo(invokeExpr.Parameters[i]).ExpressionType;
-                        RuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, invokeExpr.Parameters[i]);
+                        IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, invokeExpr.Parameters[i]);
                         paramsArray.SetValue(Executor.AdjustType(argType, argResult.Value, elementType), i - numFixedParameters);
                     }
 
@@ -1822,7 +1822,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             RuleExpressionWalker.AnalyzeUsage(analysis, paramExpr, argIsRead, argIsWritten, argQualifier);
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             // For evaluation purposes, ignore the direction.  It is handled specifically in the
             // method invoke Evaluate method.
@@ -1904,7 +1904,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // These introduce no interesting dependencies or side-effects.
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             // Type references don't evaluate to any value.
             return new RuleLiteralResult(null);
@@ -2129,7 +2129,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             RuleExpressionWalker.AnalyzeUsage(analysis, castExpr.Expression, true, false, null);
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             string message;
 
@@ -2451,7 +2451,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             string message;
 
@@ -2491,7 +2491,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             for (i = 0; i < numFixedParameters; ++i)
             {
                 Type argType = execution.Validation.ExpressionInfo(indexerExpr.Indices[i]).ExpressionType;
-                RuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, indexerExpr.Indices[i]);
+                IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, indexerExpr.Indices[i]);
                 indexArgs[i] = Executor.AdjustType(argType, argResult.Value, parmInfos[i].ParameterType);
             }
 
@@ -2515,7 +2515,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 for (; i < actualArgCount; ++i)
                 {
                     Type argType = execution.Validation.ExpressionInfo(indexerExpr.Indices[i]).ExpressionType;
-                    RuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, indexerExpr.Indices[i]);
+                    IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, indexerExpr.Indices[i]);
                     paramsArray.SetValue(Executor.AdjustType(argType, argResult.Value, elementType), i - numFixedParameters);
                 }
 
@@ -2774,7 +2774,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 RuleExpressionWalker.AnalyzeUsage(analysis, arrayIndexerExpr.Indices[i], true, false, null);
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodeArrayIndexerExpression arrayIndexerExpr = (CodeArrayIndexerExpression)expression;
 
@@ -2986,7 +2986,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodeObjectCreateExpression createExpression = (CodeObjectCreateExpression)expression;
 
@@ -3013,7 +3013,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             ConstructorInfo constructor = createExpressionInfo.ConstructorInfo;
             object[] arguments = null;
-            RuleExpressionResult[] outArgumentResults = null;
+            IRuleExpressionResult[] outArgumentResults = null;
 
             if (createExpression.Parameters != null && createExpression.Parameters.Count > 0)
             {
@@ -3053,13 +3053,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     }
 
                     Type argType = execution.Validation.ExpressionInfo(createExpression.Parameters[i]).ExpressionType;
-                    RuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, createExpression.Parameters[i]);
+                    IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, createExpression.Parameters[i]);
 
                     // Special procesing of direction expressions to keep track of out arguments (& ref).
                     if (createExpression.Parameters[i] is CodeDirectionExpression direction && (direction.Direction == FieldDirection.Ref || direction.Direction == FieldDirection.Out))
                     {
                         // lazy creation of fieldsToSet
-                        outArgumentResults ??= new RuleExpressionResult[actualArgCount];
+                        outArgumentResults ??= new IRuleExpressionResult[actualArgCount];
                         // keep track of this out expression so we can set it later
                         outArgumentResults[i] = argResult;
                     }
@@ -3087,7 +3087,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     for (; i < actualArgCount; ++i)
                     {
                         Type argType = execution.Validation.ExpressionInfo(createExpression.Parameters[i]).ExpressionType;
-                        RuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, createExpression.Parameters[i]);
+                        IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, createExpression.Parameters[i]);
                         paramsArray.SetValue(Executor.AdjustType(argType, argResult.Value, elementType), i - numFixedParameters);
                     }
 
@@ -3359,7 +3359,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 RuleExpressionWalker.AnalyzeUsage(analysis, p, true, false, null);
         }
 
-        internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodeArrayCreateExpression createExpression = (CodeArrayCreateExpression)expression;
 
@@ -3387,7 +3387,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (createExpression.SizeExpression != null)
             {
                 Type sizeType = execution.Validation.ExpressionInfo(createExpression.SizeExpression).ExpressionType;
-                RuleExpressionResult sizeResult = RuleExpressionWalker.Evaluate(execution, createExpression.SizeExpression);
+                IRuleExpressionResult sizeResult = RuleExpressionWalker.Evaluate(execution, createExpression.SizeExpression);
                 if (sizeType == typeof(int))
                     size = (int)sizeResult.Value;
                 else if (sizeType == typeof(long))
@@ -3408,7 +3408,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 {
                     CodeExpression initializer = createExpression.Initializers[i];
                     Type initializerType = execution.Validation.ExpressionInfo(initializer).ExpressionType;
-                    RuleExpressionResult initializerResult = RuleExpressionWalker.Evaluate(execution, initializer);
+                    IRuleExpressionResult initializerResult = RuleExpressionWalker.Evaluate(execution, initializer);
                     result.SetValue(Executor.AdjustType(initializerType, initializerResult.Value, elementType), i);
                 }
             return new RuleLiteralResult(result);

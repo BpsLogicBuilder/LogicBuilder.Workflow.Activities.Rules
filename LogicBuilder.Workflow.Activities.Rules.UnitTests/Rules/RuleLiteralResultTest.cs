@@ -197,14 +197,14 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var result = new RuleLiteralResult(42);
 
             // Assert
-            Assert.IsType<RuleExpressionResult>(result, exactMatch: false);
+            Assert.IsType<IRuleExpressionResult>(result, exactMatch: false);
         }
 
         [Fact]
         public void RuleLiteralResult_CanBeTreatedAsRuleExpressionResult()
         {
             // Arrange
-            RuleExpressionResult expressionResult = new RuleLiteralResult("test");
+            IRuleExpressionResult expressionResult = new RuleLiteralResult("test");
 
             // Act
             var value = expressionResult.Value;

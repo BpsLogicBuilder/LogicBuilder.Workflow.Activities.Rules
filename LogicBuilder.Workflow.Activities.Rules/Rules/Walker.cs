@@ -44,7 +44,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 ruleExpr.Decompile(decompilation, parentExpression);
             }
 
-            internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+            internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
             {
                 return ruleExpr.Evaluate(execution);
             }
@@ -164,7 +164,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             ruleExpr.AnalyzeUsage(expression, analysis, isRead, isWritten, qualifier);
         }
 
-        public static RuleExpressionResult Evaluate(RuleExecution execution, CodeExpression expression)
+        public static IRuleExpressionResult Evaluate(RuleExecution execution, CodeExpression expression)
         {
             if (execution == null)
                 throw new ArgumentNullException("execution");

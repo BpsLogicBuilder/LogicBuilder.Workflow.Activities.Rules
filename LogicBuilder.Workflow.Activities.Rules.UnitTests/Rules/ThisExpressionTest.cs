@@ -247,10 +247,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             method!.Invoke(thisExpressionInstance, [expression, analysis, isRead, isWritten, qualifier]);
         }
 
-        private RuleExpressionResult InvokeEvaluate(CodeExpression expression, RuleExecution execution)
+        private IRuleExpressionResult InvokeEvaluate(CodeExpression expression, RuleExecution execution)
         {
             var method = thisExpressionType.GetMethod("Evaluate", BindingFlags.Instance | BindingFlags.NonPublic);
-            return (RuleExpressionResult)method!.Invoke(thisExpressionInstance, [expression, execution])!;
+            return (IRuleExpressionResult)method!.Invoke(thisExpressionInstance, [expression, execution])!;
         }
 
         private void InvokeDecompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)

@@ -7,25 +7,23 @@ using LogicBuilder.Workflow.ComponentModel.Compiler;
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using static System.Collections.Specialized.BitVector32;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
     #region RuleExpressionResult class hierarchy
-    public abstract class RuleExpressionResult
+    public interface IRuleExpressionResult 
     {
-        public abstract object Value { get; set; }
+        object Value { get; set; }
     }
 
-    public class RuleLiteralResult(object literal) : RuleExpressionResult
+    public class RuleLiteralResult(object literal) : IRuleExpressionResult
     {
         private readonly object literal = literal;
 
-        public override object Value
+        public object Value
         {
             get
             {
@@ -38,27 +36,16 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
     }
 
-    internal class RuleFieldResult(object targetObject, FieldInfo fieldInfo) : RuleExpressionResult
+    internal class RuleFieldResult(object targetObject, FieldInfo fieldInfo) : IRuleExpressionResult
     {
         private readonly object targetObject = targetObject;
         private readonly FieldInfo fieldInfo = fieldInfo ?? throw new ArgumentNullException("fieldInfo");
 
-        public override object Value
+        public object Value
         {
             get
             {
-#pragma warning disable 56503
-                if (!fieldInfo.IsStatic && targetObject == null)
-                {
-                    // Accessing a non-static field from null target.
-                    string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullField, fieldInfo.Name);
-                    RuleEvaluationException exception = new(message);
-                    exception.Data[RuleUserDataKeys.ErrorObject] = fieldInfo;
-                    throw exception;
-                }
-
-                return fieldInfo.GetValue(targetObject);
-#pragma warning restore 56503
+                return GetValue();
             }
             set
             {
@@ -74,41 +61,33 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 fieldInfo.SetValue(targetObject, value);
             }
         }
+
+        private object GetValue()
+        {
+            if (!fieldInfo.IsStatic && targetObject == null)
+            {
+                // Accessing a non-static field from null target.
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullField, fieldInfo.Name);
+                RuleEvaluationException exception = new(message);
+                exception.Data[RuleUserDataKeys.ErrorObject] = fieldInfo;
+                throw exception;
+            }
+
+            return fieldInfo.GetValue(targetObject);
+        }
     }
 
-    internal class RulePropertyResult(PropertyInfo propertyInfo, object targetObject, object[] indexerArguments) : RuleExpressionResult
+    internal class RulePropertyResult(PropertyInfo propertyInfo, object targetObject, object[] indexerArguments) : IRuleExpressionResult
     {
         private readonly PropertyInfo propertyInfo = propertyInfo ?? throw new ArgumentNullException("propertyInfo");
         private readonly object targetObject = targetObject;
         private readonly object[] indexerArguments = indexerArguments;
 
-        public override object Value
+        public object Value
         {
             get
             {
-#pragma warning disable 56503
-                if (!propertyInfo.GetGetMethod(true).IsStatic && targetObject == null)
-                {
-                    string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullProperty, propertyInfo.Name);
-                    RuleEvaluationException exception = new(message);
-                    exception.Data[RuleUserDataKeys.ErrorObject] = propertyInfo;
-                    throw exception;
-                }
-
-                try
-                {
-                    return propertyInfo.GetValue(targetObject, indexerArguments);
-                }
-                catch (TargetInvocationException e)
-                {
-                    // if there is no inner exception, leave it untouched
-                    if (e.InnerException == null)
-                        throw;
-                    string message = string.Format(CultureInfo.CurrentCulture, Messages.Error_PropertyGet,
-                        RuleDecompiler.DecompileType(propertyInfo.ReflectedType), propertyInfo.Name, e.InnerException.Message);
-                    throw new TargetInvocationException(message, e.InnerException);
-                }
-#pragma warning restore 56503
+                return GetValue();
             }
 
             set
@@ -137,14 +116,39 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             }
         }
+
+        private object GetValue()
+        {
+            if (!propertyInfo.GetGetMethod(true).IsStatic && targetObject == null)
+            {
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullProperty, propertyInfo.Name);
+                RuleEvaluationException exception = new(message);
+                exception.Data[RuleUserDataKeys.ErrorObject] = propertyInfo;
+                throw exception;
+            }
+
+            try
+            {
+                return propertyInfo.GetValue(targetObject, indexerArguments);
+            }
+            catch (TargetInvocationException e)
+            {
+                // if there is no inner exception, leave it untouched
+                if (e.InnerException == null)
+                    throw;
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.Error_PropertyGet,
+                    RuleDecompiler.DecompileType(propertyInfo.ReflectedType), propertyInfo.Name, e.InnerException.Message);
+                throw new TargetInvocationException(message, e.InnerException);
+            }
+        }
     }
 
-    internal class RuleArrayElementResult(Array targetArray, long[] indexerArguments) : RuleExpressionResult
+    internal class RuleArrayElementResult(Array targetArray, long[] indexerArguments) : IRuleExpressionResult
     {
         private readonly Array targetArray = targetArray ?? throw new ArgumentNullException("targetArray");
         private readonly long[] indexerArguments = indexerArguments ?? throw new ArgumentNullException("indexerArguments");
 
-        public override object Value
+        public object Value
         {
             get
             {
@@ -162,7 +166,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region RuleExecution Class
     public class RuleExecution
     {
-        private bool halted;    // "Halt" was executed?
         private readonly object thisObject;
         private RuleValidation validation;
         private readonly RuleLiteralResult thisLiteralResult;
@@ -180,7 +183,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         RuleDecompiler.DecompileType(thisObject.GetType())));
 
             this.validation = validation;
-            //this.activity = thisObject as Activity;
             this.thisObject = thisObject;
             this.thisLiteralResult = new RuleLiteralResult(thisObject);
         }
@@ -199,11 +201,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        public bool Halted
-        {
-            get { return halted; }
-            set { halted = value; }
-        }
+        public bool Halted { get; set; }
 
         internal RuleLiteralResult ThisLiteralResult
         {
@@ -235,6 +233,77 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 // if the priorities are the same, compare names (in ascending order)
                 compare = -other.Rule?.Name.CompareTo(Rule.Name) ?? 1;
             return compare;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is not RuleState other)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            return Rule?.Priority == other.Rule?.Priority &&
+                   Rule?.Name == other.Rule?.Name;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + (Rule?.Priority.GetHashCode() ?? 0);
+                hash = hash * 23 + (Rule?.Name?.GetHashCode() ?? 0);
+                return hash;
+            }
+        }
+
+        public static bool operator ==(RuleState left, RuleState right)
+        {
+            if (ReferenceEquals(left, right))
+                return true;
+
+            if (left is null || right is null)
+                return false;
+
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(RuleState left, RuleState right)
+        {
+            return !(left == right);
+        }
+
+        public static bool operator <(RuleState left, RuleState right)
+        {
+            if (left is null)
+                return right is not null;
+
+            return ((IComparable)left).CompareTo(right) < 0;
+        }
+
+        public static bool operator <=(RuleState left, RuleState right)
+        {
+            if (left is null)
+                return true;
+
+            return ((IComparable)left).CompareTo(right) <= 0;
+        }
+
+        public static bool operator >(RuleState left, RuleState right)
+        {
+            if (left is null)
+                return false;
+
+            return ((IComparable)left).CompareTo(right) > 0;
+        }
+
+        public static bool operator >=(RuleState left, RuleState right)
+        {
+            if (left is null)
+                return right is null;
+
+            return ((IComparable)left).CompareTo(right) >= 0;
         }
     }
     #endregion
