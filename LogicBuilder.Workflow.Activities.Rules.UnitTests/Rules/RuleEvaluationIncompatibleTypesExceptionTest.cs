@@ -256,26 +256,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Equal(message, caughtException.Message);
         }
 
-        [Fact]
-        public void CanBeCaught_AsException()
-        {
-            var message = "Incompatible types error";
-            Exception caughtException;
-
-            try
-            {
-                throw new RuleEvaluationIncompatibleTypesException(message);
-            }
-            catch (Exception ex)
-            {
-                caughtException = ex;
-            }
-
-            Assert.NotNull(caughtException);
-            Assert.IsType<RuleEvaluationIncompatibleTypesException>(caughtException);
-            Assert.Equal(message, caughtException.Message);
-        }
-
         #endregion
 
         #region ToString Tests

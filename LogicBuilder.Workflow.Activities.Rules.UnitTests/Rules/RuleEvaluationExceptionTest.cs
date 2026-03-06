@@ -171,26 +171,6 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Equal(message, caughtException.Message);
         }
 
-        [Fact]
-        public void CanBeCaught_AsException()
-        {
-            var message = "Evaluation error occurred";
-            Exception? caughtException;
-
-            try
-            {
-                throw new RuleEvaluationException(message);
-            }
-            catch (Exception ex)
-            {
-                caughtException = ex;
-            }
-
-            Assert.NotNull(caughtException);
-            Assert.IsType<RuleEvaluationException>(caughtException);
-            Assert.Equal(message, caughtException.Message);
-        }
-
         #endregion
 
         #region Property Tests

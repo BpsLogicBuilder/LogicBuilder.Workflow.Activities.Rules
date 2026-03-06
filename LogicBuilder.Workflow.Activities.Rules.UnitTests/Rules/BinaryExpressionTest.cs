@@ -1490,7 +1490,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.Add, right);
 
             // Act
-            var cloned = _binaryExpression.Clone(expression) as CodeBinaryOperatorExpression;
+            var cloned = (CodeBinaryOperatorExpression)_binaryExpression.Clone(expression);
 
             // Assert
             Assert.NotNull(cloned);
@@ -1511,7 +1511,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var outerExpression = new CodeBinaryOperatorExpression(innerExpression, CodeBinaryOperatorType.Multiply, outerRight);
 
             // Act
-            var cloned = _binaryExpression.Clone(outerExpression) as CodeBinaryOperatorExpression;
+            var cloned = (CodeBinaryOperatorExpression)_binaryExpression.Clone(outerExpression);
 
             // Assert
             Assert.NotNull(cloned);
@@ -2006,7 +2006,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var expression = new CodeBinaryOperatorExpression(left, CodeBinaryOperatorType.Multiply, right);
 
             // Act
-            var cloned = _binaryExpression.Clone(expression) as CodeBinaryOperatorExpression;
+            var cloned = (CodeBinaryOperatorExpression)_binaryExpression.Clone(expression);
 
             // Assert
             Assert.NotNull(cloned);
@@ -2044,7 +2044,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
                 var expression = new CodeBinaryOperatorExpression(left, op, right);
 
                 // Act
-                var cloned = _binaryExpression.Clone(expression) as CodeBinaryOperatorExpression;
+                var cloned = (CodeBinaryOperatorExpression)_binaryExpression.Clone(expression);
 
                 // Assert
                 Assert.NotNull(cloned);
