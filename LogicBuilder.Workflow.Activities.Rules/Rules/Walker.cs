@@ -19,6 +19,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         #region IRuleExpression wrapper factories for CodeDom
 
+        [ExcludeFromCodeCoverage]
         class CustomExpressionWrapper : RuleExpressionInternal
         {
             private readonly IRuleExpression ruleExpr;
