@@ -847,5 +847,523 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             Assert.Equal(3, result.MethodInfo.GetParameters().Length);
         }
         #endregion
+
+        #region AllowInternalMembers Tests
+        [Fact]
+        public void AllowInternalMembers_WithSameAssembly_ReturnsTrue()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Act
+            var result = validation.AllowInternalMembers(typeof(TestClass));
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void AllowInternalMembers_WithDifferentAssembly_ReturnsFalse()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Act
+            var result = validation.AllowInternalMembers(typeof(string));
+
+            // Assert
+            Assert.False(result);
+        }
+        #endregion
+
+        #region ValidateMemberAccess Tests
+        [Fact]
+        public void ValidateMemberAccess_WithPublicField_ReturnsTrue()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var field = typeof(TestClass).GetField("PublicField");
+            var expression = new CodeFieldReferenceExpression();
+
+            // Act
+            var result = validation.ValidateMemberAccess(
+                expression, typeof(TestClass), field, "PublicField", expression);
+
+            // Assert
+            Assert.True(result);
+            Assert.Empty(validation.Errors);
+        }
+
+        [Fact]
+        public void ValidateMemberAccess_WithPrivateFieldOnDifferentType_ReturnsFalse()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(string));
+            var field = typeof(TestClass).GetField("privateField", 
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var expression = new CodeFieldReferenceExpression();
+
+            // Act
+            var result = validation.ValidateMemberAccess(
+                expression, typeof(TestClass), field, "privateField", expression);
+
+            // Assert
+            Assert.False(result);
+            Assert.NotEmpty(validation.Errors);
+        }
+
+        [Fact]
+        public void ValidateMemberAccess_WithStaticMethodAndInstanceTarget_ReturnsFalse()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var method = typeof(TestClass).GetMethod("StaticMethod");
+            var referenceExpression = new CodeThisReferenceExpression();
+            var expression = new CodeMethodInvokeExpression(
+                referenceExpression, "StaticMethod");
+
+            // Act
+            var result = validation.ValidateMemberAccess(
+                referenceExpression, typeof(TestClass), method, "StaticMethod", expression);
+
+            // Assert
+            Assert.False(result);
+            Assert.NotEmpty(validation.Errors);
+        }
+
+        [Fact]
+        public void ValidateMemberAccess_WithInstanceMethodAndTypeTarget_ReturnsFalse()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var method = typeof(TestClass).GetMethod("PublicMethod");
+            var referenceExpression = new CodeTypeReferenceExpression(typeof(TestClass));
+            var expression = new CodeMethodInvokeExpression(
+                referenceExpression, "PublicMethod");
+
+            // Act
+            var result = validation.ValidateMemberAccess(
+                referenceExpression, typeof(TestClass), method, "PublicMethod", expression);
+
+            // Assert
+            Assert.False(result);
+            Assert.NotEmpty(validation.Errors);
+        }
+        #endregion
+
+        #region ResolveConstructor Tests
+        [Fact]
+        public void ResolveConstructor_WithValidConstructor_ReturnsConstructorInfo()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var arguments = new List<CodeExpression>();
+
+            // Act
+            var result = validation.ResolveConstructor(
+                typeof(TestClass),
+                BindingFlags.Public | BindingFlags.Instance,
+                arguments,
+                out ValidationError error);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Null(error);
+            Assert.NotNull(result.ConstructorInfo);
+        }
+
+        [Fact]
+        public void ResolveConstructor_WithPrivateConstructor_ReturnsNull()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(PrivateConstructorClass));
+            var arguments = new List<CodeExpression>();
+
+            // Act
+            var result = validation.ResolveConstructor(
+                typeof(PrivateConstructorClass),
+                BindingFlags.Public | BindingFlags.Instance,
+                arguments,
+                out ValidationError error);
+
+            // Assert
+            Assert.Null(result);
+            Assert.NotNull(error);
+        }
+        #endregion
+
+        #region AddTypeReference Tests
+        [Fact]
+        public void AddTypeReference_StoresTypeReference()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var typeRef = new CodeTypeReference(typeof(string));
+
+            // Act
+            validation.AddTypeReference(typeRef, typeof(string));
+            var resolvedType = validation.ResolveType(typeRef);
+
+            // Assert
+            Assert.NotNull(resolvedType);
+            Assert.Equal(typeof(string), resolvedType);
+        }
+
+        [Fact]
+        public void AddTypeReference_WithMultipleReferences_StoresAll()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var typeRef1 = new CodeTypeReference(typeof(string));
+            var typeRef2 = new CodeTypeReference(typeof(int));
+
+            // Act
+            validation.AddTypeReference(typeRef1, typeof(string));
+            validation.AddTypeReference(typeRef2, typeof(int));
+
+            // Assert
+            Assert.Equal(typeof(string), validation.ResolveType(typeRef1));
+            Assert.Equal(typeof(int), validation.ResolveType(typeRef2));
+        }
+        #endregion
+
+        #region ImplicitConversion Tests
+        [Fact]
+        public void ImplicitConversion_WithStandardImplicitConversion_ReturnsTrue()
+        {
+            // Act
+            var result = RuleValidation.ImplicitConversion(typeof(int), typeof(long));
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void ImplicitConversion_WithNoConversion_ReturnsFalse()
+        {
+            // Act
+            var result = RuleValidation.ImplicitConversion(typeof(string), typeof(int));
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void ImplicitConversion_WithNullableConversion_ReturnsTrue()
+        {
+            // Act
+            var result = RuleValidation.ImplicitConversion(typeof(int), typeof(int?));
+
+            // Assert
+            Assert.True(result);
+        }
+        #endregion
+
+        #region FindImplicitConversion Tests
+        [Fact]
+        public void FindImplicitConversion_WithInvalidConversion_GeneratesError()
+        {
+            // Act
+            var method = RuleValidation.FindImplicitConversion(
+                typeof(string), typeof(int), out ValidationError error);
+
+            // Assert
+            Assert.Null(method);
+            Assert.NotNull(error);
+        }
+        #endregion
+
+        #region Additional StandardImplicitConversion Tests
+        [Theory]
+        [InlineData(typeof(char), typeof(ushort), true)]
+        [InlineData(typeof(char), typeof(int), true)]
+        [InlineData(typeof(char), typeof(uint), true)]
+        [InlineData(typeof(char), typeof(long), true)]
+        [InlineData(typeof(char), typeof(ulong), true)]
+        [InlineData(typeof(ushort), typeof(int), true)]
+        [InlineData(typeof(ushort), typeof(uint), true)]
+        [InlineData(typeof(ushort), typeof(long), true)]
+        [InlineData(typeof(ushort), typeof(ulong), true)]
+        [InlineData(typeof(uint), typeof(long), true)]
+        [InlineData(typeof(uint), typeof(ulong), true)]
+        public void StandardImplicitConversion_WithVariousNumericTypes_ReturnsExpected(
+            Type fromType, Type toType, bool expected)
+        {
+            // Act
+            var result = RuleValidation.StandardImplicitConversion(
+                fromType, toType, null, out _);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void StandardImplicitConversion_WithNullableToNullable_ReturnsTrue()
+        {
+            // Act
+            var result = RuleValidation.StandardImplicitConversion(
+                typeof(int?), typeof(long?), null, out _);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void StandardImplicitConversion_WithEnumAndZero_ReturnsTrue()
+        {
+            // Arrange
+            var zeroExpression = new CodePrimitiveExpression(0);
+
+            // Act
+            var result = RuleValidation.StandardImplicitConversion(
+                typeof(int), typeof(TestEnum), zeroExpression, out _);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void StandardImplicitConversion_WithEnumAndNonZero_ReturnsFalse()
+        {
+            // Arrange
+            var nonZeroExpression = new CodePrimitiveExpression(1);
+
+            // Act
+            var result = RuleValidation.StandardImplicitConversion(
+                typeof(int), typeof(TestEnum), nonZeroExpression, out _);
+
+            // Assert
+            Assert.False(result);
+        }
+        #endregion
+
+        #region ResolveProperty Tests
+        [Fact]
+        public void ResolveProperty_WithValidProperty_ReturnsPropertyInfo()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Act
+            var property = validation.ResolveProperty(
+                typeof(TestClass),
+                "PublicProperty",
+                BindingFlags.Public | BindingFlags.Instance);
+
+            // Assert
+            Assert.NotNull(property);
+            Assert.Equal("PublicProperty", property.Name);
+        }
+
+        [Fact]
+        public void ResolveProperty_WithNonExistentProperty_ReturnsNull()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Act
+            var property = validation.ResolveProperty(
+                typeof(TestClass),
+                "NonExistentProperty",
+                BindingFlags.Public | BindingFlags.Instance);
+
+            // Assert
+            Assert.Null(property);
+        }
+        #endregion
+
+        #region GetConstructors Tests
+        [Fact]
+        public void GetConstructors_ReturnsPublicConstructors()
+        {
+            // Arrange
+            var types = new List<Type> { typeof(TestClass) };
+
+            // Act
+            var constructors = RuleValidation.GetConstructors(
+                types,
+                BindingFlags.Public | BindingFlags.Instance);
+
+            // Assert
+            Assert.NotEmpty(constructors);
+            Assert.All(constructors, c => Assert.True(c.IsPublic));
+        }
+
+        [Fact]
+        public void GetConstructors_ExcludesPrivateConstructors()
+        {
+            // Arrange
+            var types = new List<Type> { typeof(TestClass) };
+
+            // Act
+            var constructors = RuleValidation.GetConstructors(
+                types,
+                BindingFlags.Public | BindingFlags.Instance);
+
+            // Assert
+            Assert.All(constructors, c => Assert.False(c.IsPrivate));
+        }
+        #endregion
+
+        #region Additional Edge Case Tests
+        [Fact]
+        public void TypesAreAssignable_WithNullableToNonNullable_ReturnsFalse()
+        {
+            // Act
+            var result = RuleValidation.TypesAreAssignable(
+                typeof(int?), typeof(int), null, out _);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void TypesAreAssignable_WithNullableToObject_ReturnsTrue()
+        {
+            // Act
+            var result = RuleValidation.TypesAreAssignable(
+                typeof(int?), typeof(object), null, out ValidationError error);
+
+            // Assert
+            Assert.True(result);
+            Assert.Null(error);
+        }
+
+        [Fact]
+        public void ExplicitConversionSpecified_WithNullableTypes_HandlesCorrectly()
+        {
+            // Act
+            var result = RuleValidation.ExplicitConversionSpecified(
+                typeof(long?), typeof(int?), out ValidationError error);
+
+            // Assert
+            Assert.True(result);
+            Assert.Null(error);
+        }
+
+        [Fact]
+        public void ExplicitConversionSpecified_WithInterfaceTypes_HandlesCorrectly()
+        {
+            // Act
+            var result = RuleValidation.ExplicitConversionSpecified(
+                typeof(IComparable), typeof(int), out _);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void ResolveType_WithGenericType_ReturnsCorrectType()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var typeRef = new CodeTypeReference(typeof(List<>));
+            typeRef.TypeArguments.Add(new CodeTypeReference(typeof(int)));
+
+            // Act
+            var resolvedType = validation.ResolveType(typeRef);
+
+            // Assert
+            Assert.NotNull(resolvedType);
+            Assert.True(resolvedType.IsGenericType);
+            Assert.Equal(typeof(int), resolvedType.GetGenericArguments()[0]);
+        }
+
+        [Fact]
+        public void ResolveType_WithInvalidGenericArgument_ReturnsNull()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var typeRef = new CodeTypeReference(typeof(List<>));
+            typeRef.TypeArguments.Add(new CodeTypeReference("NonExistent.Type"));
+
+            // Act
+            var resolvedType = validation.ResolveType(typeRef);
+
+            // Assert
+            Assert.Null(resolvedType);
+            Assert.NotEmpty(validation.Errors);
+        }
+
+        [Fact]
+        public void ResolveFieldOrProperty_WithInternalField_WhenAllowed_ReturnsField()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+
+            // Act
+            var member = validation.ResolveFieldOrProperty(typeof(TestClass), "internalField");
+
+            // Assert
+            Assert.NotNull(member);
+            Assert.Equal("internalField", member.Name);
+        }
+
+        [Fact]
+        public void ValidateConditionExpression_WithComplexExpression_HandlesCorrectly()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var binaryExpr = new CodeBinaryOperatorExpression(
+                new CodePrimitiveExpression(true),
+                CodeBinaryOperatorType.BooleanAnd,
+                new CodePrimitiveExpression(false));
+
+            // Act
+            var result = validation.ValidateConditionExpression(binaryExpr);
+
+            // Assert
+            Assert.True(result);
+            Assert.Empty(validation.Errors);
+        }
+
+        [Fact]
+        public void FindBestCandidate_WithMultipleMethods_SelectsCorrectOne()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var methods = new List<MethodInfo>
+            {
+                typeof(TestClass).GetMethod("GetMessage", Type.EmptyTypes)!,
+                typeof(TestClass).GetMethod("GetMessage", new[] { typeof(string) })!
+            };
+
+            // Act
+            var result = validation.FindBestCandidate(
+                typeof(TestClass),
+                methods,
+                typeof(string));
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.GetParameters());
+        }
+
+        [Fact]
+        public void ResolveType_WithMultidimensionalArray_ReturnsCorrectType()
+        {
+            // Arrange
+            var validation = new RuleValidation(typeof(TestClass));
+            var typeRef = new CodeTypeReference(typeof(int[]))
+            {
+                ArrayRank = 2
+            };
+
+            // Act
+            var resolvedType = validation.ResolveType(typeRef);
+
+            // Assert
+            Assert.NotNull(resolvedType);
+            Assert.True(resolvedType.IsArray);
+            Assert.Equal(2, resolvedType.GetArrayRank());
+        }
+        #endregion
+
+        #region Helper Classes for Additional Tests
+        private class PrivateConstructorClass//NOSONAR - used for testing.
+        {
+            private PrivateConstructorClass() { }
+        }
+        #endregion
     }
 }
