@@ -9,6 +9,7 @@ using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -389,7 +390,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             int result = actualMethod.GetHashCode() ^ resultType.GetHashCode();
             for (int i = 0; i < expectedParameters.Length; ++i)
-                result ^= expectedParameters[i].GetHashCode();
+                result ^= expectedParameters[i].ParameterType.GetHashCode();
             return result;
         }
     }
@@ -2111,6 +2112,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
+        [ExcludeFromCodeCoverage]
         private class CandidateParameter
         {
             private readonly Type type;
@@ -2300,6 +2302,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
+        [ExcludeFromCodeCoverage]
         private class CandidateMember
         {
             internal enum Form
