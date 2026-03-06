@@ -10,7 +10,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var boolLiteral = new BoolLiteral(true);
 
             // Assert
-            Assert.Equal(true, boolLiteral.Value);
+            Assert.True((bool)boolLiteral.Value);
         }
 
         [Fact]
@@ -20,7 +20,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var boolLiteral = new BoolLiteral(false);
 
             // Assert
-            Assert.Equal(false, boolLiteral.Value);
+            Assert.False((bool)boolLiteral.Value);
         }
 
         [Fact]
@@ -46,7 +46,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.IsType<bool>(value);
-            Assert.Equal(true, value);
+            Assert.True((bool)value);
         }
 
         [Fact]
@@ -60,7 +60,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.IsType<bool>(value);
-            Assert.Equal(false, value);
+            Assert.False((bool)value);
         }
         #endregion
 
@@ -382,7 +382,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.IsType<BoolLiteral>(literal);
-            Assert.Equal(true, literal.Value);
+            Assert.True((bool)literal.Value);
         }
 
         [Fact]
@@ -393,7 +393,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
             // Assert
             Assert.IsType<BoolLiteral>(literal);
-            Assert.Equal(false, literal.Value);
+            Assert.False((bool)literal.Value);
         }
 
         [Fact]

@@ -1065,5 +1065,415 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         }
 
         #endregion
+
+        #region Additional Branch Coverage Tests for Negative Long
+
+        [Fact]
+        public void Subtract_WithNegativeLong_ThrowsException()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var longLiteral = ArithmeticLiteral.MakeLiteral(typeof(long), -30L);
+
+            // Act & Assert
+            Assert.Throws<RuleEvaluationIncompatibleTypesException>(() => literal.Subtract(longLiteral));
+        }
+
+        [Fact]
+        public void Multiply_WithNegativeLong_ThrowsException()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 10UL);
+            var longLiteral = ArithmeticLiteral.MakeLiteral(typeof(long), -5L);
+
+            // Act & Assert
+            Assert.Throws<RuleEvaluationIncompatibleTypesException>(() => literal.Multiply(longLiteral));
+        }
+
+        [Fact]
+        public void Divide_WithNegativeLong_ThrowsException()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var longLiteral = ArithmeticLiteral.MakeLiteral(typeof(long), -5L);
+
+            // Act & Assert
+            Assert.Throws<RuleEvaluationIncompatibleTypesException>(() => literal.Divide(longLiteral));
+        }
+
+        [Fact]
+        public void Modulus_WithNegativeLong_ThrowsException()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var longLiteral = ArithmeticLiteral.MakeLiteral(typeof(long), -30L);
+
+            // Act & Assert
+            Assert.Throws<RuleEvaluationIncompatibleTypesException>(() => literal.Modulus(longLiteral));
+        }
+
+        [Fact]
+        public void BitAnd_WithNegativeLong_ThrowsException()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 255UL);
+            var longLiteral = ArithmeticLiteral.MakeLiteral(typeof(long), -1L);
+
+            // Act & Assert
+            Assert.Throws<RuleEvaluationIncompatibleTypesException>(() => literal.BitAnd(longLiteral));
+        }
+
+        [Fact]
+        public void BitOr_WithNegativeLong_ThrowsException()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 240UL);
+            var longLiteral = ArithmeticLiteral.MakeLiteral(typeof(long), -1L);
+
+            // Act & Assert
+            Assert.Throws<RuleEvaluationIncompatibleTypesException>(() => literal.BitOr(longLiteral));
+        }
+
+        #endregion
+
+        #region Edge Case Tests
+
+        [Fact]
+        public void Add_WithZeroInt_ReturnsOriginalValue()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var intLiteral = ArithmeticLiteral.MakeLiteral(typeof(int), 0);
+
+            // Act
+            var result = literal.Add(intLiteral);
+
+            // Assert
+            Assert.Equal(100UL, result);
+        }
+
+        [Fact]
+        public void Add_WithZeroLong_ReturnsOriginalValue()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var longLiteral = ArithmeticLiteral.MakeLiteral(typeof(long), 0L);
+
+            // Act
+            var result = literal.Add(longLiteral);
+
+            // Assert
+            Assert.Equal(100UL, result);
+        }
+
+        [Fact]
+        public void Subtract_WithZero_ReturnsOriginalValue()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var intLiteral = ArithmeticLiteral.MakeLiteral(typeof(int), 0);
+
+            // Act
+            var result = literal.Subtract(intLiteral);
+
+            // Assert
+            Assert.Equal(100UL, result);
+        }
+
+        [Fact]
+        public void Multiply_WithOne_ReturnsOriginalValue()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var intLiteral = ArithmeticLiteral.MakeLiteral(typeof(int), 1);
+
+            // Act
+            var result = literal.Multiply(intLiteral);
+
+            // Assert
+            Assert.Equal(100UL, result);
+        }
+
+        [Fact]
+        public void Multiply_WithZero_ReturnsZero()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var intLiteral = ArithmeticLiteral.MakeLiteral(typeof(int), 0);
+
+            // Act
+            var result = literal.Multiply(intLiteral);
+
+            // Assert
+            Assert.Equal(0UL, result);
+        }
+
+        [Fact]
+        public void Divide_ByOne_ReturnsOriginalValue()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var intLiteral = ArithmeticLiteral.MakeLiteral(typeof(int), 1);
+
+            // Act
+            var result = literal.Divide(intLiteral);
+
+            // Assert
+            Assert.Equal(100UL, result);
+        }
+
+        [Fact]
+        public void Modulus_BySameValue_ReturnsZero()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var ulongLiteral = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+
+            // Act
+            var result = literal.Modulus(ulongLiteral);
+
+            // Assert
+            Assert.Equal(0UL, result);
+        }
+
+        [Fact]
+        public void BitAnd_WithZero_ReturnsZero()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 255UL);
+            var intLiteral = ArithmeticLiteral.MakeLiteral(typeof(int), 0);
+
+            // Act
+            var result = literal.BitAnd(intLiteral);
+
+            // Assert
+            Assert.Equal(0UL, result);
+        }
+
+        [Fact]
+        public void BitAnd_WithAllBitsSet_ReturnsOriginalValue()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 255UL);
+            var ulongLiteral = ArithmeticLiteral.MakeLiteral(typeof(ulong), ulong.MaxValue);
+
+            // Act
+            var result = literal.BitAnd(ulongLiteral);
+
+            // Assert
+            Assert.Equal(255UL, result);
+        }
+
+        [Fact]
+        public void BitOr_WithZero_ReturnsOriginalValue()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 240UL);
+            var intLiteral = ArithmeticLiteral.MakeLiteral(typeof(int), 0);
+
+            // Act
+            var result = literal.BitOr(intLiteral);
+
+            // Assert
+            Assert.Equal(240UL, result);
+        }
+
+        [Fact]
+        public void BitOr_WithSameValue_ReturnsSameValue()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 240UL);
+            var ulongLiteral = ArithmeticLiteral.MakeLiteral(typeof(ulong), 240UL);
+
+            // Act
+            var result = literal.BitOr(ulongLiteral);
+
+            // Assert
+            Assert.Equal(240UL, result);
+        }
+
+        #endregion
+
+        #region Tests with Maximum and Minimum Values
+
+        [Fact]
+        public void Add_WithMaxValue_OverflowsCorrectly()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), ulong.MaxValue);
+            var oneLiteral = ArithmeticLiteral.MakeLiteral(typeof(ulong), 1UL);
+
+            // Act & Assert - This will overflow but C# allows it (wraps around)
+            var result = literal.Add(oneLiteral);
+            Assert.Equal(0UL, result); // Wraps around to 0
+        }
+
+        [Fact]
+        public void Subtract_FromMinValue_UnderflowsCorrectly()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 0UL);
+            var oneLiteral = ArithmeticLiteral.MakeLiteral(typeof(ulong), 1UL);
+
+            // Act - This will underflow but C# allows it (wraps around)
+            var result = literal.Subtract(oneLiteral);
+            Assert.Equal(ulong.MaxValue, result); // Wraps around to MaxValue
+        }
+
+        [Fact]
+        public void Multiply_MaxValueByTwo_OverflowsCorrectly()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), ulong.MaxValue);
+            var twoLiteral = ArithmeticLiteral.MakeLiteral(typeof(ulong), 2UL);
+
+            // Act - This will overflow but C# allows it (wraps around)
+            var result = literal.Multiply(twoLiteral);
+            Assert.Equal(ulong.MaxValue - 1, result); // Overflows and wraps
+        }
+
+        [Fact]
+        public void BitAnd_WithMaxValue_ReturnsMaxValue()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), ulong.MaxValue);
+            var maxLiteral = ArithmeticLiteral.MakeLiteral(typeof(ulong), ulong.MaxValue);
+
+            // Act
+            var result = literal.BitAnd(maxLiteral);
+
+            // Assert
+            Assert.Equal(ulong.MaxValue, result);
+        }
+
+        [Fact]
+        public void BitOr_WithMaxValue_ReturnsMaxValue()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var maxLiteral = ArithmeticLiteral.MakeLiteral(typeof(ulong), ulong.MaxValue);
+
+            // Act
+            var result = literal.BitOr(maxLiteral);
+
+            // Assert
+            Assert.Equal(ulong.MaxValue, result);
+        }
+
+        #endregion
+
+        #region Boolean Operation Tests
+
+        [Fact]
+        public void BitAnd_WithBool_ThrowsException()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 255UL);
+            var boolLiteral = ArithmeticLiteral.MakeLiteral(typeof(bool), true);
+
+            // Act & Assert
+            Assert.Throws<RuleEvaluationIncompatibleTypesException>(() => literal.BitAnd(boolLiteral));
+        }
+
+        [Fact]
+        public void BitOr_WithBool_ThrowsException()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 240UL);
+            var boolLiteral = ArithmeticLiteral.MakeLiteral(typeof(bool), false);
+
+            // Act & Assert
+            Assert.Throws<RuleEvaluationIncompatibleTypesException>(() => literal.BitOr(boolLiteral));
+        }
+
+        #endregion
+
+        #region Tests for Operations Calling Empty/Null Overloads
+
+        [Fact]
+        public void Subtract_WithNullLiteral_CallsNullOverload()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var nullLiteral = ArithmeticLiteral.MakeLiteral(typeof(long?), null);
+
+            // Act
+            var result = literal.Subtract(nullLiteral);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Multiply_WithNullLiteral_CallsNullOverload()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var nullLiteral = ArithmeticLiteral.MakeLiteral(typeof(int?), null);
+
+            // Act
+            var result = literal.Multiply(nullLiteral);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Divide_WithNullLiteral_CallsNullOverload()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var nullLiteral = ArithmeticLiteral.MakeLiteral(typeof(decimal?), null);
+
+            // Act
+            var result = literal.Divide(nullLiteral);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Modulus_WithNullLiteral_CallsNullOverload()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 100UL);
+            var nullLiteral = ArithmeticLiteral.MakeLiteral(typeof(float?), null);
+
+            // Act
+            var result = literal.Modulus(nullLiteral);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void BitAnd_WithNullLiteral_CallsNullOverload()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 255UL);
+            var nullLiteral = ArithmeticLiteral.MakeLiteral(typeof(double?), null);
+
+            // Act
+            var result = literal.BitAnd(nullLiteral);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void BitOr_WithNullLiteral_CallsNullOverload()
+        {
+            // Arrange
+            var literal = ArithmeticLiteral.MakeLiteral(typeof(ulong), 240UL);
+            var nullLiteral = ArithmeticLiteral.MakeLiteral(typeof(bool?), null);
+
+            // Act
+            var result = literal.BitOr(nullLiteral);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        #endregion
     }
 }
