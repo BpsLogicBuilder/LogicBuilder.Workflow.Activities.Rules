@@ -34,31 +34,19 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             public string ThrowingProperty //NOSONAR - needed for testing
             {
                 get => throw new InvalidOperationException("Getter error");
-                set
-                {
-                    var _ = value;
-                    throw new InvalidOperationException("Setter error");
-                }
+                set => throw new InvalidOperationException("Setter error");
             }
 
             public string ThrowingPropertyWithInnerException//NOSONAR - needed for testing
             {
                 get => throw new TargetInvocationException("Outer exception", new ArgumentException("Inner exception"));
-                set
-                {
-                    var _ = value;
-                    throw new TargetInvocationException("Outer exception", new ArgumentException("Inner exception"));
-                }
+                set => throw new TargetInvocationException("Outer exception", new ArgumentException("Inner exception"));
             }
 
             public string ThrowingPropertyNoInnerException//NOSONAR - needed for testing
             {
                 get => throw new TargetInvocationException("No inner exception", null);
-                set
-                {
-                    var _ = value;
-                    throw new TargetInvocationException("No inner exception", null);
-                }
+                set => throw new TargetInvocationException("No inner exception", null);
             }
         }
         #endregion
