@@ -192,8 +192,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
             Type leftType = execution.Validation.ExpressionInfo(assignStatement.Left).ExpressionType;
             Type rightType = execution.Validation.ExpressionInfo(assignStatement.Right).ExpressionType;
 
-            RuleExpressionResult leftResult = RuleExpressionWalker.Evaluate(execution, assignStatement.Left);
-            RuleExpressionResult rightResult = RuleExpressionWalker.Evaluate(execution, assignStatement.Right);
+            IRuleExpressionResult leftResult = RuleExpressionWalker.Evaluate(execution, assignStatement.Left);
+            IRuleExpressionResult rightResult = RuleExpressionWalker.Evaluate(execution, assignStatement.Right);
             leftResult.Value = Executor.AdjustType(rightType, rightResult.Value, leftType);
         }
 

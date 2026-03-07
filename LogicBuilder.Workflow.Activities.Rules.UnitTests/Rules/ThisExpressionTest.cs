@@ -237,37 +237,37 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
 
         private RuleExpressionInfo InvokeValidate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
-            var method = thisExpressionType.GetMethod("Validate", BindingFlags.Instance | BindingFlags.NonPublic);
+            var method = thisExpressionType.GetMethod("Validate", BindingFlags.Instance | BindingFlags.Public);
             return (RuleExpressionInfo)method!.Invoke(thisExpressionInstance, [expression, validation, isWritten])!;
         }
 
         private void InvokeAnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
-            var method = thisExpressionType.GetMethod("AnalyzeUsage", BindingFlags.Instance | BindingFlags.NonPublic);
+            var method = thisExpressionType.GetMethod("AnalyzeUsage", BindingFlags.Instance | BindingFlags.Public);
             method!.Invoke(thisExpressionInstance, [expression, analysis, isRead, isWritten, qualifier]);
         }
 
-        private RuleExpressionResult InvokeEvaluate(CodeExpression expression, RuleExecution execution)
+        private IRuleExpressionResult InvokeEvaluate(CodeExpression expression, RuleExecution execution)
         {
-            var method = thisExpressionType.GetMethod("Evaluate", BindingFlags.Instance | BindingFlags.NonPublic);
-            return (RuleExpressionResult)method!.Invoke(thisExpressionInstance, [expression, execution])!;
+            var method = thisExpressionType.GetMethod("Evaluate", BindingFlags.Instance | BindingFlags.Public);
+            return (IRuleExpressionResult)method!.Invoke(thisExpressionInstance, [expression, execution])!;
         }
 
         private void InvokeDecompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
-            var method = thisExpressionType.GetMethod("Decompile", BindingFlags.Instance | BindingFlags.NonPublic);
+            var method = thisExpressionType.GetMethod("Decompile", BindingFlags.Instance | BindingFlags.Public);
             method!.Invoke(thisExpressionInstance, [expression, stringBuilder, parentExpression]);
         }
 
         private CodeExpression InvokeClone(CodeExpression expression)
         {
-            var method = thisExpressionType.GetMethod("Clone", BindingFlags.Instance | BindingFlags.NonPublic);
+            var method = thisExpressionType.GetMethod("Clone", BindingFlags.Instance | BindingFlags.Public);
             return (CodeExpression)method!.Invoke(thisExpressionInstance, [expression])!;
         }
 
         private bool InvokeMatch(CodeExpression expression, CodeExpression comperand)
         {
-            var method = thisExpressionType.GetMethod("Match", BindingFlags.Instance | BindingFlags.NonPublic);
+            var method = thisExpressionType.GetMethod("Match", BindingFlags.Instance | BindingFlags.Public);
             return (bool)method!.Invoke(thisExpressionInstance, [expression, comperand])!;
         }
 

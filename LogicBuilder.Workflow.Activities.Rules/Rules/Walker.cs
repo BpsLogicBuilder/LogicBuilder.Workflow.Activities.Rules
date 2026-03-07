@@ -20,7 +20,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         #region IRuleExpression wrapper factories for CodeDom
 
         [ExcludeFromCodeCoverage]
-        class CustomExpressionWrapper : RuleExpressionInternal
+        class CustomExpressionWrapper : IRuleExpressionInternal
         {
             private readonly IRuleExpression ruleExpr;
 
@@ -29,32 +29,32 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 this.ruleExpr = ruleExpr;
             }
 
-            internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+            public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
             {
                 ruleExpr.AnalyzeUsage(analysis, isRead, isWritten, qualifier);
             }
 
-            internal override CodeExpression Clone(CodeExpression expression)
+            public CodeExpression Clone(CodeExpression expression)
             {
                 return ruleExpr.Clone();
             }
 
-            internal override void Decompile(CodeExpression expression, StringBuilder decompilation, CodeExpression parentExpression)
+            public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
             {
-                ruleExpr.Decompile(decompilation, parentExpression);
+                ruleExpr.Decompile(stringBuilder, parentExpression);
             }
 
-            internal override RuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+            public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
             {
                 return ruleExpr.Evaluate(execution);
             }
 
-            internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+            public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
             {
                 return ruleExpr.Match(rightExpression);
             }
 
-            internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+            public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
             {
                 return ruleExpr.Validate(validation, isWritten);
             }
@@ -63,9 +63,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
         class TypeWrapperTuple
         {
             internal readonly Type codeDomType;
-            internal readonly RuleExpressionInternal internalExpression;
+            internal readonly IRuleExpressionInternal internalExpression;
 
-            internal TypeWrapperTuple(Type type, RuleExpressionInternal internalExpression)
+            internal TypeWrapperTuple(Type type, IRuleExpressionInternal internalExpression)
             {
                 this.codeDomType = type;
                 this.internalExpression = internalExpression;
@@ -88,7 +88,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             new TypeWrapperTuple(typeof(CodeArrayCreateExpression), new ArrayCreateExpression())
         ];
 
-        private static RuleExpressionInternal GetExpression(CodeExpression expression)
+        private static IRuleExpressionInternal GetExpression(CodeExpression expression)
         {
             Type exprType = expression.GetType();
             int numTypeWrappers = typeWrappers.Length;
@@ -121,7 +121,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (resultExprInfo == null)
             {
                 // First time we've seen this node.
-                RuleExpressionInternal ruleExpr = GetExpression(expression);
+                IRuleExpressionInternal ruleExpr = GetExpression(expression);
                 if (ruleExpr == null)
                 {
                     string message = string.Format(CultureInfo.CurrentCulture, Messages.CodeExpressionNotHandled, expression.GetType().FullName);
@@ -160,22 +160,22 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (analysis == null)
                 throw new ArgumentNullException("analysis");
 
-            RuleExpressionInternal ruleExpr = GetExpression(expression);
+            IRuleExpressionInternal ruleExpr = GetExpression(expression);
             ruleExpr.AnalyzeUsage(expression, analysis, isRead, isWritten, qualifier);
         }
 
-        public static RuleExpressionResult Evaluate(RuleExecution execution, CodeExpression expression)
+        public static IRuleExpressionResult Evaluate(RuleExecution execution, CodeExpression expression)
         {
             if (execution == null)
                 throw new ArgumentNullException("execution");
 
-            RuleExpressionInternal ruleExpr = GetExpression(expression);
+            IRuleExpressionInternal ruleExpr = GetExpression(expression);
             return ruleExpr.Evaluate(expression, execution);
         }
 
         public static void Decompile(StringBuilder stringBuilder, CodeExpression expression, CodeExpression parentExpression)
         {
-            RuleExpressionInternal ruleExpr = GetExpression(expression);
+            IRuleExpressionInternal ruleExpr = GetExpression(expression);
             ruleExpr.Decompile(expression, stringBuilder, parentExpression);
         }
 
@@ -192,7 +192,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (firstExpression.GetType() != secondExpression.GetType())
                 return false;
 
-            RuleExpressionInternal ruleExpr1 = GetExpression(firstExpression);
+            IRuleExpressionInternal ruleExpr1 = GetExpression(firstExpression);
             return ruleExpr1.Match(firstExpression, secondExpression);
         }
 
@@ -201,7 +201,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (originalExpression == null)
                 return null;
 
-            RuleExpressionInternal ruleExpr = GetExpression(originalExpression);
+            IRuleExpressionInternal ruleExpr = GetExpression(originalExpression);
             CodeExpression newExpr = ruleExpr.Clone(originalExpression);
 
             ConditionHelper.CloneUserData(originalExpression, newExpr);

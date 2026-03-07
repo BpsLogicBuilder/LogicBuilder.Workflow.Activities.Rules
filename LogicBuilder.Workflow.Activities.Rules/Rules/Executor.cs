@@ -7,25 +7,23 @@ using LogicBuilder.Workflow.ComponentModel.Compiler;
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using static System.Collections.Specialized.BitVector32;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
     #region RuleExpressionResult class hierarchy
-    public abstract class RuleExpressionResult
+    public interface IRuleExpressionResult 
     {
-        public abstract object Value { get; set; }
+        object Value { get; set; }
     }
 
-    public class RuleLiteralResult(object literal) : RuleExpressionResult
+    public class RuleLiteralResult(object literal) : IRuleExpressionResult
     {
         private readonly object literal = literal;
 
-        public override object Value
+        public object Value
         {
             get
             {
@@ -38,27 +36,16 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
     }
 
-    internal class RuleFieldResult(object targetObject, FieldInfo fieldInfo) : RuleExpressionResult
+    internal class RuleFieldResult(object targetObject, FieldInfo fieldInfo) : IRuleExpressionResult
     {
         private readonly object targetObject = targetObject;
         private readonly FieldInfo fieldInfo = fieldInfo ?? throw new ArgumentNullException("fieldInfo");
 
-        public override object Value
+        public object Value
         {
             get
             {
-#pragma warning disable 56503
-                if (!fieldInfo.IsStatic && targetObject == null)
-                {
-                    // Accessing a non-static field from null target.
-                    string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullField, fieldInfo.Name);
-                    RuleEvaluationException exception = new(message);
-                    exception.Data[RuleUserDataKeys.ErrorObject] = fieldInfo;
-                    throw exception;
-                }
-
-                return fieldInfo.GetValue(targetObject);
-#pragma warning restore 56503
+                return GetValue();
             }
             set
             {
@@ -74,41 +61,33 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 fieldInfo.SetValue(targetObject, value);
             }
         }
+
+        private object GetValue()
+        {
+            if (!fieldInfo.IsStatic && targetObject == null)
+            {
+                // Accessing a non-static field from null target.
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullField, fieldInfo.Name);
+                RuleEvaluationException exception = new(message);
+                exception.Data[RuleUserDataKeys.ErrorObject] = fieldInfo;
+                throw exception;
+            }
+
+            return fieldInfo.GetValue(targetObject);
+        }
     }
 
-    internal class RulePropertyResult(PropertyInfo propertyInfo, object targetObject, object[] indexerArguments) : RuleExpressionResult
+    internal class RulePropertyResult(PropertyInfo propertyInfo, object targetObject, object[] indexerArguments) : IRuleExpressionResult
     {
         private readonly PropertyInfo propertyInfo = propertyInfo ?? throw new ArgumentNullException("propertyInfo");
         private readonly object targetObject = targetObject;
         private readonly object[] indexerArguments = indexerArguments;
 
-        public override object Value
+        public object Value
         {
             get
             {
-#pragma warning disable 56503
-                if (!propertyInfo.GetGetMethod(true).IsStatic && targetObject == null)
-                {
-                    string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullProperty, propertyInfo.Name);
-                    RuleEvaluationException exception = new(message);
-                    exception.Data[RuleUserDataKeys.ErrorObject] = propertyInfo;
-                    throw exception;
-                }
-
-                try
-                {
-                    return propertyInfo.GetValue(targetObject, indexerArguments);
-                }
-                catch (TargetInvocationException e)
-                {
-                    // if there is no inner exception, leave it untouched
-                    if (e.InnerException == null)
-                        throw;
-                    string message = string.Format(CultureInfo.CurrentCulture, Messages.Error_PropertyGet,
-                        RuleDecompiler.DecompileType(propertyInfo.ReflectedType), propertyInfo.Name, e.InnerException.Message);
-                    throw new TargetInvocationException(message, e.InnerException);
-                }
-#pragma warning restore 56503
+                return GetValue();
             }
 
             set
@@ -137,14 +116,39 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             }
         }
+
+        private object GetValue()
+        {
+            if (!propertyInfo.GetGetMethod(true).IsStatic && targetObject == null)
+            {
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.TargetEvaluatedNullProperty, propertyInfo.Name);
+                RuleEvaluationException exception = new(message);
+                exception.Data[RuleUserDataKeys.ErrorObject] = propertyInfo;
+                throw exception;
+            }
+
+            try
+            {
+                return propertyInfo.GetValue(targetObject, indexerArguments);
+            }
+            catch (TargetInvocationException e)
+            {
+                // if there is no inner exception, leave it untouched
+                if (e.InnerException == null)
+                    throw;
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.Error_PropertyGet,
+                    RuleDecompiler.DecompileType(propertyInfo.ReflectedType), propertyInfo.Name, e.InnerException.Message);
+                throw new TargetInvocationException(message, e.InnerException);
+            }
+        }
     }
 
-    internal class RuleArrayElementResult(Array targetArray, long[] indexerArguments) : RuleExpressionResult
+    internal class RuleArrayElementResult(Array targetArray, long[] indexerArguments) : IRuleExpressionResult
     {
         private readonly Array targetArray = targetArray ?? throw new ArgumentNullException("targetArray");
         private readonly long[] indexerArguments = indexerArguments ?? throw new ArgumentNullException("indexerArguments");
 
-        public override object Value
+        public object Value
         {
             get
             {
@@ -162,7 +166,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region RuleExecution Class
     public class RuleExecution
     {
-        private bool halted;    // "Halt" was executed?
         private readonly object thisObject;
         private RuleValidation validation;
         private readonly RuleLiteralResult thisLiteralResult;
@@ -180,7 +183,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         RuleDecompiler.DecompileType(thisObject.GetType())));
 
             this.validation = validation;
-            //this.activity = thisObject as Activity;
             this.thisObject = thisObject;
             this.thisLiteralResult = new RuleLiteralResult(thisObject);
         }
@@ -199,11 +201,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        public bool Halted
-        {
-            get { return halted; }
-            set { halted = value; }
-        }
+        public bool Halted { get; set; }
 
         internal RuleLiteralResult ThisLiteralResult
         {
@@ -216,35 +214,96 @@ namespace LogicBuilder.Workflow.Activities.Rules
     internal class RuleState : IComparable
     {
         internal readonly Rule Rule;
-        private ICollection<int> thenActionsActiveRules;
-        private ICollection<int> elseActionsActiveRules;
 
         internal RuleState(Rule rule)
         {
             this.Rule = rule;
         }
 
-        internal ICollection<int> ThenActionsActiveRules
-        {
-            get { return thenActionsActiveRules; }
-            set { thenActionsActiveRules = value; }
-        }
+        internal ICollection<int> ThenActionsActiveRules { get; set; }
 
-        internal ICollection<int> ElseActionsActiveRules
-        {
-            get { return elseActionsActiveRules; }
-            set { elseActionsActiveRules = value; }
-        }
+        internal ICollection<int> ElseActionsActiveRules { get; set; }
 
         int IComparable.CompareTo(object obj)
         {
             RuleState other = obj as RuleState;
-            int compare = other?.Rule?.Priority.CompareTo(Rule.Priority) ?? -1; 
+            int compare = other?.Rule?.Priority.CompareTo(Rule.Priority) ?? -1;
             //using other to compare.  thisRule.Priority is greater than null (result is 1) - so return -1 for descending order.
             if (compare == 0)
                 // if the priorities are the same, compare names (in ascending order)
-                compare = -other?.Rule?.Name.CompareTo(Rule.Name) ?? 1;
+                compare = -other.Rule?.Name.CompareTo(Rule.Name) ?? 1;
             return compare;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is not RuleState other)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            return Rule?.Priority == other.Rule?.Priority &&
+                   Rule?.Name == other.Rule?.Name;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + (Rule?.Priority ?? 0);
+                hash = hash * 23 + (Rule?.Name?.GetHashCode() ?? 0);
+                return hash;
+            }
+        }
+
+        public static bool operator ==(RuleState left, RuleState right)
+        {
+            if (ReferenceEquals(left, right))
+                return true;
+
+            if (left is null || right is null)
+                return false;
+
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(RuleState left, RuleState right)
+        {
+            return !(left == right);
+        }
+
+        public static bool operator <(RuleState left, RuleState right)
+        {
+            if (left is null)
+                return right is not null;
+
+            return ((IComparable)left).CompareTo(right) < 0;
+        }
+
+        public static bool operator <=(RuleState left, RuleState right)
+        {
+            if (left is null)
+                return true;
+
+            return ((IComparable)left).CompareTo(right) <= 0;
+        }
+
+        public static bool operator >(RuleState left, RuleState right)
+        {
+            if (left is null)
+                return false;
+
+            return ((IComparable)left).CompareTo(right) > 0;
+        }
+
+        public static bool operator >=(RuleState left, RuleState right)
+        {
+            if (left is null)
+                return right is null;
+
+            return ((IComparable)left).CompareTo(right) >= 0;
         }
     }
     #endregion
@@ -289,66 +348,80 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 RuleState currentRuleState = orderedRules[current];
 
                 // does this rule need to be evaluated?
-                if (!satisfied[current])
+                if (satisfied[current])
                 {
-                    // yes, so evaluate it and determine the list of actions needed
-                    tracer?.StartRule(currentRuleState.Rule.Name);
-                    satisfied[current] = true;
-                    bool result = currentRuleState.Rule.Condition.Evaluate(ruleExecution);
-                    tracer?.RuleResult(currentRuleState.Rule.Name, result);
-
-                    ICollection<RuleAction> actions = (result) ?
-                        currentRuleState.Rule.thenActions :
-                        currentRuleState.Rule.elseActions;
-                    ICollection<int> activeRules = result ?
-                        currentRuleState.ThenActionsActiveRules :
-                        currentRuleState.ElseActionsActiveRules;
-
-                    // are there any actions to be performed?
-                    if ((actions != null) && (actions.Count > 0))
-                    {
-                        ++executionCount[current];
-                        string ruleName = currentRuleState.Rule.Name;
-                        tracer?.StartActions(ruleName, result);
-
-                        // evaluate the actions
-                        foreach (RuleAction action in actions)
-                        {
-                            action.Execute(ruleExecution);
-
-                            // was Halt executed?
-                            if (ruleExecution.Halted)
-                                break;
-                        }
-
-                        // was Halt executed?
-                        if (ruleExecution.Halted)
-                            break;
-
-                        // any fields updated?
-                        if (activeRules != null)
-                        {
-                            foreach (int updatedRuleIndex in activeRules)
-                            {
-                                RuleState rs = orderedRules[updatedRuleIndex];
-                                if (satisfied[updatedRuleIndex]
-                                    && (executionCount[updatedRuleIndex] == 0 || rs.Rule.ReevaluationBehavior == RuleReevaluationBehavior.Always))
-                                {
-                                    // evaluate at least once, or repeatedly if appropriate
-                                    tracer?.TraceUpdate(ruleName, rs.Rule.Name);
-                                    satisfied[updatedRuleIndex] = false;
-                                    if (updatedRuleIndex < current)
-                                        current = updatedRuleIndex;
-                                }
-                            }
-                        }
-                        continue;
-
-                    }
+                    ++current;
+                    continue;
                 }
-                ++current;
+
+                // yes, so evaluate it and determine the list of actions needed
+                tracer?.StartRule(currentRuleState.Rule.Name);
+                satisfied[current] = true;
+                bool result = currentRuleState.Rule.Condition.Evaluate(ruleExecution);
+                tracer?.RuleResult(currentRuleState.Rule.Name, result);
+
+                ICollection<RuleAction> actions = (result) ?
+                    currentRuleState.Rule.thenActions :
+                    currentRuleState.Rule.elseActions;
+                ICollection<int> activeRules = result ?
+                    currentRuleState.ThenActionsActiveRules :
+                    currentRuleState.ElseActionsActiveRules;
+
+                // are there any actions to be performed?
+                if (actions == null || actions.Count <= 0)
+                {
+                    ++current;
+                    continue;
+                }
+
+                ++executionCount[current];
+                string ruleName = currentRuleState.Rule.Name;
+                tracer?.StartActions(ruleName, result);
+                ExecuteActions(ruleExecution, actions);
+
+                // was Halt executed?
+                if (ruleExecution.Halted)
+                    break;
+
+                // any fields updated?
+                if (activeRules == null)
+                    continue;
+
+                current = GetCurrentIndex(orderedRules, tracer, executionCount, satisfied, current, activeRules, ruleName);
             }
             // no more rules to execute, so we are done
+        }
+
+        private static void ExecuteActions(RuleExecution ruleExecution, ICollection<RuleAction> actions)
+        {
+            // evaluate the actions
+            foreach (RuleAction action in actions)
+            {
+                action.Execute(ruleExecution);
+
+                // was Halt executed?
+                if (ruleExecution.Halted)
+                    break;
+            }
+        }
+
+        private static int GetCurrentIndex(IList<RuleState> orderedRules, Tracer tracer, long[] executionCount, bool[] satisfied, int current, ICollection<int> activeRules, string ruleName)
+        {
+            foreach (int updatedRuleIndex in activeRules)
+            {
+                RuleState rs = orderedRules[updatedRuleIndex];
+                if (satisfied[updatedRuleIndex]
+                    && (executionCount[updatedRuleIndex] == 0 || rs.Rule.ReevaluationBehavior == RuleReevaluationBehavior.Always))
+                {
+                    // evaluate at least once, or repeatedly if appropriate
+                    tracer?.TraceUpdate(ruleName, rs.Rule.Name);
+                    satisfied[updatedRuleIndex] = false;
+                    if (updatedRuleIndex < current)
+                        current = updatedRuleIndex;
+                }
+            }
+
+            return current;
         }
 
         class RuleSymbolInfo
@@ -413,91 +486,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
                     if (sideEffect.EndsWith("*", StringComparison.Ordinal))
                     {
-                        foreach (string dependency in dependencies)
-                        {
-                            if (dependency.EndsWith("*", StringComparison.Ordinal))
-                            {
-                                // Strip the trailing "/*" from the dependency
-                                string stripDependency = dependency.Substring(0, dependency.Length - 2);
-                                // Strip the trailing "*" from the side-effect
-                                string stripSideEffect = sideEffect.Substring(0, sideEffect.Length - 1);
-
-                                string shortString;
-                                string longString;
-
-                                if (stripDependency.Length < stripSideEffect.Length)
-                                {
-                                    shortString = stripDependency;
-                                    longString = stripSideEffect;
-                                }
-                                else
-                                {
-                                    shortString = stripSideEffect;
-                                    longString = stripDependency;
-                                }
-
-                                // There's a match if the shorter string is a prefix of the longer string.
-                                if (longString.StartsWith(shortString, StringComparison.Ordinal))
-                                {
-                                    match = true;
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                string stripSideEffect = sideEffect.Substring(0, sideEffect.Length - 1);
-                                string stripDependency = dependency;
-                                if (stripDependency.EndsWith("/", StringComparison.Ordinal))
-                                    stripDependency = stripDependency.Substring(0, stripDependency.Length - 1);
-                                if (stripDependency.StartsWith(stripSideEffect, StringComparison.Ordinal))
-                                {
-                                    match = true;
-                                    break;
-                                }
-                            }
-                        }
+                        match = AnalyzeWildCards(dependencies, sideEffect, match);
                     }
                     else
                     {
-                        // The side-effect did not end with a wildcard
-                        foreach (string dependency in dependencies)
-                        {
-                            if (dependency.EndsWith("*", StringComparison.Ordinal))
-                            {
-                                // Strip the trailing "/*"
-                                string stripDependency = dependency.Substring(0, dependency.Length - 2);
-
-                                string shortString;
-                                string longString;
-
-                                if (stripDependency.Length < sideEffect.Length)
-                                {
-                                    shortString = stripDependency;
-                                    longString = sideEffect;
-                                }
-                                else
-                                {
-                                    shortString = sideEffect;
-                                    longString = stripDependency;
-                                }
-
-                                // There's a match if the shorter string is a prefix of the longer string.
-                                if (longString.StartsWith(shortString, StringComparison.Ordinal))
-                                {
-                                    match = true;
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                // The side-effect must be a prefix of the dependency (or an exact match).
-                                if (dependency.StartsWith(sideEffect, StringComparison.Ordinal))
-                                {
-                                    match = true;
-                                    break;
-                                }
-                            }
-                        }
+                        match = AnalyzeNonWildCards(dependencies, sideEffect, match);
                     }
 
                     if (match)
@@ -509,6 +502,107 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             return affectedRules.Keys;
+        }
+
+        private static bool AnalyzeWildCards(ICollection<string> dependencies, string sideEffect, bool match)
+        {
+            foreach (string dependency in dependencies)
+            {
+                if (dependency.EndsWith("*", StringComparison.Ordinal))
+                {
+                    // Strip the trailing "/*" from the dependency
+                    string stripDependency = dependency.Substring(0, dependency.Length - 2);
+                    // Strip the trailing "*" from the side-effect
+                    string stripSideEffect = sideEffect.Substring(0, sideEffect.Length - 1);
+
+                    string shortString;
+                    string longString;
+
+                    if (stripDependency.Length < stripSideEffect.Length)
+                    {
+                        shortString = stripDependency;
+                        longString = stripSideEffect;
+                    }
+                    else
+                    {
+                        shortString = stripSideEffect;
+                        longString = stripDependency;
+                    }
+
+                    // There's a match if the shorter string is a prefix of the longer string.
+                    if (longString.StartsWith(shortString, StringComparison.Ordinal))
+                    {
+                        match = true;
+                        break;
+                    }
+                }
+                else
+                {
+                    string stripSideEffect = sideEffect.Substring(0, sideEffect.Length - 1);
+                    string stripDependency = GetsStripDependency(dependency);
+
+                    if (stripDependency.StartsWith(stripSideEffect, StringComparison.Ordinal))
+                    {
+                        match = true;
+                        break;
+                    }
+                }
+            }
+
+            return match;
+        }
+
+        private static string GetsStripDependency(string dependency)
+        {
+            string stripDependency = dependency;
+            if (stripDependency.EndsWith("/", StringComparison.Ordinal))
+                stripDependency = stripDependency.Substring(0, stripDependency.Length - 1);
+            return stripDependency;
+        }
+
+        private static bool AnalyzeNonWildCards(ICollection<string> dependencies, string sideEffect, bool match)
+        {
+            // The side-effect did not end with a wildcard
+            foreach (string dependency in dependencies)
+            {
+                if (dependency.EndsWith("*", StringComparison.Ordinal))
+                {
+                    // Strip the trailing "/*"
+                    string stripDependency = dependency.Substring(0, dependency.Length - 2);
+
+                    string shortString;
+                    string longString;
+
+                    if (stripDependency.Length < sideEffect.Length)
+                    {
+                        shortString = stripDependency;
+                        longString = sideEffect;
+                    }
+                    else
+                    {
+                        shortString = sideEffect;
+                        longString = stripDependency;
+                    }
+
+                    // There's a match if the shorter string is a prefix of the longer string.
+                    if (longString.StartsWith(shortString, StringComparison.Ordinal))
+                    {
+                        match = true;
+                        break;
+                    }
+                }
+                else
+                {
+                    // The side-effect must be a prefix of the dependency (or an exact match).
+                    if (dependency.StartsWith(sideEffect, StringComparison.Ordinal))
+                    {
+                        match = true;
+                        break;
+                    }
+                }
+            }
+
+            return match;
         }
 
         private static RuleSymbolInfo AnalyzeRule(RuleChainingBehavior behavior, Rule rule, RuleValidation validator, Tracer tracer)
@@ -549,7 +643,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             foreach (RuleAction action in actions.Where
                         (
-                            a => behavior == RuleChainingBehavior.Full 
+                            a => behavior == RuleChainingBehavior.Full
                                 || (behavior == RuleChainingBehavior.UpdateOnly && a is RuleUpdateAction)
                         ))
             {
@@ -677,25 +771,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // check for null
             if (operandValue == null)
             {
-                // are we converting to a value type?
-                if (toType.IsValueType)
-                {
-                    // is the conversion to nullable?
-                    if (!ConditionHelper.IsNullableValueType(toType))
-                    {
-                        // value type and null, so no conversion possible
-                        string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotCastNullToValueType, RuleDecompiler.DecompileType(toType));
-                        throw new InvalidCastException(message);
-                    }
-
-                    // here we have a Nullable<T>
-                    // however, we may need to call the implicit conversion operator if the types are not compatible
-                    converted = Activator.CreateInstance(toType);
-                    return RuleValidation.StandardImplicitConversion(operandType, toType, null, out _);
-                }
-
-                // not a value type, so null is valid
-                return true;
+                return ConvertNullOperand(operandType, toType, ref converted);
             }
 
             // check simple cases
@@ -712,111 +788,163 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // note that if the value was null, it's already handled, so value cannot be nullable
             if ((currentType.IsValueType) && (toType.IsValueType))
             {
-                if (currentType.IsEnum)
-                {
-                    // strip off the enum representation
-                    currentType = Enum.GetUnderlyingType(currentType);
-                    ArithmeticLiteral literal = ArithmeticLiteral.MakeLiteral(currentType, operandValue);
-                    operandValue = literal.Value;
-                }
-
-                bool resultNullable = ConditionHelper.IsNullableValueType(toType);
-                Type resultType = (resultNullable) ? Nullable.GetUnderlyingType(toType) : toType;
-
-                if (resultType.IsEnum)
-                {
-                    // Enum.ToObject may throw if currentType is not type SByte, 
-                    // Int16, Int32, Int64, Byte, UInt16, UInt32, or UInt64.
-                    // So we adjust currentValue to the underlying type (which may throw if out of range)
-                    Type underlyingType = Enum.GetUnderlyingType(resultType);
-                    if (AdjustValueStandard(currentType, operandValue, underlyingType, out object adjusted))
-                    {
-                        converted = Enum.ToObject(resultType, adjusted);
-                        if (resultNullable)
-                            converted = Activator.CreateInstance(toType, converted);
-                        return true;
-                    }
-                }
-                else if ((resultType.IsPrimitive) || (resultType == typeof(decimal)))
-                {
-                    // resultType must be a primitive to continue (not a struct)
-                    // (enums and generics handled above)
-                    if (currentType == typeof(char))
-                    {
-                        char c = (char)operandValue;
-                        if (resultType == typeof(float))
-                        {
-                            converted = (float)c;
-                        }
-                        else if (resultType == typeof(double))
-                        {
-                            converted = (double)c;
-                        }
-                        else if (resultType == typeof(decimal))
-                        {
-                            converted = (decimal)c;
-                        }
-                        else
-                        {
-                            converted = ((IConvertible)c).ToType(resultType, CultureInfo.CurrentCulture);
-                        }
-                        if (resultNullable)
-                            converted = Activator.CreateInstance(toType, converted);
-                        return true;
-                    }
-                    else if (currentType == typeof(float))
-                    {
-                        float f = (float)operandValue;
-                        converted = resultType == typeof(char)
-                            ? (char)f
-                            : ((IConvertible)f).ToType(resultType, CultureInfo.CurrentCulture);
-                        if (resultNullable)
-                            converted = Activator.CreateInstance(toType, converted);
-                        return true;
-                    }
-                    else if (currentType == typeof(double))
-                    {
-                        double d = (double)operandValue;
-                        converted = resultType == typeof(char)
-                            ? (char)d
-                            : ((IConvertible)d).ToType(resultType, CultureInfo.CurrentCulture);
-                        if (resultNullable)
-                            converted = Activator.CreateInstance(toType, converted);
-                        return true;
-                    }
-                    else if (currentType == typeof(decimal))
-                    {
-                        decimal d = (decimal)operandValue;
-                        converted = resultType == typeof(char)
-                            ? (char)d
-                            : ((IConvertible)d).ToType(resultType, CultureInfo.CurrentCulture);
-                        if (resultNullable)
-                            converted = Activator.CreateInstance(toType, converted);
-                        return true;
-                    }
-                    else
-                    {
-                        if (operandValue is IConvertible convert)
-                        {
-                            try
-                            {
-                                converted = convert.ToType(resultType, CultureInfo.CurrentCulture);
-                                if (resultNullable)
-                                    converted = Activator.CreateInstance(toType, converted);
-                                return true;
-                            }
-                            catch (InvalidCastException)
-                            {
-                                // not IConvertable, so can't do it
-                                return false;
-                            }
-                        }
-                    }
-                }
+                return ConvertValueType(ref operandValue, toType, ref converted, ref currentType);
             }
 
             // no luck with standard conversions, so no conversion done
             return false;
+        }
+
+        private static bool ConvertValueType(ref object operandValue, Type toType, ref object converted, ref Type currentType)
+        {
+            if (currentType.IsEnum)
+            {
+                // strip off the enum representation
+                currentType = Enum.GetUnderlyingType(currentType);
+                ArithmeticLiteral literal = ArithmeticLiteral.MakeLiteral(currentType, operandValue);
+                operandValue = literal.Value;
+            }
+
+            bool resultNullable = ConditionHelper.IsNullableValueType(toType);
+            Type resultType = (resultNullable) ? Nullable.GetUnderlyingType(toType) : toType;
+
+            if (resultType.IsEnum)
+            {
+                // Enum.ToObject may throw if currentType is not type SByte, 
+                // Int16, Int32, Int64, Byte, UInt16, UInt32, or UInt64.
+                // So we adjust currentValue to the underlying type (which may throw if out of range)
+                Type underlyingType = Enum.GetUnderlyingType(resultType);
+                if (AdjustValueStandard(currentType, operandValue, underlyingType, out object adjusted))
+                {
+                    converted = Enum.ToObject(resultType, adjusted);
+                    if (resultNullable)
+                        converted = Activator.CreateInstance(toType, converted);
+                    return true;
+                }
+            }
+            else if ((resultType.IsPrimitive) || (resultType == typeof(decimal)))
+            {
+                return ConvertPrimitiveOrDecimalType(operandValue, toType, ref converted, currentType, resultNullable, resultType);
+            }
+
+            return false;
+        }
+
+        private static bool ConvertPrimitiveOrDecimalType(object operandValue, Type toType, ref object converted, Type currentType, bool resultNullable, Type resultType)
+        {
+            // resultType must be a primitive to continue (not a struct)
+            // (enums and generics handled above)
+            if (currentType == typeof(char))
+            {
+                return ConvertChar(operandValue, toType, out converted, resultNullable, resultType);
+            }
+            else if (currentType == typeof(float))
+            {
+                float f = (float)operandValue;
+                converted = resultType == typeof(char)
+                    ? (char)f
+                    : ((IConvertible)f).ToType(resultType, CultureInfo.CurrentCulture);
+                if (resultNullable)
+                    converted = Activator.CreateInstance(toType, converted);
+                return true;
+            }
+            else if (currentType == typeof(double))
+            {
+                double d = (double)operandValue;
+                converted = resultType == typeof(char)
+                    ? (char)d
+                    : ((IConvertible)d).ToType(resultType, CultureInfo.CurrentCulture);
+                if (resultNullable)
+                    converted = Activator.CreateInstance(toType, converted);
+                return true;
+            }
+            else if (currentType == typeof(decimal))
+            {
+                return ConvertDecimal(operandValue, toType, out converted, resultNullable, resultType);
+            }
+            else
+            {
+                return ConvertConvertible(operandValue, toType, ref converted, resultNullable, resultType);
+            }
+        }
+
+        private static bool ConvertDecimal(object operandValue, Type toType, out object converted, bool resultNullable, Type resultType)
+        {
+            decimal d = (decimal)operandValue;
+            converted = resultType == typeof(char)
+                ? (char)d
+                : ((IConvertible)d).ToType(resultType, CultureInfo.CurrentCulture);
+            if (resultNullable)
+                converted = Activator.CreateInstance(toType, converted);
+            return true;
+        }
+
+        private static bool ConvertConvertible(object operandValue, Type toType, ref object converted, bool resultNullable, Type resultType)
+        {
+            if (operandValue is IConvertible convert)
+            {
+                try
+                {
+                    converted = convert.ToType(resultType, CultureInfo.CurrentCulture);
+                    if (resultNullable)
+                        converted = Activator.CreateInstance(toType, converted);
+                    return true;
+                }
+                catch (InvalidCastException)
+                {
+                    // not IConvertable, so can't do it
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ConvertChar(object operandValue, Type toType, out object converted, bool resultNullable, Type resultType)
+        {
+            char c = (char)operandValue;
+            if (resultType == typeof(float))
+            {
+                converted = (float)c;
+            }
+            else if (resultType == typeof(double))
+            {
+                converted = (double)c;
+            }
+            else if (resultType == typeof(decimal))
+            {
+                converted = (decimal)c;
+            }
+            else
+            {
+                converted = ((IConvertible)c).ToType(resultType, CultureInfo.CurrentCulture);
+            }
+            if (resultNullable)
+                converted = Activator.CreateInstance(toType, converted);
+            return true;
+        }
+
+        private static bool ConvertNullOperand(Type operandType, Type toType, ref object converted)
+        {
+            // are we converting to a value type?
+            if (toType.IsValueType)
+            {
+                // is the conversion to nullable?
+                if (!ConditionHelper.IsNullableValueType(toType))
+                {
+                    // value type and null, so no conversion possible
+                    string message = string.Format(CultureInfo.CurrentCulture, Messages.CannotCastNullToValueType, RuleDecompiler.DecompileType(toType));
+                    throw new InvalidCastException(message);
+                }
+
+                // here we have a Nullable<T>
+                // however, we may need to call the implicit conversion operator if the types are not compatible
+                converted = Activator.CreateInstance(toType);
+                return RuleValidation.StandardImplicitConversion(operandType, toType, null, out _);
+            }
+
+            // not a value type, so null is valid
+            return true;
         }
         #endregion
     }

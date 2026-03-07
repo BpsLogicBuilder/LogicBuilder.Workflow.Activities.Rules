@@ -1193,7 +1193,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
                 decompilation.Append("CustomExpression");
             }
 
-            public RuleExpressionResult Evaluate(RuleExecution execution)
+            public IRuleExpressionResult Evaluate(RuleExecution execution)
             {
                 return new RuleLiteralResult(42);
             }
