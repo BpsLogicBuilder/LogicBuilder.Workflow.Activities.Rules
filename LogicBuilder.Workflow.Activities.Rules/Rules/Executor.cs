@@ -252,7 +252,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             unchecked
             {
                 int hash = 17;
-                hash = hash * 23 + (Rule?.Priority.GetHashCode() ?? 0);
+                hash = hash * 23 + (Rule?.Priority ?? 0);
                 hash = hash * 23 + (Rule?.Name?.GetHashCode() ?? 0);
                 return hash;
             }

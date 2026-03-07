@@ -39,9 +39,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 return ruleExpr.Clone();
             }
 
-            public void Decompile(CodeExpression expression, StringBuilder decompilation, CodeExpression parentExpression)
+            public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
             {
-                ruleExpr.Decompile(decompilation, parentExpression);
+                ruleExpr.Decompile(stringBuilder, parentExpression);
             }
 
             public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
