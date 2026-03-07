@@ -1085,7 +1085,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         #region CodeDom Expression Validation methods
 
-        internal RuleExpressionInfo ValidateSubexpression(CodeExpression expr, RuleExpressionInternal ruleExpr, bool isWritten)
+        internal RuleExpressionInfo ValidateSubexpression(CodeExpression expr, IRuleExpressionInternal ruleExpr, bool isWritten)
         {
             Debug.Assert(ruleExpr != null, "Validation::ValidateSubexpression - IRuleExpression is null");
             Debug.Assert(expr != null, "Validation::ValidateSubexpression - CodeExpression is null");

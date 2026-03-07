@@ -25,23 +25,23 @@ namespace LogicBuilder.Workflow.Activities.Rules
         CodeExpression Clone();
     }
 
-    internal abstract class RuleExpressionInternal
+    internal interface IRuleExpressionInternal
     {
-        internal abstract RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten);
-        internal abstract IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution);
-        internal abstract void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier);
-        internal abstract void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression);
-        internal abstract bool Match(CodeExpression leftExpression, CodeExpression rightExpression);
-        internal abstract CodeExpression Clone(CodeExpression expression);
+        RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten);
+        IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution);
+        void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier);
+        void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression);
+        bool Match(CodeExpression leftExpression, CodeExpression rightExpression);
+        CodeExpression Clone(CodeExpression expression);
     }
 
 
     #region "this" expression
 
     // CodeThisReferenceExpression
-    internal class ThisExpression : RuleExpressionInternal
+    internal class ThisExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             if (isWritten)
             {
@@ -55,7 +55,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new RuleExpressionInfo(validation.ThisType);
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             if (analysis.ForWrites && !isWritten)            // If we're tracking writes, then ignore things that aren't written.
                 return;
@@ -81,22 +81,22 @@ namespace LogicBuilder.Workflow.Activities.Rules
             analysis.AddSymbol(sb.ToString());
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             return execution.ThisLiteralResult;
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             stringBuilder.Append("this");
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             return new CodeThisReferenceExpression();
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             // We already verified their types match.
             return true;
@@ -108,9 +108,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region Primitive expression
 
     // CodePrimitiveExpression
-    internal class PrimitiveExpression : RuleExpressionInternal
+    internal class PrimitiveExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             if (isWritten)
             {
@@ -126,31 +126,31 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new RuleExpressionInfo(resultType);
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             // Literal values have no interesting dependencies or side-effects.
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodePrimitiveExpression primitiveExpr = (CodePrimitiveExpression)expression;
             return new RuleLiteralResult(primitiveExpr.Value);
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             CodePrimitiveExpression primitiveExpr = (CodePrimitiveExpression)expression;
             RuleDecompiler.DecompileObjectLiteral(stringBuilder, primitiveExpr.Value);
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodePrimitiveExpression primitiveExpr = (CodePrimitiveExpression)expression;
             object clonedValue = ConditionHelper.CloneObject(primitiveExpr.Value);
             return new CodePrimitiveExpression(clonedValue);
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodePrimitiveExpression primitiveExpr = (CodePrimitiveExpression)leftExpression;
             CodePrimitiveExpression comperandPrimitive = (CodePrimitiveExpression)rightExpression;
@@ -170,11 +170,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region Binary expression
 
     // CodeBinaryOperatorExpression
-    internal class BinaryExpression : RuleExpressionInternal
+    internal class BinaryExpression : IRuleExpressionInternal
     {
         #region Validate
 
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message = null;
             ValidationError error = null;
@@ -410,7 +410,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         #endregion
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)expression;
 
@@ -438,7 +438,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
 
         #region Evaluate
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)expression;
 
@@ -607,7 +607,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         #region Decompile
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)expression;
             CheckOperandsForNull(binaryExpr);
@@ -841,7 +841,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
         #endregion
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)expression;
 
@@ -854,7 +854,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newOp;
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)leftExpression;
 
@@ -870,9 +870,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region Field ref expression
 
     // CodeFieldReferenceExpression
-    internal class FieldReferenceExpression : RuleExpressionInternal
+    internal class FieldReferenceExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message;
 
@@ -956,14 +956,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new RuleFieldExpressionInfo(fi);
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             CodeFieldReferenceExpression fieldRefExpr = (CodeFieldReferenceExpression)expression;
             CodeExpression targetObject = fieldRefExpr.TargetObject;
             RuleExpressionWalker.AnalyzeUsage(analysis, targetObject, isRead, isWritten, new RulePathQualifier(fieldRefExpr.FieldName, qualifier));
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodeFieldReferenceExpression fieldRefExpr = (CodeFieldReferenceExpression)expression;
             object target = RuleExpressionWalker.Evaluate(execution, fieldRefExpr.TargetObject).Value;
@@ -981,7 +981,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new RuleFieldResult(target, fi);
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             CodeFieldReferenceExpression fieldRefExpr = (CodeFieldReferenceExpression)expression;
 
@@ -999,7 +999,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             stringBuilder.Append(fieldRefExpr.FieldName);
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodeFieldReferenceExpression fieldRefExpr = (CodeFieldReferenceExpression)expression;
 
@@ -1011,7 +1011,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newField;
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodeFieldReferenceExpression fieldRefExpr = (CodeFieldReferenceExpression)leftExpression;
 
@@ -1026,9 +1026,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region Property ref expression
 
     // CodePropertyReferenceExpression
-    internal class PropertyReferenceExpression : RuleExpressionInternal
+    internal class PropertyReferenceExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message;
 
@@ -1135,7 +1135,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return true;
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             string message;
 
@@ -1176,7 +1176,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodePropertyReferenceExpression propGetExpr = (CodePropertyReferenceExpression)expression;
 
@@ -1194,7 +1194,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new RulePropertyResult(pi, target, null);
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             CodePropertyReferenceExpression propGetExpr = (CodePropertyReferenceExpression)expression;
 
@@ -1212,7 +1212,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             stringBuilder.Append(propGetExpr.PropertyName);
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodePropertyReferenceExpression propGetExpr = (CodePropertyReferenceExpression)expression;
 
@@ -1224,7 +1224,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newProperty;
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodePropertyReferenceExpression propGetExpr = (CodePropertyReferenceExpression)leftExpression;
 
@@ -1239,9 +1239,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region Method invoke expression
 
     // CodeMethodInvokeExpression
-    internal class MethodInvokeExpression : RuleExpressionInternal
+    internal class MethodInvokeExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             Type targetType = null;
             RuleMethodInvokeExpressionInfo methodInvokeInfo = null;
@@ -1432,7 +1432,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             string message;
 
@@ -1489,7 +1489,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             string message;
 
@@ -1654,7 +1654,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return paramsArray;
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             CodeMethodInvokeExpression invokeExpr = (CodeMethodInvokeExpression)expression;
 
@@ -1699,7 +1699,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             stringBuilder.Append(')');
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodeMethodInvokeExpression invokeExpr = (CodeMethodInvokeExpression)expression;
 
@@ -1725,7 +1725,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newReference;
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodeMethodInvokeExpression invokeExpr = (CodeMethodInvokeExpression)leftExpression;
 
@@ -1750,9 +1750,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region Direction expression (in/out/ref)
 
     // CodeDirectionExpression
-    internal class DirectionExpression : RuleExpressionInternal
+    internal class DirectionExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             CodeDirectionExpression directionExpr = (CodeDirectionExpression)expression;
 
@@ -1823,7 +1823,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new RuleExpressionInfo(parameterType);
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             CodeDirectionExpression directionExpr = (CodeDirectionExpression)expression;
             CodeExpression paramExpr = directionExpr.Expression;
@@ -1861,7 +1861,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             RuleExpressionWalker.AnalyzeUsage(analysis, paramExpr, argIsRead, argIsWritten, argQualifier);
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             // For evaluation purposes, ignore the direction.  It is handled specifically in the
             // method invoke Evaluate method.
@@ -1869,7 +1869,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return RuleExpressionWalker.Evaluate(execution, directionExpr.Expression);
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             CodeDirectionExpression directionExpr = (CodeDirectionExpression)expression;
 
@@ -1885,7 +1885,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             RuleExpressionWalker.Decompile(stringBuilder, directionExpr.Expression, directionExpr);
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodeDirectionExpression directionExpr = (CodeDirectionExpression)expression;
             CodeDirectionExpression newDirection = new()
@@ -1896,7 +1896,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newDirection;
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodeDirectionExpression directionExpr = (CodeDirectionExpression)leftExpression;
             CodeDirectionExpression newDirection = (CodeDirectionExpression)rightExpression;
@@ -1910,9 +1910,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region Type Reference expression
 
     // CodeTypeReferenceExpression
-    internal class TypeReferenceExpression : RuleExpressionInternal
+    internal class TypeReferenceExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             CodeTypeReferenceExpression typeRefExpr = (CodeTypeReferenceExpression)expression;
 
@@ -1938,24 +1938,24 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new RuleExpressionInfo(resultType);
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             // These introduce no interesting dependencies or side-effects.
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             // Type references don't evaluate to any value.
             return new RuleLiteralResult(null);
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             CodeTypeReferenceExpression typeRefExpr = (CodeTypeReferenceExpression)expression;
             RuleDecompiler.DecompileType(stringBuilder, typeRefExpr.Type);
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodeTypeReferenceExpression typeRefExpr = (CodeTypeReferenceExpression)expression;
             CodeTypeReferenceExpression newType = new(CloneType(typeRefExpr.Type));
@@ -1981,7 +1981,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newType;
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodeTypeReferenceExpression typeRefExpr = (CodeTypeReferenceExpression)leftExpression;
             CodeTypeReferenceExpression newType = (CodeTypeReferenceExpression)rightExpression;
@@ -2013,9 +2013,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region Cast expression
 
     // CodeCastExpression
-    internal class CastExpression : RuleExpressionInternal
+    internal class CastExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message = null;
 
@@ -2176,14 +2176,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
             };
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             // Just analyze the child.
             CodeCastExpression castExpr = (CodeCastExpression)expression;
             RuleExpressionWalker.AnalyzeUsage(analysis, castExpr.Expression, true, false, null);
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             string message;
 
@@ -2225,7 +2225,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new RuleLiteralResult(operandValue);
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             CodeCastExpression castExpr = (CodeCastExpression)expression;
 
@@ -2257,7 +2257,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 stringBuilder.Append(")");
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodeCastExpression castExpr = (CodeCastExpression)expression;
             CodeCastExpression newCast = new()
@@ -2268,7 +2268,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newCast;
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodeCastExpression castExpr = (CodeCastExpression)leftExpression;
             CodeCastExpression castComperand = (CodeCastExpression)rightExpression;
@@ -2283,9 +2283,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region Indexer Expression (indexer properties)
 
     // CodeIndexerExpression
-    internal class IndexerPropertyExpression : RuleExpressionInternal
+    internal class IndexerPropertyExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message = null;
             RulePropertyExpressionInfo propExprInfo = null;
@@ -2462,7 +2462,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             string message;
 
@@ -2517,7 +2517,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             string message;
 
@@ -2592,7 +2592,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return result;
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             string message;
 
@@ -2626,7 +2626,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             stringBuilder.Append(']');
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodeIndexerExpression indexerExpr = (CodeIndexerExpression)expression;
 
@@ -2640,7 +2640,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newIndexer;
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodeIndexerExpression indexerExpr = (CodeIndexerExpression)leftExpression;
 
@@ -2666,9 +2666,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #region Array Indexer Expression (indexer properties)
 
     // CodeArrayIndexerExpression
-    internal class ArrayIndexerExpression : RuleExpressionInternal
+    internal class ArrayIndexerExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             Type targetType = null;
 
@@ -2837,7 +2837,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             // Analyze the target object, flowing down the qualifier from above.  An expression
             // like:
@@ -2853,7 +2853,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 RuleExpressionWalker.AnalyzeUsage(analysis, arrayIndexerExpr.Indices[i], true, false, null);
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodeArrayIndexerExpression arrayIndexerExpr = (CodeArrayIndexerExpression)expression;
 
@@ -2883,7 +2883,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return result;
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             string message;
 
@@ -2917,7 +2917,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             stringBuilder.Append(']');
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodeArrayIndexerExpression arrayIndexerExpr = (CodeArrayIndexerExpression)expression;
 
@@ -2931,7 +2931,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newIndexer;
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodeArrayIndexerExpression arrayIndexerExpr = (CodeArrayIndexerExpression)leftExpression;
 
@@ -2955,9 +2955,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #endregion
 
     #region Object Create expression
-    internal class ObjectCreateExpression : RuleExpressionInternal
+    internal class ObjectCreateExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message = null;
             ValidationError error = null;
@@ -3058,7 +3058,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             CodeObjectCreateExpression createExpression = (CodeObjectCreateExpression)expression;
 
@@ -3069,7 +3069,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodeObjectCreateExpression createExpression = (CodeObjectCreateExpression)expression;
 
@@ -3214,7 +3214,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return arguments;
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             CodeObjectCreateExpression createExpression = (CodeObjectCreateExpression)expression;
 
@@ -3249,7 +3249,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 stringBuilder.Append(")");
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodeObjectCreateExpression createExpression = (CodeObjectCreateExpression)expression;
 
@@ -3264,7 +3264,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newCreate;
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodeObjectCreateExpression createExpression = (CodeObjectCreateExpression)leftExpression;
 
@@ -3285,9 +3285,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #endregion
 
     #region Array Create expression
-    internal class ArrayCreateExpression : RuleExpressionInternal
+    internal class ArrayCreateExpression : IRuleExpressionInternal
     {
-        internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
             string message = null;
 
@@ -3469,7 +3469,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return true;
         }
 
-        internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             CodeArrayCreateExpression createExpression = (CodeArrayCreateExpression)expression;
 
@@ -3479,7 +3479,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 RuleExpressionWalker.AnalyzeUsage(analysis, p, true, false, null);
         }
 
-        internal override IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
         {
             CodeArrayCreateExpression createExpression = (CodeArrayCreateExpression)expression;
 
@@ -3534,7 +3534,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new RuleLiteralResult(result);
         }
 
-        internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             CodeArrayCreateExpression createExpression = (CodeArrayCreateExpression)expression;
 
@@ -3576,7 +3576,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 stringBuilder.Append(")");
         }
 
-        internal override CodeExpression Clone(CodeExpression expression)
+        public CodeExpression Clone(CodeExpression expression)
         {
             CodeArrayCreateExpression createExpression = (CodeArrayCreateExpression)expression;
 
@@ -3592,7 +3592,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newCreate;
         }
 
-        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             CodeArrayCreateExpression createExpression = (CodeArrayCreateExpression)leftExpression;
 
