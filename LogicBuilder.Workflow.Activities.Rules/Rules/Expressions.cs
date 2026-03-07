@@ -96,7 +96,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new CodeThisReferenceExpression();
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
             // We already verified their types match.
             return true;
@@ -150,10 +150,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new CodePrimitiveExpression(clonedValue);
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodePrimitiveExpression primitiveExpr = (CodePrimitiveExpression)expression;
-            CodePrimitiveExpression comperandPrimitive = (CodePrimitiveExpression)comperand;
+            CodePrimitiveExpression primitiveExpr = (CodePrimitiveExpression)leftExpression;
+            CodePrimitiveExpression comperandPrimitive = (CodePrimitiveExpression)rightExpression;
 
             if (primitiveExpr.Value == comperandPrimitive.Value)
                 return true;
@@ -176,8 +176,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
-            string message;
-            ValidationError error;
+            string message = null;
+            ValidationError error = null;
 
             CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)expression;
 
@@ -244,136 +244,147 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (lhsExprInfo != null && rhsExprInfo != null)
             {
-                Type lhsType = lhsExprInfo.ExpressionType;
-                Type rhsType = rhsExprInfo.ExpressionType;
-
-                switch (binaryExpr.Operator)
-                {
-                    case CodeBinaryOperatorType.Add:
-                    case CodeBinaryOperatorType.Subtract:
-                    case CodeBinaryOperatorType.Multiply:
-                    case CodeBinaryOperatorType.Divide:
-                    case CodeBinaryOperatorType.Modulus:
-                    case CodeBinaryOperatorType.BitwiseAnd:
-                    case CodeBinaryOperatorType.BitwiseOr:
-                        resultExprInfo = ArithmeticLiteral.ResultType(binaryExpr.Operator, lhsType, binaryExpr.Left, rhsType, binaryExpr.Right, validation, out error);
-                        if (resultExprInfo == null)
-                        {
-                            // check if constants are used with ulongs, as we should do some extra "conversions"
-                            if (((lhsType == typeof(ulong)) && (PromotionPossible(rhsType, binaryExpr.Right)))
-                                || ((rhsType == typeof(ulong)) && (PromotionPossible(lhsType, binaryExpr.Left))))
-                            {
-                                resultExprInfo = new RuleBinaryExpressionInfo(lhsType, rhsType, typeof(ulong));
-                            }
-                            else
-                            {
-                                error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
-                                validation.Errors.Add(error);
-                            }
-                        }
-                        break;
-
-                    case CodeBinaryOperatorType.IdentityEquality:
-                    case CodeBinaryOperatorType.IdentityInequality:
-                        resultExprInfo = new RuleBinaryExpressionInfo(lhsType, rhsType, typeof(bool));
-                        break;
-
-                    case CodeBinaryOperatorType.ValueEquality:
-                        resultExprInfo = Literal.AllowedComparison(lhsType, binaryExpr.Left, rhsType, binaryExpr.Right, binaryExpr.Operator, validation, out error);
-                        if (resultExprInfo == null)
-                        {
-                            // check if constants are used with ulongs, as we should do some extra "conversions"
-                            if (((lhsType == typeof(ulong)) && (PromotionPossible(rhsType, binaryExpr.Right)))
-                                || ((rhsType == typeof(ulong)) && (PromotionPossible(lhsType, binaryExpr.Left))))
-                            {
-                                resultExprInfo = new RuleBinaryExpressionInfo(lhsType, rhsType, typeof(bool));
-                            }
-                            else
-                            {
-                                error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
-                                validation.Errors.Add(error);
-                            }
-                        }
-                        break;
-
-                    case CodeBinaryOperatorType.LessThan:
-                    case CodeBinaryOperatorType.LessThanOrEqual:
-                    case CodeBinaryOperatorType.GreaterThan:
-                    case CodeBinaryOperatorType.GreaterThanOrEqual:
-                        resultExprInfo = Literal.AllowedComparison(lhsType, binaryExpr.Left, rhsType, binaryExpr.Right, binaryExpr.Operator, validation, out error);
-                        if (resultExprInfo == null)
-                        {
-                            // check if constants are used with ulongs, as we should do some extra "conversions"
-                            if (((lhsType == typeof(ulong)) && (PromotionPossible(rhsType, binaryExpr.Right)))
-                                || ((rhsType == typeof(ulong)) && (PromotionPossible(lhsType, binaryExpr.Left))))
-                            {
-                                resultExprInfo = new RuleBinaryExpressionInfo(lhsType, rhsType, typeof(bool));
-                            }
-                            else
-                            {
-                                error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
-                                validation.Errors.Add(error);
-                            }
-                        }
-                        break;
-
-                    case CodeBinaryOperatorType.BooleanAnd:
-                    case CodeBinaryOperatorType.BooleanOr:
-                        resultExprInfo = new RuleBinaryExpressionInfo(lhsType, rhsType, typeof(bool));
-                        if (lhsType != typeof(bool))
-                        {
-                            message = string.Format(CultureInfo.CurrentCulture, Messages.LogicalOpBadTypeLHS, binaryExpr.Operator,
-                                (lhsType == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(lhsType));
-                            error = new ValidationError(message, ErrorNumbers.Error_LeftOperandInvalidType);
-                            error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
-                            validation.Errors.Add(error);
-                            resultExprInfo = null;
-                        }
-                        if (rhsType != typeof(bool))
-                        {
-                            message = string.Format(CultureInfo.CurrentCulture, Messages.LogicalOpBadTypeRHS, binaryExpr.Operator,
-                                (rhsType == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(rhsType));
-                            error = new ValidationError(message, ErrorNumbers.Error_RightOperandInvalidType);
-                            error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
-                            validation.Errors.Add(error);
-                            resultExprInfo = null;
-                        }
-                        break;
-
-                    default:
-                        {
-                            message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, binaryExpr.Operator);
-                            error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
-                            error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
-                            validation.Errors.Add(error);
-                        }
-                        break;
-                }
+                ValidateResult(validation, ref message, ref error, binaryExpr, lhsExprInfo, rhsExprInfo, ref resultExprInfo);
             }
 
             // Validate any RuleAttributes, if present.
-            if (resultExprInfo != null)
+            if (resultExprInfo != null
+                && !ValidateRuleAttributes(validation, resultExprInfo))
+                return null;
+
+            return resultExprInfo;
+        }
+
+        private static void ValidateResult(RuleValidation validation, ref string message, ref ValidationError error, CodeBinaryOperatorExpression binaryExpr, RuleExpressionInfo lhsExprInfo, RuleExpressionInfo rhsExprInfo, ref RuleBinaryExpressionInfo resultExprInfo)
+        {
+            Type lhsType = lhsExprInfo.ExpressionType;
+            Type rhsType = rhsExprInfo.ExpressionType;
+
+            switch (binaryExpr.Operator)
             {
-                MethodInfo method = resultExprInfo.MethodInfo;
-                if (method != null)
-                {
-                    object[] attrs = method.GetCustomAttributes(typeof(RuleAttribute), true);
-                    if (attrs != null && attrs.Length > 0)
+                case CodeBinaryOperatorType.Add:
+                case CodeBinaryOperatorType.Subtract:
+                case CodeBinaryOperatorType.Multiply:
+                case CodeBinaryOperatorType.Divide:
+                case CodeBinaryOperatorType.Modulus:
+                case CodeBinaryOperatorType.BitwiseAnd:
+                case CodeBinaryOperatorType.BitwiseOr:
+                    ValidateArithmethidOperations(validation, out error, binaryExpr, out resultExprInfo, lhsType, rhsType);
+                    break;
+
+                case CodeBinaryOperatorType.IdentityEquality:
+                case CodeBinaryOperatorType.IdentityInequality:
+                    resultExprInfo = new RuleBinaryExpressionInfo(lhsType, rhsType, typeof(bool));
+                    break;
+
+                case CodeBinaryOperatorType.ValueEquality:
+                case CodeBinaryOperatorType.LessThan:
+                case CodeBinaryOperatorType.LessThanOrEqual:
+                case CodeBinaryOperatorType.GreaterThan:
+                case CodeBinaryOperatorType.GreaterThanOrEqual:
+                    ValidateLiteralComparisons(validation, out error, binaryExpr, out resultExprInfo, lhsType, rhsType);
+                    break;
+
+                case CodeBinaryOperatorType.BooleanAnd:
+                case CodeBinaryOperatorType.BooleanOr:
+                    resultExprInfo = ValidateBooleans(validation, ref message, ref error, binaryExpr, lhsType, rhsType);
+                    break;
+
+                default:
                     {
-                        Stack<MemberInfo> methodStack = new();
-                        methodStack.Push(method);
-
-                        bool allAttributesValid = !attrs.OfType<RuleAttribute>().Any(r => !r.Validate(validation, method, method.DeclaringType, method.GetParameters()));
-
-                        methodStack.Pop();
-
-                        if (!allAttributesValid)
-                            return null;
+                        message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, binaryExpr.Operator);
+                        error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
+                        error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
+                        validation.Errors.Add(error);
                     }
+                    break;
+            }
+        }
+
+        private static void ValidateArithmethidOperations(RuleValidation validation, out ValidationError error, CodeBinaryOperatorExpression binaryExpr, out RuleBinaryExpressionInfo resultExprInfo, Type lhsType, Type rhsType)
+        {
+            resultExprInfo = ArithmeticLiteral.ResultType(binaryExpr.Operator, lhsType, binaryExpr.Left, rhsType, binaryExpr.Right, validation, out error);
+            if (resultExprInfo == null)
+            {
+                // check if constants are used with ulongs, as we should do some extra "conversions"
+                if (((lhsType == typeof(ulong)) && (PromotionPossible(rhsType, binaryExpr.Right)))
+                    || ((rhsType == typeof(ulong)) && (PromotionPossible(lhsType, binaryExpr.Left))))
+                {
+                    resultExprInfo = new RuleBinaryExpressionInfo(lhsType, rhsType, typeof(ulong));
                 }
+                else
+                {
+                    error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
+                    validation.Errors.Add(error);
+                }
+            }
+        }
+
+        private static void ValidateLiteralComparisons(RuleValidation validation, out ValidationError error, CodeBinaryOperatorExpression binaryExpr, out RuleBinaryExpressionInfo resultExprInfo, Type lhsType, Type rhsType)
+        {
+            resultExprInfo = Literal.AllowedComparison(lhsType, binaryExpr.Left, rhsType, binaryExpr.Right, binaryExpr.Operator, validation, out error);
+            if (resultExprInfo == null)
+            {
+                // check if constants are used with ulongs, as we should do some extra "conversions"
+                if (((lhsType == typeof(ulong)) && (PromotionPossible(rhsType, binaryExpr.Right)))
+                    || ((rhsType == typeof(ulong)) && (PromotionPossible(lhsType, binaryExpr.Left))))
+                {
+                    resultExprInfo = new RuleBinaryExpressionInfo(lhsType, rhsType, typeof(bool));
+                }
+                else
+                {
+                    error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
+                    validation.Errors.Add(error);
+                }
+            }
+        }
+
+        private static RuleBinaryExpressionInfo ValidateBooleans(RuleValidation validation, ref string message, ref ValidationError error, CodeBinaryOperatorExpression binaryExpr, Type lhsType, Type rhsType)
+        {
+            RuleBinaryExpressionInfo resultExprInfo = new(lhsType, rhsType, typeof(bool));
+            if (lhsType != typeof(bool))
+            {
+                message = string.Format(CultureInfo.CurrentCulture, Messages.LogicalOpBadTypeLHS, binaryExpr.Operator,
+                    (lhsType == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(lhsType));
+                error = new ValidationError(message, ErrorNumbers.Error_LeftOperandInvalidType);
+                error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
+                validation.Errors.Add(error);
+                resultExprInfo = null;
+            }
+            if (rhsType != typeof(bool))
+            {
+                message = string.Format(CultureInfo.CurrentCulture, Messages.LogicalOpBadTypeRHS, binaryExpr.Operator,
+                    (rhsType == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(rhsType));
+                error = new ValidationError(message, ErrorNumbers.Error_RightOperandInvalidType);
+                error.UserData[RuleUserDataKeys.ErrorObject] = binaryExpr;
+                validation.Errors.Add(error);
+                resultExprInfo = null;
             }
 
             return resultExprInfo;
+        }
+
+        private static bool ValidateRuleAttributes(RuleValidation validation, RuleBinaryExpressionInfo resultExprInfo)
+        {
+            MethodInfo method = resultExprInfo.MethodInfo;
+            if (method != null)
+            {
+                object[] attrs = method.GetCustomAttributes(typeof(RuleAttribute), true);
+                if (attrs != null && attrs.Length > 0)
+                {
+                    Stack<MemberInfo> methodStack = new();
+                    methodStack.Push(method);
+
+                    bool allAttributesValid = !attrs.OfType<RuleAttribute>().Any(r => !r.Validate(validation, method, method.DeclaringType, method.GetParameters()));
+
+                    methodStack.Pop();
+
+                    if (!allAttributesValid)
+                        return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -460,6 +471,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
             else
             {
+                return EvaluateNonShortCircuitedCases(execution, binaryExpr, lhsValue, operation);
+            }
+
+            static IRuleExpressionResult EvaluateNonShortCircuitedCases(RuleExecution execution, CodeBinaryOperatorExpression binaryExpr, object lhsValue, CodeBinaryOperatorType operation)
+            {
                 object resultValue;
                 object rhsValue = RuleExpressionWalker.Evaluate(execution, binaryExpr.Right).Value;
                 if (execution.Validation.ExpressionInfo(binaryExpr) is not RuleBinaryExpressionInfo expressionInfo)  // Oops, someone forgot to validate.
@@ -507,116 +523,38 @@ namespace LogicBuilder.Workflow.Activities.Rules
             switch (operation)
             {
                 case CodeBinaryOperatorType.Add:
-                    leftArithmetic = ArithmeticLiteral.MakeLiteral(lhsType, lhsValue);
-                    if (leftArithmetic == null)
-                        break;
-                    rightArithmetic = ArithmeticLiteral.MakeLiteral(rhsType, rhsValue);
-                    if (rightArithmetic == null)
-                        break;
-                    return leftArithmetic.Add(rightArithmetic);
                 case CodeBinaryOperatorType.Subtract:
-                    leftArithmetic = ArithmeticLiteral.MakeLiteral(lhsType, lhsValue);
-                    if (leftArithmetic == null)
-                        break;
-                    rightArithmetic = ArithmeticLiteral.MakeLiteral(rhsType, rhsValue);
-                    if (rightArithmetic == null)
-                        break;
-                    return leftArithmetic.Subtract(rightArithmetic);
                 case CodeBinaryOperatorType.Multiply:
-                    leftArithmetic = ArithmeticLiteral.MakeLiteral(lhsType, lhsValue);
-                    if (leftArithmetic == null)
-                        break;
-                    rightArithmetic = ArithmeticLiteral.MakeLiteral(rhsType, rhsValue);
-                    if (rightArithmetic == null)
-                        break;
-                    return leftArithmetic.Multiply(rightArithmetic);
                 case CodeBinaryOperatorType.Divide:
-                    leftArithmetic = ArithmeticLiteral.MakeLiteral(lhsType, lhsValue);
-                    if (leftArithmetic == null)
-                        break;
-                    rightArithmetic = ArithmeticLiteral.MakeLiteral(rhsType, rhsValue);
-                    if (rightArithmetic == null)
-                        break;
-                    return leftArithmetic.Divide(rightArithmetic);
                 case CodeBinaryOperatorType.Modulus:
-                    leftArithmetic = ArithmeticLiteral.MakeLiteral(lhsType, lhsValue);
-                    if (leftArithmetic == null)
-                        break;
-                    rightArithmetic = ArithmeticLiteral.MakeLiteral(rhsType, rhsValue);
-                    if (rightArithmetic == null)
-                        break;
-                    return leftArithmetic.Modulus(rightArithmetic);
                 case CodeBinaryOperatorType.BitwiseAnd:
-                    leftArithmetic = ArithmeticLiteral.MakeLiteral(lhsType, lhsValue);
-                    if (leftArithmetic == null)
-                        break;
-                    rightArithmetic = ArithmeticLiteral.MakeLiteral(rhsType, rhsValue);
-                    if (rightArithmetic == null)
-                        break;
-                    return leftArithmetic.BitAnd(rightArithmetic);
                 case CodeBinaryOperatorType.BitwiseOr:
                     leftArithmetic = ArithmeticLiteral.MakeLiteral(lhsType, lhsValue);
-                    if (leftArithmetic == null)
-                        break;
                     rightArithmetic = ArithmeticLiteral.MakeLiteral(rhsType, rhsValue);
-                    if (rightArithmetic == null)
+                    if (leftArithmetic == null || rightArithmetic == null)
                         break;
-                    return leftArithmetic.BitOr(rightArithmetic);
 
-                case CodeBinaryOperatorType.ValueEquality:
-                    leftLiteral = Literal.MakeLiteral(lhsType, lhsValue);
-                    if (leftLiteral == null)
-                        break;
-                    rightLiteral = Literal.MakeLiteral(rhsType, rhsValue);
-                    if (rightLiteral == null)
-                        break;
-                    return leftLiteral.Equal(rightLiteral);
+                    return EvaluateArithmeticLiteral();
                 case CodeBinaryOperatorType.IdentityEquality:
                     return lhsValue == rhsValue;
                 case CodeBinaryOperatorType.IdentityInequality:
                     return lhsValue != rhsValue;
-
+                case CodeBinaryOperatorType.ValueEquality:
                 case CodeBinaryOperatorType.LessThan:
-                    leftLiteral = Literal.MakeLiteral(lhsType, lhsValue);
-                    if (leftLiteral == null)
-                        break;
-                    rightLiteral = Literal.MakeLiteral(rhsType, rhsValue);
-                    if (rightLiteral == null)
-                        break;
-                    return leftLiteral.LessThan(rightLiteral);
                 case CodeBinaryOperatorType.LessThanOrEqual:
-                    leftLiteral = Literal.MakeLiteral(lhsType, lhsValue);
-                    if (leftLiteral == null)
-                        break;
-                    rightLiteral = Literal.MakeLiteral(rhsType, rhsValue);
-                    if (rightLiteral == null)
-                        break;
-                    return leftLiteral.LessThanOrEqual(rightLiteral);
                 case CodeBinaryOperatorType.GreaterThan:
-                    leftLiteral = Literal.MakeLiteral(lhsType, lhsValue);
-                    if (leftLiteral == null)
-                        break;
-                    rightLiteral = Literal.MakeLiteral(rhsType, rhsValue);
-                    if (rightLiteral == null)
-                        break;
-                    return leftLiteral.GreaterThan(rightLiteral);
                 case CodeBinaryOperatorType.GreaterThanOrEqual:
                     leftLiteral = Literal.MakeLiteral(lhsType, lhsValue);
-                    if (leftLiteral == null)
-                        break;
                     rightLiteral = Literal.MakeLiteral(rhsType, rhsValue);
-                    if (rightLiteral == null)
+                    if (leftLiteral == null || rightLiteral == null)
                         break;
-                    return leftLiteral.GreaterThanOrEqual(rightLiteral);
 
+                    return EvaluateLiteral();
                 default:
                     // should never happen
                     // BooleanAnd & BooleanOr short-circuited before call
                     // Assign disallowed at validation time
-                    message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, operation);
-                    exception = new RuleEvaluationException(message);
-                    exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
-                    throw exception;
+                    throw CreateBinaryOpNotSupportedException();
             }
 
             message = string.Format(CultureInfo.CurrentCulture,
@@ -627,7 +565,44 @@ namespace LogicBuilder.Workflow.Activities.Rules
             exception = new RuleEvaluationException(message);
             exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
             throw exception;
+
+            object EvaluateArithmeticLiteral()
+            {
+                return operation switch
+                {
+                    CodeBinaryOperatorType.Add => leftArithmetic.Add(rightArithmetic),
+                    CodeBinaryOperatorType.Subtract => leftArithmetic.Subtract(rightArithmetic),
+                    CodeBinaryOperatorType.Multiply => leftArithmetic.Multiply(rightArithmetic),
+                    CodeBinaryOperatorType.Divide => leftArithmetic.Divide(rightArithmetic),
+                    CodeBinaryOperatorType.Modulus => leftArithmetic.Modulus(rightArithmetic),
+                    CodeBinaryOperatorType.BitwiseAnd => leftArithmetic.BitAnd(rightArithmetic),
+                    CodeBinaryOperatorType.BitwiseOr => leftArithmetic.BitOr(rightArithmetic),
+                    _ => throw CreateBinaryOpNotSupportedException(),
+                };
+            }
+
+            object EvaluateLiteral()
+            {
+                return operation switch
+                {
+                    CodeBinaryOperatorType.ValueEquality => leftLiteral.Equal(rightLiteral),
+                    CodeBinaryOperatorType.GreaterThan => leftLiteral.GreaterThan(rightLiteral),
+                    CodeBinaryOperatorType.LessThan => leftLiteral.LessThan(rightLiteral),
+                    CodeBinaryOperatorType.GreaterThanOrEqual => leftLiteral.GreaterThanOrEqual(rightLiteral),
+                    CodeBinaryOperatorType.LessThanOrEqual => leftLiteral.LessThanOrEqual(rightLiteral),
+                    _ => throw CreateBinaryOpNotSupportedException(),
+                };
+            }
+
+            RuleEvaluationException CreateBinaryOpNotSupportedException()
+            {
+                string message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, operation);
+                RuleEvaluationException exception = new(message);
+                exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
+                return exception;
+            }
         }
+
         #endregion
 
         #region Decompile
@@ -635,7 +610,151 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
         {
             CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)expression;
+            CheckOperandsForNull(binaryExpr);
 
+            string opString;
+            opString = GetOpstring(binaryExpr);
+
+            CodeExpression leftExpr = binaryExpr.Left;
+            CodeExpression rightExpr = binaryExpr.Right;
+
+
+            bool mustParenthesize = false;
+            if (binaryExpr.Operator == CodeBinaryOperatorType.ValueEquality
+                && DecompileForEqualityOperatorComplete(stringBuilder, parentExpression, ref opString, ref leftExpr, ref rightExpr, ref mustParenthesize))
+                return;
+
+            else if (binaryExpr.Operator == CodeBinaryOperatorType.Subtract
+                && leftExpr is CodePrimitiveExpression lhsPrimitive
+                && lhsPrimitive.Value != null
+                && DecompileForSubtractComplete(stringBuilder, parentExpression, rightExpr, ref mustParenthesize, lhsPrimitive))
+                return;
+
+            mustParenthesize = RuleDecompiler.MustParenthesize(binaryExpr, parentExpression);
+            if (mustParenthesize)
+                stringBuilder.Append("(");
+
+            RuleExpressionWalker.Decompile(stringBuilder, leftExpr, binaryExpr);
+            stringBuilder.Append(opString);
+            RuleExpressionWalker.Decompile(stringBuilder, rightExpr, binaryExpr);
+
+            if (mustParenthesize)
+                stringBuilder.Append(")");
+        }
+
+        private static bool DecompileForSubtractComplete(StringBuilder stringBuilder, CodeExpression parentExpression, CodeExpression rightExpr, ref bool mustParenthesize, CodePrimitiveExpression lhsPrimitive)
+        {
+            // Look for the special case:
+            //    0 - RHS       --> - RHS
+
+            object lhsValue = lhsPrimitive.Value;
+
+            // Check if the LHS is zero.  We'll only check a few types (decimal,
+            // double, float, int, long), since these occur most often (and the 
+            // unsigned types are all illegal).
+            TypeCode tc = Type.GetTypeCode(lhsValue.GetType());
+            bool isZero = false;
+            switch (tc)
+            {
+                case TypeCode.Decimal:
+                    isZero = ((decimal)lhsValue) == 0;
+                    break;
+
+                case TypeCode.Double:
+                    isZero = Math.Abs((double)lhsValue) < double.Epsilon;
+                    break;
+
+                case TypeCode.Single:
+                    isZero = Math.Abs((float)lhsValue) < float.Epsilon;
+                    break;
+
+                case TypeCode.Int32:
+                    isZero = ((int)lhsValue) == 0;
+                    break;
+
+                case TypeCode.Int64:
+                    isZero = ((long)lhsValue) == 0;
+                    break;
+            }
+
+            if (isZero)
+            {
+                mustParenthesize = RuleDecompiler.MustParenthesize(rightExpr, parentExpression);
+                if (mustParenthesize)
+                    stringBuilder.Append("(");
+
+                // Note the "parentExpression" passed to the child decompile... cast is the only
+                // built-in operation that has "unary" precedence, so pass that as the parent
+                // to get the parenthesization right.  
+                stringBuilder.Append("-");
+                RuleExpressionWalker.Decompile(stringBuilder, rightExpr, new CodeCastExpression());
+
+                if (mustParenthesize)
+                    stringBuilder.Append(")");
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool DecompileForEqualityOperatorComplete(StringBuilder stringBuilder, CodeExpression parentExpression, ref string opString, ref CodeExpression leftExpr, ref CodeExpression rightExpr, ref bool mustParenthesize)
+        {
+            // Look for special cases:
+            //    LHS == false              --> ! LHS
+            // or
+            //    (LHS == expr) == false    --> LHS != expr
+
+            if (rightExpr is not CodePrimitiveExpression rhsPrimitive)
+                return false;
+
+            object rhsValue = rhsPrimitive.Value;
+            if (rhsValue is bool boolValue && !boolValue)
+            {
+                // we don't have the comparison "==null"
+                // We have comparison "== false".
+
+                if (leftExpr is CodeBinaryOperatorExpression lhsBinary && lhsBinary.Operator == CodeBinaryOperatorType.ValueEquality)
+                {
+                    // We have the pattern
+                    //      (expr1 == expr2) == false
+                    // Treat this as:
+                    //      expr1 != expr2
+
+                    opString = " != ";
+
+                    leftExpr = lhsBinary.Left;
+                    rightExpr = lhsBinary.Right;
+                }
+                else
+                {
+                    // We have the pattern
+                    //      LHS == false
+                    // Treat this as:
+                    //      ! LHS
+
+                    mustParenthesize = RuleDecompiler.MustParenthesize(leftExpr, parentExpression);
+                    if (mustParenthesize)
+                        stringBuilder.Append("(");
+
+                    // Note the "parentExpression" passed to the child decompile... cast is the only
+                    // built-in operation that has "unary" precedence, so pass that as the parent
+                    // to get the parenthesization right. .
+                    stringBuilder.Append("!");
+                    RuleExpressionWalker.Decompile(stringBuilder, leftExpr, new CodeCastExpression());
+
+                    if (mustParenthesize)
+                        stringBuilder.Append(")");
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void CheckOperandsForNull(CodeBinaryOperatorExpression binaryExpr)
+        {
             if (binaryExpr.Left == null)
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Messages.NullBinaryOpLHS, binaryExpr.Operator);
@@ -650,9 +769,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 exception.Data[RuleUserDataKeys.ErrorObject] = binaryExpr;
                 throw exception;
             }
+        }
 
+        private static string GetOpstring(CodeBinaryOperatorExpression binaryExpr)
+        {
             string opString;
-
             switch (binaryExpr.Operator)
             {
                 case CodeBinaryOperatorType.Modulus:
@@ -716,129 +837,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     throw exception;
             }
 
-            CodeExpression leftExpr = binaryExpr.Left;
-            CodeExpression rightExpr = binaryExpr.Right;
-
-
-            bool mustParenthesize;
-            if (binaryExpr.Operator == CodeBinaryOperatorType.ValueEquality)
-            {
-                // Look for special cases:
-                //    LHS == false              --> ! LHS
-                // or
-                //    (LHS == expr) == false    --> LHS != expr
-
-                if (rightExpr is CodePrimitiveExpression rhsPrimitive)
-                {
-                    object rhsValue = rhsPrimitive.Value;
-                    if (rhsValue != null && rhsValue.GetType() == typeof(bool) && !(bool)rhsValue)
-                    {
-                        // we don't have the comparison "==null"
-                        // We have comparison "== false".
-
-                        if (leftExpr is CodeBinaryOperatorExpression lhsBinary && lhsBinary.Operator == CodeBinaryOperatorType.ValueEquality)
-                        {
-                            // We have the pattern
-                            //      (expr1 == expr2) == false
-                            // Treat this as:
-                            //      expr1 != expr2
-
-                            opString = " != ";
-
-                            leftExpr = lhsBinary.Left;
-                            rightExpr = lhsBinary.Right;
-                        }
-                        else
-                        {
-                            // We have the pattern
-                            //      LHS == false
-                            // Treat this as:
-                            //      ! LHS
-
-                            mustParenthesize = RuleDecompiler.MustParenthesize(leftExpr, parentExpression);
-                            if (mustParenthesize)
-                                stringBuilder.Append("(");
-
-                            // Note the "parentExpression" passed to the child decompile... cast is the only
-                            // built-in operation that has "unary" precedence, so pass that as the parent
-                            // to get the parenthesization right. .
-                            stringBuilder.Append("!");
-                            RuleExpressionWalker.Decompile(stringBuilder, leftExpr, new CodeCastExpression());
-
-                            if (mustParenthesize)
-                                stringBuilder.Append(")");
-
-                            return;
-                        }
-                    }
-                }
-            }
-            else if (binaryExpr.Operator == CodeBinaryOperatorType.Subtract 
-                && leftExpr is CodePrimitiveExpression lhsPrimitive 
-                && lhsPrimitive.Value != null)
-            {
-                // Look for the special case:
-                //    0 - RHS       --> - RHS
-
-                object lhsValue = lhsPrimitive.Value;
-
-                // Check if the LHS is zero.  We'll only check a few types (decimal,
-                // double, float, int, long), since these occur most often (and the 
-                // unsigned types are all illegal).
-                TypeCode tc = Type.GetTypeCode(lhsValue.GetType());
-                bool isZero = false;
-                switch (tc)
-                {
-                    case TypeCode.Decimal:
-                        isZero = ((decimal)lhsValue) == 0;
-                        break;
-
-                    case TypeCode.Double:
-                        isZero = Math.Abs((double)lhsValue) < double.Epsilon;
-                        break;
-
-                    case TypeCode.Single:
-                        isZero = Math.Abs((float)lhsValue) < float.Epsilon;
-                        break;
-
-                    case TypeCode.Int32:
-                        isZero = ((int)lhsValue) == 0;
-                        break;
-
-                    case TypeCode.Int64:
-                        isZero = ((long)lhsValue) == 0;
-                        break;
-                }
-
-                if (isZero)
-                {
-                    mustParenthesize = RuleDecompiler.MustParenthesize(rightExpr, parentExpression);
-                    if (mustParenthesize)
-                        stringBuilder.Append("(");
-
-                    // Note the "parentExpression" passed to the child decompile... cast is the only
-                    // built-in operation that has "unary" precedence, so pass that as the parent
-                    // to get the parenthesization right.  
-                    stringBuilder.Append("-");
-                    RuleExpressionWalker.Decompile(stringBuilder, rightExpr, new CodeCastExpression());
-
-                    if (mustParenthesize)
-                        stringBuilder.Append(")");
-
-                    return;
-                }
-            }
-
-            mustParenthesize = RuleDecompiler.MustParenthesize(binaryExpr, parentExpression);
-            if (mustParenthesize)
-                stringBuilder.Append("(");
-
-            RuleExpressionWalker.Decompile(stringBuilder, leftExpr, binaryExpr);
-            stringBuilder.Append(opString);
-            RuleExpressionWalker.Decompile(stringBuilder, rightExpr, binaryExpr);
-
-            if (mustParenthesize)
-                stringBuilder.Append(")");
+            return opString;
         }
         #endregion
 
@@ -855,11 +854,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newOp;
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)expression;
+            CodeBinaryOperatorExpression binaryExpr = (CodeBinaryOperatorExpression)leftExpression;
 
-            CodeBinaryOperatorExpression comperandBinary = (CodeBinaryOperatorExpression)comperand;
+            CodeBinaryOperatorExpression comperandBinary = (CodeBinaryOperatorExpression)rightExpression;
             return (binaryExpr.Operator == comperandBinary.Operator
                 && RuleExpressionWalker.Match(binaryExpr.Left, comperandBinary.Left)
                 && RuleExpressionWalker.Match(binaryExpr.Right, comperandBinary.Right));
@@ -918,7 +917,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             else
                 bindingFlags |= BindingFlags.Instance;
             if (validation.AllowInternalMembers(targetType))
-                bindingFlags |= BindingFlags.NonPublic;
+                bindingFlags |= BindingFlags.NonPublic; // NOSONAR - safe for accessing members in the same assembly as the root object
 
             FieldInfo fi = targetType.GetField(fieldRefExpr.FieldName, bindingFlags);
             if (fi == null)
@@ -1012,11 +1011,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newField;
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodeFieldReferenceExpression fieldRefExpr = (CodeFieldReferenceExpression)expression;
+            CodeFieldReferenceExpression fieldRefExpr = (CodeFieldReferenceExpression)leftExpression;
 
-            CodeFieldReferenceExpression newField = (CodeFieldReferenceExpression)comperand;
+            CodeFieldReferenceExpression newField = (CodeFieldReferenceExpression)rightExpression;
             return (fieldRefExpr.FieldName == newField.FieldName
                 && RuleExpressionWalker.Match(fieldRefExpr.TargetObject, newField.TargetObject));
         }
@@ -1072,7 +1071,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy;
             if (validation.AllowInternalMembers(targetType))
             {
-                bindingFlags |= BindingFlags.NonPublic;
+                bindingFlags |= BindingFlags.NonPublic;//NOSONAR - safe for referencing members in the same assembly as the root object.
                 includeNonPublic = true;
             }
             PropertyInfo pi = validation.ResolveProperty(targetType, propGetExpr.PropertyName, bindingFlags);
@@ -1110,6 +1109,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (!validation.ValidateMemberAccess(propGetExpr.TargetObject, targetType, accessorMethod, propGetExpr.PropertyName, propGetExpr))
                 return null;
 
+            if (!ValidateRuleAttributes(validation, targetType, pi))
+                return null;
+
+            return new RulePropertyExpressionInfo(pi, pi.PropertyType, false);
+        }
+
+        private static bool ValidateRuleAttributes(RuleValidation validation, Type targetType, PropertyInfo pi)
+        {
             // Validate any RuleAttributes, if present.
             object[] attrs = pi.GetCustomAttributes(typeof(RuleAttribute), true);
             if (attrs != null && attrs.Length > 0)
@@ -1122,12 +1129,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 methodStack.Pop();
 
                 if (!allAttributesValid)
-                    return null;
+                    return false;
             }
 
-            return new RulePropertyExpressionInfo(pi, pi.PropertyType, false);
+            return true;
         }
-
 
         internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
@@ -1218,11 +1224,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newProperty;
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodePropertyReferenceExpression propGetExpr = (CodePropertyReferenceExpression)expression;
+            CodePropertyReferenceExpression propGetExpr = (CodePropertyReferenceExpression)leftExpression;
 
-            CodePropertyReferenceExpression newProperty = (CodePropertyReferenceExpression)comperand;
+            CodePropertyReferenceExpression newProperty = (CodePropertyReferenceExpression)rightExpression;
             return (propGetExpr.PropertyName == newProperty.PropertyName
                 && RuleExpressionWalker.Match(propGetExpr.TargetObject, newProperty.TargetObject));
         }
@@ -1239,12 +1245,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             Type targetType = null;
             RuleMethodInvokeExpressionInfo methodInvokeInfo = null;
-            string message;
+            string message = null;
             BindingFlags bindingFlags = BindingFlags.Public;
 
             CodeMethodInvokeExpression invokeExpr = (CodeMethodInvokeExpression)expression;
 
-            ValidationError error;
+            ValidationError error = null;
             if (isWritten)
             {
                 message = string.Format(CultureInfo.CurrentCulture, Messages.CannotWriteToExpression, typeof(CodeMethodInvokeExpression));
@@ -1277,96 +1283,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (!validation.PushParentExpression(invokeExpr))
                     return null;
 
-                RuleExpressionInfo targetExprInfo = RuleExpressionWalker.Validate(validation, invokeExpr.Method.TargetObject, false);
-                if (targetExprInfo == null)     // error occurred, so simply return
+                if (!ValidateMethodInvokeExpression(validation, ref targetType, ref methodInvokeInfo, ref message, ref bindingFlags, invokeExpr, ref error))
                     return null;
-
-                targetType = targetExprInfo.ExpressionType;
-                if (targetType == null)
-                    return null;
-
-                // if an error occurred (targetType == null), continue on to validate the arguments
-                if (targetType == typeof(NullLiteral))
-                {
-                    message = string.Format(CultureInfo.CurrentCulture, Messages.NullMethodTarget, invokeExpr.Method.MethodName);
-                    error = new ValidationError(message, ErrorNumbers.Error_BindingTypeMissing);
-                    error.UserData[RuleUserDataKeys.ErrorObject] = invokeExpr;
-                    validation.Errors.Add(error);
-                    targetType = null; // force exit after validating the arguments
-                }
-
-                List<CodeExpression> argExprs = [];
-
-                bool hasInvalidArgument = false;
-                if (invokeExpr.Parameters != null)
-                {
-                    for (int i = 0; i < invokeExpr.Parameters.Count; ++i)
-                    {
-                        CodeExpression argExpr = invokeExpr.Parameters[i];
-                        if (argExpr == null)
-                        {
-                            message = string.Format(CultureInfo.CurrentCulture, Messages.NullMethodParameter, i.ToString(CultureInfo.CurrentCulture), invokeExpr.Method.MethodName);
-                            error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
-                            error.UserData[RuleUserDataKeys.ErrorObject] = invokeExpr;
-                            validation.Errors.Add(error);
-                            targetType = null; // force exit after validating the rest of the arguments
-                        }
-                        else
-                        {
-                            if (argExpr is CodeTypeReferenceExpression)
-                            {
-                                message = string.Format(CultureInfo.CurrentCulture, Messages.CodeExpressionNotHandled, argExpr.GetType().FullName);
-                                error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
-                                error.UserData[RuleUserDataKeys.ErrorObject] = argExpr;
-                                validation.AddError(error);
-
-                                hasInvalidArgument = true;
-                            }
-
-                            // Validate the argument.
-                            RuleExpressionInfo argExprInfo = RuleExpressionWalker.Validate(validation, argExpr, false);
-                            if (argExprInfo == null)
-                                hasInvalidArgument = true;
-                            argExprs.Add(argExpr);
-                        }
-                    }
-                }
-
-                // Stop further validation if there was a problem with the target expression.
-                if (targetType == null)
-                    return null;
-
-                // Stop further validation if there was a problem with any of the arguments.
-                if (hasInvalidArgument)
-                    return null;
-
-                if (invokeExpr.Method.TargetObject is CodeTypeReferenceExpression)
-                    bindingFlags |= BindingFlags.Static | BindingFlags.FlattenHierarchy;
-                else
-                    bindingFlags |= BindingFlags.Instance;
-                if (validation.AllowInternalMembers(targetType))
-                    bindingFlags |= BindingFlags.NonPublic;
-
-                // Everything okay so far, try to resolve the method.
-                methodInvokeInfo = validation.ResolveMethod(targetType, invokeExpr.Method.MethodName, bindingFlags, argExprs, out error);
-                if ((methodInvokeInfo == null) && (invokeExpr.UserData.Contains(RuleUserDataKeys.QualifiedName)))
-                {
-                    // failed to resolve the method, but a fully qualified type name is around
-                    // load the type, add it to the assemblies, and try again
-                    string qualifiedName = invokeExpr.UserData[RuleUserDataKeys.QualifiedName] as string;
-                    Type containingClassType = validation.ResolveType(qualifiedName);
-                    if (containingClassType != null)
-                    {
-                        validation.DetermineExtensionMethods(containingClassType.Assembly);
-                        methodInvokeInfo = validation.ResolveMethod(targetType, invokeExpr.Method.MethodName, bindingFlags, argExprs, out error);
-                    }
-                }
-                if (methodInvokeInfo == null)
-                {
-                    error.UserData[RuleUserDataKeys.ErrorObject] = invokeExpr;
-                    validation.Errors.Add(error);
-                    return null;
-                }
             }
             finally
             {
@@ -1411,6 +1329,107 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             return methodInvokeInfo;
+        }
+
+        private static bool ValidateMethodInvokeExpression(RuleValidation validation, ref Type targetType, ref RuleMethodInvokeExpressionInfo methodInvokeInfo, ref string message, ref BindingFlags bindingFlags, CodeMethodInvokeExpression invokeExpr, ref ValidationError error)
+        {
+            RuleExpressionInfo targetExprInfo = RuleExpressionWalker.Validate(validation, invokeExpr.Method.TargetObject, false);
+            if (targetExprInfo == null)     // error occurred, so simply return
+                return false;
+
+            targetType = targetExprInfo.ExpressionType;
+            if (targetType == null)
+                return false;
+
+            // if an error occurred (targetType == null), continue on to validate the arguments
+            if (targetType == typeof(NullLiteral))
+            {
+                message = string.Format(CultureInfo.CurrentCulture, Messages.NullMethodTarget, invokeExpr.Method.MethodName);
+                error = new ValidationError(message, ErrorNumbers.Error_BindingTypeMissing);
+                error.UserData[RuleUserDataKeys.ErrorObject] = invokeExpr;
+                validation.Errors.Add(error);
+                targetType = null; // force exit after validating the arguments
+            }
+
+            List<CodeExpression> argExprs = [];
+
+            bool hasInvalidArgument = false;
+            if (invokeExpr.Parameters != null)
+            {
+                ValidateParameters(validation, ref targetType, ref message, invokeExpr, ref error, argExprs, ref hasInvalidArgument);
+            }
+
+            // Stop further validation if there was a problem with the target expression.
+            if (targetType == null)
+                return false;
+
+            // Stop further validation if there was a problem with any of the arguments.
+            if (hasInvalidArgument)
+                return false;
+
+            if (invokeExpr.Method.TargetObject is CodeTypeReferenceExpression)
+                bindingFlags |= BindingFlags.Static | BindingFlags.FlattenHierarchy;
+            else
+                bindingFlags |= BindingFlags.Instance;
+            if (validation.AllowInternalMembers(targetType))
+                bindingFlags |= BindingFlags.NonPublic;//NOSONAR - safe for accessing members in the same assembly as the root class.
+
+            // Everything okay so far, try to resolve the method.
+            methodInvokeInfo = validation.ResolveMethod(targetType, invokeExpr.Method.MethodName, bindingFlags, argExprs, out error);
+            if ((methodInvokeInfo == null) && (invokeExpr.UserData.Contains(RuleUserDataKeys.QualifiedName)))
+            {
+                // failed to resolve the method, but a fully qualified type name is around
+                // load the type, add it to the assemblies, and try again
+                string qualifiedName = invokeExpr.UserData[RuleUserDataKeys.QualifiedName] as string;
+                Type containingClassType = validation.ResolveType(qualifiedName);
+                if (containingClassType != null)
+                {
+                    validation.DetermineExtensionMethods(containingClassType.Assembly);
+                    methodInvokeInfo = validation.ResolveMethod(targetType, invokeExpr.Method.MethodName, bindingFlags, argExprs, out error);
+                }
+            }
+            if (methodInvokeInfo == null)
+            {
+                error.UserData[RuleUserDataKeys.ErrorObject] = invokeExpr;
+                validation.Errors.Add(error);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void ValidateParameters(RuleValidation validation, ref Type targetType, ref string message, CodeMethodInvokeExpression invokeExpr, ref ValidationError error, List<CodeExpression> argExprs, ref bool hasInvalidArgument)
+        {
+            for (int i = 0; i < invokeExpr.Parameters.Count; ++i)
+            {
+                CodeExpression argExpr = invokeExpr.Parameters[i];
+                if (argExpr == null)
+                {
+                    message = string.Format(CultureInfo.CurrentCulture, Messages.NullMethodParameter, i.ToString(CultureInfo.CurrentCulture), invokeExpr.Method.MethodName);
+                    error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
+                    error.UserData[RuleUserDataKeys.ErrorObject] = invokeExpr;
+                    validation.Errors.Add(error);
+                    targetType = null; // force exit after validating the rest of the arguments
+                }
+                else
+                {
+                    if (argExpr is CodeTypeReferenceExpression)
+                    {
+                        message = string.Format(CultureInfo.CurrentCulture, Messages.CodeExpressionNotHandled, argExpr.GetType().FullName);
+                        error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
+                        error.UserData[RuleUserDataKeys.ErrorObject] = argExpr;
+                        validation.AddError(error);
+
+                        hasInvalidArgument = true;
+                    }
+
+                    // Validate the argument.
+                    RuleExpressionInfo argExprInfo = RuleExpressionWalker.Validate(validation, argExpr, false);
+                    if (argExprInfo == null)
+                        hasInvalidArgument = true;
+                    argExprs.Add(argExpr);
+                }
+            }
         }
 
         internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
@@ -1501,91 +1520,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (invokeExpr.Parameters != null && invokeExpr.Parameters.Count > 0)
             {
-                int actualArgCount = invokeExpr.Parameters.Count;
-
-                ParameterInfo[] parmInfos = mi.GetParameters();
-
-                arguments = new object[parmInfos.Length];
-
-                int numFixedParameters = parmInfos.Length;
-                if (invokeExprInfo.NeedsParamsExpansion)
-                    numFixedParameters -= 1;
-
-                int i;
-
-                // Evaluate the fixed portion of the parameter list.
-                for (i = 0; i < numFixedParameters; ++i)
-                {
-                    if (i >= invokeExpr.Parameters.Count)
-                    {
-                        if (parmInfos[i].IsOptional)
-                        {
-                            arguments[i] = parmInfos[i].DefaultValue;
-                            continue;
-                        }
-
-                        throw new ArgumentException
-                        (
-                            string.Format
-                            (
-                                CultureInfo.CurrentCulture,
-                                Messages.MissingMethodParameterExpression,
-                                mi.DeclaringType.FullName,
-                                mi.Name,
-                                parmInfos[i].Name
-                            ),
-                            "invokeExpr.Parameters"
-                        );
-                    }
-
-                    Type argType = execution.Validation.ExpressionInfo(invokeExpr.Parameters[i]).ExpressionType;
-                    IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, invokeExpr.Parameters[i]);
-
-                    // Special procesing of direction expressions to keep track of out arguments (& ref).
-                    if (invokeExpr.Parameters[i] is CodeDirectionExpression direction && (direction.Direction == FieldDirection.Ref || direction.Direction == FieldDirection.Out))
-                    {
-                        // lazy creation of fieldsToSet
-                        outArgumentResults ??= new IRuleExpressionResult[invokeExpr.Parameters.Count];
-                        // keep track of this out expression so we can set it later
-                        outArgumentResults[i] = argResult;
-
-                        // don't evaluate out arguments
-                        if (direction.Direction != FieldDirection.Out)
-                            arguments[i] = Executor.AdjustType(argType, argResult.Value, parmInfos[i].ParameterType);
-                    }
-                    else
-                    {
-                        // treat as in
-                        arguments[i] = Executor.AdjustType(argType, argResult.Value, parmInfos[i].ParameterType);
-                    }
-                }
-
-                if (numFixedParameters < actualArgCount)
-                {
-                    // This target method had a params array, and we are calling it with an
-                    // expanded parameter list.  E.g.,
-                    //      void foo(int x, params string[] y)
-                    // with the invocation:
-                    //      foo(5, "crud", "kreeble", "glorp")
-                    // We need to translate this to:
-                    //      foo(5, new string[] { "crud", "kreeble", "glorp" })
-
-                    ParameterInfo lastParamInfo = parmInfos[numFixedParameters];
-
-                    Type arrayType = lastParamInfo.ParameterType;
-                    System.Diagnostics.Debug.Assert(arrayType.IsArray);
-                    Type elementType = arrayType.GetElementType();
-
-                    Array paramsArray = (Array)arrayType.InvokeMember(arrayType.Name, BindingFlags.CreateInstance, null, null, [actualArgCount - i], CultureInfo.CurrentCulture);
-                    for (; i < actualArgCount; ++i)
-                    {
-                        Type argType = execution.Validation.ExpressionInfo(invokeExpr.Parameters[i]).ExpressionType;
-                        IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, invokeExpr.Parameters[i]);
-                        paramsArray.SetValue(Executor.AdjustType(argType, argResult.Value, elementType), i - numFixedParameters);
-                    }
-
-                    arguments[numFixedParameters] = paramsArray;
-                }
+                arguments = GetArgumentsFromExpressionParameters(execution, invokeExpr, invokeExprInfo, mi, ref outArgumentResults);
             }
 
             object result;
@@ -1613,6 +1548,110 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             return new RuleLiteralResult(result);
+        }
+
+        private static object[] GetArgumentsFromExpressionParameters(RuleExecution execution, CodeMethodInvokeExpression invokeExpr, RuleMethodInvokeExpressionInfo invokeExprInfo, MethodInfo mi, ref IRuleExpressionResult[] outArgumentResults)
+        {
+            object[] arguments;
+            int actualArgCount = invokeExpr.Parameters.Count;
+
+            ParameterInfo[] parmInfos = mi.GetParameters();
+
+            arguments = new object[parmInfos.Length];
+
+            int numFixedParameters = parmInfos.Length;
+            if (invokeExprInfo.NeedsParamsExpansion)
+                numFixedParameters -= 1;
+
+            int i;
+
+            // Evaluate the fixed portion of the parameter list.
+            for (i = 0; i < numFixedParameters; ++i)
+            {
+                if (i >= invokeExpr.Parameters.Count)
+                {
+                    if (parmInfos[i].IsOptional)
+                    {
+                        arguments[i] = parmInfos[i].DefaultValue;
+                        continue;
+                    }
+
+                    throw new ArgumentException
+                    (
+                        string.Format
+                        (
+                            CultureInfo.CurrentCulture,
+                            Messages.MissingMethodParameterExpression,
+                            mi.DeclaringType.FullName,
+                            mi.Name,
+                            parmInfos[i].Name
+                        ),
+                        nameof(invokeExpr)
+                    );
+                }
+
+                outArgumentResults = GetArgument(execution, invokeExpr, outArgumentResults, arguments, parmInfos, i);
+            }
+
+            if (numFixedParameters < actualArgCount)
+            {
+                // This target method had a params array, and we are calling it with an
+                // expanded parameter list.  E.g.,
+                //      void foo(int x, params string[] y)
+                // with the invocation:
+                //      foo(5, "crud", "kreeble", "glorp")
+                // We need to translate this to:
+                //      foo(5, new string[] { "crud", "kreeble", "glorp" })
+
+                arguments[numFixedParameters] = GetParamsArray(execution, invokeExpr, actualArgCount, parmInfos, numFixedParameters, ref i);
+            }
+
+            return arguments;
+        }
+
+        private static IRuleExpressionResult[] GetArgument(RuleExecution execution, CodeMethodInvokeExpression invokeExpr, IRuleExpressionResult[] outArgumentResults, object[] arguments, ParameterInfo[] parmInfos, int i)
+        {
+            Type argType = execution.Validation.ExpressionInfo(invokeExpr.Parameters[i]).ExpressionType;
+            IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, invokeExpr.Parameters[i]);
+
+            // Special procesing of direction expressions to keep track of out arguments (& ref).
+            if (invokeExpr.Parameters[i] is CodeDirectionExpression direction && (direction.Direction == FieldDirection.Ref || direction.Direction == FieldDirection.Out))
+            {
+                // lazy creation of fieldsToSet
+                outArgumentResults ??= new IRuleExpressionResult[invokeExpr.Parameters.Count];
+                // keep track of this out expression so we can set it later
+                outArgumentResults[i] = argResult;
+
+                // don't evaluate out arguments
+                if (direction.Direction != FieldDirection.Out)
+                    arguments[i] = Executor.AdjustType(argType, argResult.Value, parmInfos[i].ParameterType);
+            }
+            else
+            {
+                // treat as in
+                arguments[i] = Executor.AdjustType(argType, argResult.Value, parmInfos[i].ParameterType);
+            }
+
+            return outArgumentResults;
+        }
+
+        private static Array GetParamsArray(RuleExecution execution, CodeMethodInvokeExpression invokeExpr, int actualArgCount, ParameterInfo[] parmInfos, int numFixedParameters, ref int i)
+        {
+            ParameterInfo lastParamInfo = parmInfos[numFixedParameters];
+
+            Type arrayType = lastParamInfo.ParameterType;
+            System.Diagnostics.Debug.Assert(arrayType.IsArray);
+            Type elementType = arrayType.GetElementType();
+
+            Array paramsArray = (Array)arrayType.InvokeMember(arrayType.Name, BindingFlags.CreateInstance, null, null, [actualArgCount - i], CultureInfo.CurrentCulture);
+            for (; i < actualArgCount; ++i)
+            {
+                Type argType = execution.Validation.ExpressionInfo(invokeExpr.Parameters[i]).ExpressionType;
+                IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, invokeExpr.Parameters[i]);
+                paramsArray.SetValue(Executor.AdjustType(argType, argResult.Value, elementType), i - numFixedParameters);
+            }
+
+            return paramsArray;
         }
 
         internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
@@ -1686,11 +1725,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newReference;
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodeMethodInvokeExpression invokeExpr = (CodeMethodInvokeExpression)expression;
+            CodeMethodInvokeExpression invokeExpr = (CodeMethodInvokeExpression)leftExpression;
 
-            CodeMethodInvokeExpression newMethod = (CodeMethodInvokeExpression)comperand;
+            CodeMethodInvokeExpression newMethod = (CodeMethodInvokeExpression)rightExpression;
             if (invokeExpr.Method.MethodName != newMethod.Method.MethodName)
                 return false;
             if (!RuleExpressionWalker.Match(invokeExpr.Method.TargetObject, newMethod.Method.TargetObject))
@@ -1857,10 +1896,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newDirection;
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodeDirectionExpression directionExpr = (CodeDirectionExpression)expression;
-            CodeDirectionExpression newDirection = (CodeDirectionExpression)comperand;
+            CodeDirectionExpression directionExpr = (CodeDirectionExpression)leftExpression;
+            CodeDirectionExpression newDirection = (CodeDirectionExpression)rightExpression;
             return (directionExpr.Direction == newDirection.Direction &&
                 RuleExpressionWalker.Match(directionExpr.Expression, newDirection.Expression));
         }
@@ -1942,10 +1981,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newType;
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodeTypeReferenceExpression typeRefExpr = (CodeTypeReferenceExpression)expression;
-            CodeTypeReferenceExpression newType = (CodeTypeReferenceExpression)comperand;
+            CodeTypeReferenceExpression typeRefExpr = (CodeTypeReferenceExpression)leftExpression;
+            CodeTypeReferenceExpression newType = (CodeTypeReferenceExpression)rightExpression;
             return MatchType(typeRefExpr.Type, newType.Type);
         }
 
@@ -1978,7 +2017,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
-            string message;
+            string message = null;
 
             CodeCastExpression castExpr = (CodeCastExpression)expression;
 
@@ -2040,77 +2079,92 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
             else
             {
-                // Unwrap nullables to make life easy.
-                Type fromType2 = fromType;
-                if (ConditionHelper.IsNullableValueType(fromType2))
-                    fromType2 = fromType2.GetGenericArguments()[0];
-
-                Type toType2 = toType;
-                if (ConditionHelper.IsNullableValueType(toType2))
-                    toType2 = toType2.GetGenericArguments()[0];
-
-                bool canConvert = false;
-                if (fromType2.IsValueType && toType2.IsValueType)
-                {
-                    // Convert.ChangeType doesn't handle enum <--> numeric
-                    // and float/double/decimal <--> char, which are allowed
-                    if (fromType2.IsEnum)
-                    {
-                        canConvert = (toType2.IsEnum) || IsNumeric(toType2);
-                    }
-                    else if (toType2.IsEnum)
-                    {
-                        // don't need to check fromType for enum since it's handled above
-                        canConvert = IsNumeric(fromType2);
-                    }
-                    else if (fromType2 == typeof(char))
-                    {
-                        canConvert = IsNumeric(toType2);
-                    }
-                    else if (toType2 == typeof(char))
-                    {
-                        canConvert = IsNumeric(fromType2);
-                    }
-                    else if (fromType2.IsPrimitive && toType2.IsPrimitive)
-                    {
-                        try
-                        {
-                            // note: this also allows bool <--> numeric conversions
-                            object fromValueDefault = Activator.CreateInstance(fromType2);
-                            Convert.ChangeType(fromValueDefault, toType2, CultureInfo.CurrentCulture);
-                            canConvert = true;
-                        }
-                        catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
-                        {
-                            canConvert = false;
-                        }
-                    }
-                }
-
-                if (!canConvert)
-                {
-                    // We can cast up or down an inheritence hierarchy,
-                    // as well as support explicit and implicit overrides
-                    canConvert = RuleValidation.ExplicitConversionSpecified(fromType, toType, out ValidationError error);
-                    if (error != null)
-                    {
-                        error.UserData[RuleUserDataKeys.ErrorObject] = castExpr;
-                        validation.Errors.Add(error);
-                        return null;
-                    }
-                }
-
-                if (!canConvert)
-                {
-                    message = string.Format(CultureInfo.CurrentCulture, Messages.CastIncompatibleTypes, RuleDecompiler.DecompileType(fromType), RuleDecompiler.DecompileType(toType));
-                    ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
-                    error.UserData[RuleUserDataKeys.ErrorObject] = castExpr;
-                    validation.Errors.Add(error);
+                if (!ValidateCastExpression(validation, ref message, castExpr, fromType, toType))
                     return null;
-                }
             }
 
             return new RuleExpressionInfo(toType);
+        }
+
+        private static bool ValidateCastExpression(RuleValidation validation, ref string message, CodeCastExpression castExpr, Type fromType, Type toType)
+        {
+            // Unwrap nullables to make life easy.
+            Type fromType2 = fromType;
+            if (ConditionHelper.IsNullableValueType(fromType2))
+                fromType2 = fromType2.GetGenericArguments()[0];
+
+            Type toType2 = toType;
+            if (ConditionHelper.IsNullableValueType(toType2))
+                toType2 = toType2.GetGenericArguments()[0];
+
+            bool canConvert = false;
+            if (fromType2.IsValueType && toType2.IsValueType)
+            {
+                canConvert = CanConvertValueTypes(fromType2, toType2, canConvert);
+            }
+
+            if (!canConvert)
+            {
+                // We can cast up or down an inheritence hierarchy,
+                // as well as support explicit and implicit overrides
+                canConvert = RuleValidation.ExplicitConversionSpecified(fromType, toType, out ValidationError error);
+                if (error != null)
+                {
+                    error.UserData[RuleUserDataKeys.ErrorObject] = castExpr;
+                    validation.Errors.Add(error);
+                    return false;
+                }
+            }
+
+            if (!canConvert)
+            {
+                message = string.Format(CultureInfo.CurrentCulture, Messages.CastIncompatibleTypes, RuleDecompiler.DecompileType(fromType), RuleDecompiler.DecompileType(toType));
+                ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
+                error.UserData[RuleUserDataKeys.ErrorObject] = castExpr;
+                validation.Errors.Add(error);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool CanConvertValueTypes(Type fromType2, Type toType2, bool canConvert)
+        {
+            // Convert.ChangeType doesn't handle enum <--> numeric
+            // and float/double/decimal <--> char, which are allowed
+            if (fromType2.IsEnum)
+            {
+                canConvert = (toType2.IsEnum) || IsNumeric(toType2);
+            }
+            else if (toType2.IsEnum)
+            {
+                // don't need to check fromType for enum since it's handled above
+                canConvert = IsNumeric(fromType2);
+            }
+            else if (fromType2 == typeof(char))
+            {
+                canConvert = IsNumeric(toType2);
+            }
+            else if (toType2 == typeof(char))
+            {
+                canConvert = IsNumeric(fromType2);
+            }
+            else if (fromType2.IsPrimitive && toType2.IsPrimitive)
+            {
+                try
+                {
+                    // note: this also allows bool <--> numeric conversions
+                    object fromValueDefault = Activator.CreateInstance(fromType2);
+                    Convert.ChangeType(fromValueDefault, toType2, CultureInfo.CurrentCulture);
+                    canConvert = true;
+                }
+                catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
+                {
+                    canConvert = false;
+                }
+            }
+
+            return canConvert;
         }
 
         private static bool IsNumeric(Type type)
@@ -2214,10 +2268,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newCast;
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodeCastExpression castExpr = (CodeCastExpression)expression;
-            CodeCastExpression castComperand = (CodeCastExpression)comperand;
+            CodeCastExpression castExpr = (CodeCastExpression)leftExpression;
+            CodeCastExpression castComperand = (CodeCastExpression)rightExpression;
 
             return TypeReferenceExpression.MatchType(castExpr.TargetType, castComperand.TargetType) &&
                 RuleExpressionWalker.Match(castExpr.Expression, castComperand.Expression);
@@ -2233,7 +2287,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
-            string message;
+            string message = null;
             RulePropertyExpressionInfo propExprInfo = null;
             bool includeNonPublic = false;
             Type targetType = null;
@@ -2241,7 +2295,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             CodeIndexerExpression indexerExpr = (CodeIndexerExpression)expression;
 
             CodeExpression targetObject = indexerExpr.TargetObject;
-            ValidationError error;
+            ValidationError error = null;
             if (targetObject == null)
             {
                 error = new ValidationError(Messages.NullIndexerTarget, ErrorNumbers.Error_ParameterNotSet);
@@ -2272,89 +2326,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (!validation.PushParentExpression(indexerExpr))
                     return null;
 
-                RuleExpressionInfo targetExprInfo = RuleExpressionWalker.Validate(validation, indexerExpr.TargetObject, false);
-                if (targetExprInfo == null)     // error occurred, so simply return
+                if (!ValidateIndexerExpression(validation, ref message, ref propExprInfo, ref includeNonPublic, ref targetType, indexerExpr, ref error))
                     return null;
-
-                targetType = targetExprInfo.ExpressionType;
-                if (targetType == null)
-                    return null;
-
-                // if an error occurred (targetType == null), continue on to validate the arguments
-                if (targetType == typeof(NullLiteral))
-                {
-                    message = string.Format(CultureInfo.CurrentCulture, Messages.NullIndexerTarget);
-                    error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
-                    error.UserData[RuleUserDataKeys.ErrorObject] = indexerExpr;
-                    validation.Errors.Add(error);
-                    targetType = null; // force exit after validating the arguments
-                }
-
-                List<CodeExpression> argExprs = [];
-
-                bool hasInvalidArgument = false;
-                for (int i = 0; i < indexerExpr.Indices.Count; ++i)
-                {
-                    CodeExpression argExpr = indexerExpr.Indices[i];
-                    if (argExpr == null)
-                    {
-                        error = new ValidationError(Messages.NullIndexExpression, ErrorNumbers.Error_ParameterNotSet);
-                        error.UserData[RuleUserDataKeys.ErrorObject] = indexerExpr;
-                        validation.Errors.Add(error);
-                        hasInvalidArgument = true;
-                    }
-                    else
-                    {
-                        if (argExpr is CodeDirectionExpression argDirection && argDirection.Direction != FieldDirection.In)
-                        {
-                            // No "ref" or "out" arguments are allowed on indexer arguments.
-                            error = new ValidationError(Messages.IndexerArgCannotBeRefOrOut, ErrorNumbers.Error_IndexerArgCannotBeRefOrOut);
-                            error.UserData[RuleUserDataKeys.ErrorObject] = indexerExpr;
-                            validation.Errors.Add(error);
-                            hasInvalidArgument = true;
-                        }
-
-                        if (argExpr is CodeTypeReferenceExpression)
-                        {
-                            message = string.Format(CultureInfo.CurrentCulture, Messages.CodeExpressionNotHandled, argExpr.GetType().FullName);
-                            error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
-                            error.UserData[RuleUserDataKeys.ErrorObject] = argExpr;
-                            validation.AddError(error);
-                            hasInvalidArgument = true;
-                        }
-
-                        // Validate the argument.
-                        RuleExpressionInfo argExprInfo = RuleExpressionWalker.Validate(validation, argExpr, false);
-                        if (argExprInfo == null)
-                            hasInvalidArgument = true;
-                        else
-                            argExprs.Add(argExpr);
-                    }
-                }
-
-                // Stop further validation if there was a problem with the target expression.
-                if (targetType == null)
-                    return null;
-
-                // Stop further validation if there was a problem with any of the arguments.
-                if (hasInvalidArgument)
-                    return null;
-
-                BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
-                if (validation.AllowInternalMembers(targetType))
-                {
-                    bindingFlags |= BindingFlags.NonPublic;
-                    includeNonPublic = true;
-                }
-
-                // Everything okay so far, try to resolve the method.
-                propExprInfo = validation.ResolveIndexerProperty(targetType, bindingFlags, argExprs, out error);
-                if (propExprInfo == null)
-                {
-                    error.UserData[RuleUserDataKeys.ErrorObject] = indexerExpr;
-                    validation.Errors.Add(error);
-                    return null;
-                }
             }
             finally
             {
@@ -2395,6 +2368,99 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return propExprInfo;
         }
 
+        private static bool ValidateIndexerExpression(RuleValidation validation, ref string message, ref RulePropertyExpressionInfo propExprInfo, ref bool includeNonPublic, ref Type targetType, CodeIndexerExpression indexerExpr, ref ValidationError error)
+        {
+            RuleExpressionInfo targetExprInfo = RuleExpressionWalker.Validate(validation, indexerExpr.TargetObject, false);
+            if (targetExprInfo == null)     // error occurred, so simply return
+                return false;
+
+            targetType = targetExprInfo.ExpressionType;
+            if (targetType == null)
+                return false;
+
+            // if an error occurred (targetType == null), continue on to validate the arguments
+            if (targetType == typeof(NullLiteral))
+            {
+                message = string.Format(CultureInfo.CurrentCulture, Messages.NullIndexerTarget);
+                error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
+                error.UserData[RuleUserDataKeys.ErrorObject] = indexerExpr;
+                validation.Errors.Add(error);
+                targetType = null; // force exit after validating the arguments
+            }
+
+            List<CodeExpression> argExprs = [];
+
+            bool hasInvalidArgument = false;
+            for (int i = 0; i < indexerExpr.Indices.Count; ++i)
+            {
+                CodeExpression argExpr = indexerExpr.Indices[i];
+                ValidateIndex(validation, ref message, indexerExpr, ref error, argExprs, ref hasInvalidArgument, argExpr);
+            }
+
+            // Stop further validation if there was a problem with the target expression.
+            if (targetType == null)
+                return false;
+
+            // Stop further validation if there was a problem with any of the arguments.
+            if (hasInvalidArgument)
+                return false;
+
+            BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
+            if (validation.AllowInternalMembers(targetType))
+            {
+                bindingFlags |= BindingFlags.NonPublic;//NOSONAR - safe for accessing members withing the current assembly (assembly of the root object)
+                includeNonPublic = true;
+            }
+
+            // Everything okay so far, try to resolve the method.
+            propExprInfo = validation.ResolveIndexerProperty(targetType, bindingFlags, argExprs, out error);
+            if (propExprInfo == null)
+            {
+                error.UserData[RuleUserDataKeys.ErrorObject] = indexerExpr;
+                validation.Errors.Add(error);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void ValidateIndex(RuleValidation validation, ref string message, CodeIndexerExpression indexerExpr, ref ValidationError error, List<CodeExpression> argExprs, ref bool hasInvalidArgument, CodeExpression argExpr)
+        {
+            if (argExpr == null)
+            {
+                error = new ValidationError(Messages.NullIndexExpression, ErrorNumbers.Error_ParameterNotSet);
+                error.UserData[RuleUserDataKeys.ErrorObject] = indexerExpr;
+                validation.Errors.Add(error);
+                hasInvalidArgument = true;
+            }
+            else
+            {
+                if (argExpr is CodeDirectionExpression argDirection && argDirection.Direction != FieldDirection.In)
+                {
+                    // No "ref" or "out" arguments are allowed on indexer arguments.
+                    error = new ValidationError(Messages.IndexerArgCannotBeRefOrOut, ErrorNumbers.Error_IndexerArgCannotBeRefOrOut);
+                    error.UserData[RuleUserDataKeys.ErrorObject] = indexerExpr;
+                    validation.Errors.Add(error);
+                    hasInvalidArgument = true;
+                }
+
+                if (argExpr is CodeTypeReferenceExpression)
+                {
+                    message = string.Format(CultureInfo.CurrentCulture, Messages.CodeExpressionNotHandled, argExpr.GetType().FullName);
+                    error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
+                    error.UserData[RuleUserDataKeys.ErrorObject] = argExpr;
+                    validation.AddError(error);
+                    hasInvalidArgument = true;
+                }
+
+                // Validate the argument.
+                RuleExpressionInfo argExprInfo = RuleExpressionWalker.Validate(validation, argExpr, false);
+                if (argExprInfo == null)
+                    hasInvalidArgument = true;
+                else
+                    argExprs.Add(argExpr);
+            }
+        }
 
         internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
@@ -2574,11 +2640,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newIndexer;
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodeIndexerExpression indexerExpr = (CodeIndexerExpression)expression;
+            CodeIndexerExpression indexerExpr = (CodeIndexerExpression)leftExpression;
 
-            CodeIndexerExpression indexerComperand = (CodeIndexerExpression)comperand;
+            CodeIndexerExpression indexerComperand = (CodeIndexerExpression)rightExpression;
             if (!RuleExpressionWalker.Match(indexerExpr.TargetObject, indexerComperand.TargetObject))
                 return false;
 
@@ -2604,13 +2670,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
-            string message;
             Type targetType = null;
 
             CodeArrayIndexerExpression arrayIndexerExpr = (CodeArrayIndexerExpression)expression;
 
             CodeExpression targetObject = arrayIndexerExpr.TargetObject;
-            ValidationError error;
+            ValidationError error = null;
             if (targetObject == null)
             {
                 error = new ValidationError(Messages.NullIndexerTarget, ErrorNumbers.Error_ParameterNotSet);
@@ -2641,111 +2706,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (!validation.PushParentExpression(arrayIndexerExpr))
                     return null;
 
-                RuleExpressionInfo targetExprInfo = RuleExpressionWalker.Validate(validation, arrayIndexerExpr.TargetObject, false);
-                if (targetExprInfo == null)     // error occurred, so simply return
-                    return null;
-
-                targetType = targetExprInfo.ExpressionType;
-                if (targetType == null)
-                    return null;
-
-                // if an error occurred (targetType == null), continue on to validate the arguments
-                if (targetType == typeof(NullLiteral))
-                {
-                    error = new ValidationError(Messages.NullIndexerTarget, ErrorNumbers.Error_ParameterNotSet);
-                    error.UserData[RuleUserDataKeys.ErrorObject] = arrayIndexerExpr;
-                    validation.Errors.Add(error);
-                    return null;
-                }
-
-                // The target type better be an array.
-                if (!targetType.IsArray)
-                {
-                    message = string.Format(CultureInfo.CurrentCulture, Messages.CannotIndexType, RuleDecompiler.DecompileType(targetType));
-                    error = new ValidationError(message, ErrorNumbers.Error_CannotIndexType);
-                    error.UserData[RuleUserDataKeys.ErrorObject] = arrayIndexerExpr;
-                    validation.Errors.Add(error);
-                    return null;
-                }
-
-                int rank = targetType.GetArrayRank();
-                if (arrayIndexerExpr.Indices.Count != rank)
-                {
-                    message = string.Format(CultureInfo.CurrentCulture, Messages.ArrayIndexBadRank, rank);
-                    error = new ValidationError(message, ErrorNumbers.Error_ArrayIndexBadRank);
-                    error.UserData[RuleUserDataKeys.ErrorObject] = arrayIndexerExpr;
-                    validation.Errors.Add(error);
-                    return null;
-                }
-
-                bool hasInvalidArgument = false;
-                for (int i = 0; i < arrayIndexerExpr.Indices.Count; ++i)
-                {
-                    CodeExpression argExpr = arrayIndexerExpr.Indices[i];
-                    if (argExpr == null)
-                    {
-                        error = new ValidationError(Messages.NullIndexExpression, ErrorNumbers.Error_ParameterNotSet);
-                        error.UserData[RuleUserDataKeys.ErrorObject] = arrayIndexerExpr;
-                        validation.Errors.Add(error);
-                        hasInvalidArgument = true;
-                    }
-                    else
-                    {
-                        if (argExpr is CodeDirectionExpression)
-                        {
-                            // No "ref" or "out" arguments are allowed on indexer arguments.
-                            error = new ValidationError(Messages.IndexerArgCannotBeRefOrOut, ErrorNumbers.Error_IndexerArgCannotBeRefOrOut);
-                            error.UserData[RuleUserDataKeys.ErrorObject] = argExpr;
-                            validation.Errors.Add(error);
-                            hasInvalidArgument = true;
-                        }
-
-                        if (argExpr is CodeTypeReferenceExpression)
-                        {
-                            message = string.Format(CultureInfo.CurrentCulture, Messages.CodeExpressionNotHandled, argExpr.GetType().FullName);
-                            error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
-                            error.UserData[RuleUserDataKeys.ErrorObject] = argExpr;
-                            validation.AddError(error);
-                            hasInvalidArgument = true;
-                        }
-
-                        // Validate the argument.
-                        RuleExpressionInfo argExprInfo = RuleExpressionWalker.Validate(validation, argExpr, false);
-                        if (argExprInfo != null)
-                        {
-                            Type argType = argExprInfo.ExpressionType;
-                            TypeCode argTypeCode = Type.GetTypeCode(argType);
-
-                            // Any type that is, or can be converted to: int or long.
-                            switch (argTypeCode)
-                            {
-                                case TypeCode.Byte:
-                                case TypeCode.Char:
-                                case TypeCode.Int16:
-                                case TypeCode.Int32:
-                                case TypeCode.Int64:
-                                case TypeCode.SByte:
-                                case TypeCode.UInt16:
-                                    break;
-
-                                default:
-                                    message = string.Format(CultureInfo.CurrentCulture, Messages.ArrayIndexBadType, RuleDecompiler.DecompileType(argType));
-                                    error = new ValidationError(message, ErrorNumbers.Error_ArrayIndexBadType);
-                                    error.UserData[RuleUserDataKeys.ErrorObject] = argExpr;
-                                    validation.Errors.Add(error);
-                                    hasInvalidArgument = true;
-                                    break;
-                            }
-                        }
-                        else
-                        {
-                            hasInvalidArgument = true;
-                        }
-                    }
-                }
-
-                // Stop further validation if there was a problem with any of the arguments.
-                if (hasInvalidArgument)
+                if (!ValidateArrayIndexerExpression(validation, ref targetType, arrayIndexerExpr, ref error))
                     return null;
             }
             finally
@@ -2757,12 +2718,130 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return new RuleExpressionInfo(targetType.GetElementType());
         }
 
+        private static bool ValidateArrayIndexerExpression(RuleValidation validation, ref Type targetType, CodeArrayIndexerExpression arrayIndexerExpr, ref ValidationError error)
+        {
+            string message = null;
+
+            RuleExpressionInfo targetExprInfo = RuleExpressionWalker.Validate(validation, arrayIndexerExpr.TargetObject, false);
+            if (targetExprInfo == null)     // error occurred, so simply return
+                return false;
+
+            targetType = targetExprInfo.ExpressionType;
+            if (targetType == null)
+                return false;
+
+            // if an error occurred (targetType == null), continue on to validate the arguments
+            if (targetType == typeof(NullLiteral))
+            {
+                error = new ValidationError(Messages.NullIndexerTarget, ErrorNumbers.Error_ParameterNotSet);
+                error.UserData[RuleUserDataKeys.ErrorObject] = arrayIndexerExpr;
+                validation.Errors.Add(error);
+                return false;
+            }
+
+            // The target type better be an array.
+            if (!targetType.IsArray)
+            {
+                message = string.Format(CultureInfo.CurrentCulture, Messages.CannotIndexType, RuleDecompiler.DecompileType(targetType));
+                error = new ValidationError(message, ErrorNumbers.Error_CannotIndexType);
+                error.UserData[RuleUserDataKeys.ErrorObject] = arrayIndexerExpr;
+                validation.Errors.Add(error);
+                return false;
+            }
+
+            int rank = targetType.GetArrayRank();
+            if (arrayIndexerExpr.Indices.Count != rank)
+            {
+                message = string.Format(CultureInfo.CurrentCulture, Messages.ArrayIndexBadRank, rank);
+                error = new ValidationError(message, ErrorNumbers.Error_ArrayIndexBadRank);
+                error.UserData[RuleUserDataKeys.ErrorObject] = arrayIndexerExpr;
+                validation.Errors.Add(error);
+                return false;
+            }
+
+            bool hasInvalidArgument = false;
+            for (int i = 0; i < arrayIndexerExpr.Indices.Count; ++i)
+            {
+                CodeExpression argExpr = arrayIndexerExpr.Indices[i];
+                ValidateIndex(validation, arrayIndexerExpr, ref error, ref message, ref hasInvalidArgument, argExpr);
+            }
+
+            // Stop further validation if there was a problem with any of the arguments.
+            if (hasInvalidArgument)
+                return false;
+
+            return true;
+        }
+
+        private static void ValidateIndex(RuleValidation validation, CodeArrayIndexerExpression arrayIndexerExpr, ref ValidationError error, ref string message, ref bool hasInvalidArgument, CodeExpression argExpr)
+        {
+            if (argExpr == null)
+            {
+                error = new ValidationError(Messages.NullIndexExpression, ErrorNumbers.Error_ParameterNotSet);
+                error.UserData[RuleUserDataKeys.ErrorObject] = arrayIndexerExpr;
+                validation.Errors.Add(error);
+                hasInvalidArgument = true;
+            }
+            else
+            {
+                if (argExpr is CodeDirectionExpression)
+                {
+                    // No "ref" or "out" arguments are allowed on indexer arguments.
+                    error = new ValidationError(Messages.IndexerArgCannotBeRefOrOut, ErrorNumbers.Error_IndexerArgCannotBeRefOrOut);
+                    error.UserData[RuleUserDataKeys.ErrorObject] = argExpr;
+                    validation.Errors.Add(error);
+                    hasInvalidArgument = true;
+                }
+
+                if (argExpr is CodeTypeReferenceExpression)
+                {
+                    message = string.Format(CultureInfo.CurrentCulture, Messages.CodeExpressionNotHandled, argExpr.GetType().FullName);
+                    error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
+                    error.UserData[RuleUserDataKeys.ErrorObject] = argExpr;
+                    validation.AddError(error);
+                    hasInvalidArgument = true;
+                }
+
+                // Validate the argument.
+                RuleExpressionInfo argExprInfo = RuleExpressionWalker.Validate(validation, argExpr, false);
+                if (argExprInfo != null)
+                {
+                    Type argType = argExprInfo.ExpressionType;
+                    TypeCode argTypeCode = Type.GetTypeCode(argType);
+
+                    // Any type that is, or can be converted to: int or long.
+                    switch (argTypeCode)
+                    {
+                        case TypeCode.Byte:
+                        case TypeCode.Char:
+                        case TypeCode.Int16:
+                        case TypeCode.Int32:
+                        case TypeCode.Int64:
+                        case TypeCode.SByte:
+                        case TypeCode.UInt16:
+                            break;
+
+                        default:
+                            message = string.Format(CultureInfo.CurrentCulture, Messages.ArrayIndexBadType, RuleDecompiler.DecompileType(argType));
+                            error = new ValidationError(message, ErrorNumbers.Error_ArrayIndexBadType);
+                            error.UserData[RuleUserDataKeys.ErrorObject] = argExpr;
+                            validation.Errors.Add(error);
+                            hasInvalidArgument = true;
+                            break;
+                    }
+                }
+                else
+                {
+                    hasInvalidArgument = true;
+                }
+            }
+        }
 
         internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
         {
             // Analyze the target object, flowing down the qualifier from above.  An expression
             // like:
-            //      this.a.b[2,3].c[4].d[5] = 99;
+            //      this.a.b[2,3].c[4].d[5] = 99
             // should produce a path similar to:
             //      this/a/b/c/d
 
@@ -2852,11 +2931,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newIndexer;
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodeArrayIndexerExpression arrayIndexerExpr = (CodeArrayIndexerExpression)expression;
+            CodeArrayIndexerExpression arrayIndexerExpr = (CodeArrayIndexerExpression)leftExpression;
 
-            CodeArrayIndexerExpression indexerComperand = (CodeArrayIndexerExpression)comperand;
+            CodeArrayIndexerExpression indexerComperand = (CodeArrayIndexerExpression)rightExpression;
             if (!RuleExpressionWalker.Match(arrayIndexerExpr.TargetObject, indexerComperand.TargetObject))
                 return false;
 
@@ -2880,8 +2959,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
-            string message;
-            ValidationError error;
+            string message = null;
+            ValidationError error = null;
 
             CodeObjectCreateExpression createExpression = (CodeObjectCreateExpression)expression;
 
@@ -2915,25 +2994,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     return null;
 
                 bool hasInvalidArgument = false;
-                for (int i = 0; i < createExpression.Parameters.Count; ++i)
-                {
-                    CodeExpression parameter = createExpression.Parameters[i];
-                    if (parameter == null)
-                    {
-                        message = string.Format(CultureInfo.CurrentCulture, Messages.NullConstructorParameter, i.ToString(CultureInfo.CurrentCulture), RuleDecompiler.DecompileType(resultType));
-                        error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
-                        error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
-                        validation.Errors.Add(error);
-                        hasInvalidArgument = true;
-                    }
-                    else
-                    {
-                        RuleExpressionInfo parameterInfo = RuleExpressionWalker.Validate(validation, parameter, false);
-                        if (parameterInfo == null)
-                            hasInvalidArgument = true;
-                        parameters.Add(parameter);
-                    }
-                }
+                ValidateParameters(validation, ref message, ref error, createExpression, resultType, parameters, ref hasInvalidArgument);
                 // quit if parameters not valid
                 if (hasInvalidArgument)
                     return null;
@@ -2946,8 +3007,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // see if we can find the matching constructor
             BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
             if (validation.AllowInternalMembers(resultType))
-                bindingFlags |= BindingFlags.NonPublic;
-
+                bindingFlags |= BindingFlags.NonPublic; //NOSONAR - safe when the type is referencing members in the same assembly
             // creating a value-type object with no parameters can always be done
             if ((resultType.IsValueType) && (parameters.Count == 0))
                 return new RuleExpressionInfo(resultType);
@@ -2973,6 +3033,29 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             return constructorInvokeInfo;
+        }
+
+        private static void ValidateParameters(RuleValidation validation, ref string message, ref ValidationError error, CodeObjectCreateExpression createExpression, Type resultType, List<CodeExpression> parameters, ref bool hasInvalidArgument)
+        {
+            for (int i = 0; i < createExpression.Parameters.Count; ++i)
+            {
+                CodeExpression parameter = createExpression.Parameters[i];
+                if (parameter == null)
+                {
+                    message = string.Format(CultureInfo.CurrentCulture, Messages.NullConstructorParameter, i.ToString(CultureInfo.CurrentCulture), RuleDecompiler.DecompileType(resultType));
+                    error = new ValidationError(message, ErrorNumbers.Error_ParameterNotSet);
+                    error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
+                    validation.Errors.Add(error);
+                    hasInvalidArgument = true;
+                }
+                else
+                {
+                    RuleExpressionInfo parameterInfo = RuleExpressionWalker.Validate(validation, parameter, false);
+                    if (parameterInfo == null)
+                        hasInvalidArgument = true;
+                    parameters.Add(parameter);
+                }
+            }
         }
 
         internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
@@ -3017,82 +3100,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             if (createExpression.Parameters != null && createExpression.Parameters.Count > 0)
             {
-                int actualArgCount = createExpression.Parameters.Count;
-                ParameterInfo[] parmInfos = constructor.GetParameters();
-
-                arguments = new object[parmInfos.Length];
-
-                int numFixedParameters = parmInfos.Length;
-                if (createExpressionInfo.NeedsParamsExpansion)
-                    numFixedParameters -= 1;
-
-                int i;
-
-                // Evaluate the fixed portion of the parameter list.
-                for (i = 0; i < numFixedParameters; ++i)
-                {
-                    if (i >= createExpression.Parameters.Count)
-                    {
-                        if (parmInfos[i].IsOptional)
-                        {
-                            arguments[i] = parmInfos[i].DefaultValue;
-                            continue;
-                        }
-
-                        throw new ArgumentException
-                        (
-                            string.Format
-                            (
-                                CultureInfo.CurrentCulture,
-                                Messages.MissingConstructorParameterExpression,
-                                constructor.DeclaringType.FullName,
-                                parmInfos[i].Name
-                            ),
-                            "createExpression.Parameters"
-                        );
-                    }
-
-                    Type argType = execution.Validation.ExpressionInfo(createExpression.Parameters[i]).ExpressionType;
-                    IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, createExpression.Parameters[i]);
-
-                    // Special procesing of direction expressions to keep track of out arguments (& ref).
-                    if (createExpression.Parameters[i] is CodeDirectionExpression direction && (direction.Direction == FieldDirection.Ref || direction.Direction == FieldDirection.Out))
-                    {
-                        // lazy creation of fieldsToSet
-                        outArgumentResults ??= new IRuleExpressionResult[actualArgCount];
-                        // keep track of this out expression so we can set it later
-                        outArgumentResults[i] = argResult;
-                    }
-
-                    arguments[i] = Executor.AdjustType(argType, argResult.Value, parmInfos[i].ParameterType);
-                }
-
-                if (numFixedParameters < actualArgCount)
-                {
-                    // This target method had a params array, and we are calling it with an
-                    // expanded parameter list.  E.g.,
-                    //      void foo(int x, params string[] y)
-                    // with the invocation:
-                    //      foo(5, "crud", "kreeble", "glorp")
-                    // We need to translate this to:
-                    //      foo(5, new string[] { "crud", "kreeble", "glorp" })
-
-                    ParameterInfo lastParamInfo = parmInfos[numFixedParameters];
-
-                    Type arrayType = lastParamInfo.ParameterType;
-                    System.Diagnostics.Debug.Assert(arrayType.IsArray);
-                    Type elementType = arrayType.GetElementType();
-
-                    Array paramsArray = Array.CreateInstance(elementType, actualArgCount - i);
-                    for (; i < actualArgCount; ++i)
-                    {
-                        Type argType = execution.Validation.ExpressionInfo(createExpression.Parameters[i]).ExpressionType;
-                        IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, createExpression.Parameters[i]);
-                        paramsArray.SetValue(Executor.AdjustType(argType, argResult.Value, elementType), i - numFixedParameters);
-                    }
-
-                    arguments[numFixedParameters] = paramsArray;
-                }
+                arguments = GetArgumentsFromParameters(execution, createExpression, createExpressionInfo, constructor, ref outArgumentResults);
             }
 
             object result;
@@ -3121,6 +3129,89 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 }
             }
             return new RuleLiteralResult(result);
+        }
+
+        private static object[] GetArgumentsFromParameters(RuleExecution execution, CodeObjectCreateExpression createExpression, RuleConstructorExpressionInfo createExpressionInfo, ConstructorInfo constructor, ref IRuleExpressionResult[] outArgumentResults)
+        {
+            object[] arguments;
+            int actualArgCount = createExpression.Parameters.Count;
+            ParameterInfo[] parmInfos = constructor.GetParameters();
+
+            arguments = new object[parmInfos.Length];
+
+            int numFixedParameters = parmInfos.Length;
+            if (createExpressionInfo.NeedsParamsExpansion)
+                numFixedParameters -= 1;
+
+            int i;
+
+            // Evaluate the fixed portion of the parameter list.
+            for (i = 0; i < numFixedParameters; ++i)
+            {
+                if (i >= createExpression.Parameters.Count)
+                {
+                    if (parmInfos[i].IsOptional)
+                    {
+                        arguments[i] = parmInfos[i].DefaultValue;
+                        continue;
+                    }
+
+                    throw new ArgumentException
+                    (
+                        string.Format
+                        (
+                            CultureInfo.CurrentCulture,
+                            Messages.MissingConstructorParameterExpression,
+                            constructor.DeclaringType.FullName,
+                            parmInfos[i].Name
+                        ),
+                        nameof(createExpression)
+                    );
+                }
+
+                Type argType = execution.Validation.ExpressionInfo(createExpression.Parameters[i]).ExpressionType;
+                IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, createExpression.Parameters[i]);
+
+                // Special procesing of direction expressions to keep track of out arguments (& ref).
+                if (createExpression.Parameters[i] is CodeDirectionExpression direction && (direction.Direction == FieldDirection.Ref || direction.Direction == FieldDirection.Out))
+                {
+                    // lazy creation of fieldsToSet
+                    outArgumentResults ??= new IRuleExpressionResult[actualArgCount];
+                    // keep track of this out expression so we can set it later
+                    outArgumentResults[i] = argResult;
+                }
+
+                arguments[i] = Executor.AdjustType(argType, argResult.Value, parmInfos[i].ParameterType);
+            }
+
+            if (numFixedParameters < actualArgCount)
+            {
+                // This target method had a params array, and we are calling it with an
+                // expanded parameter list.  E.g.,
+                //      void foo(int x, params string[] y)
+                // with the invocation:
+                //      foo(5, "crud", "kreeble", "glorp")
+                // We need to translate this to:
+                //      foo(5, new string[] { "crud", "kreeble", "glorp" })
+
+                ParameterInfo lastParamInfo = parmInfos[numFixedParameters];
+
+                Type arrayType = lastParamInfo.ParameterType;
+                System.Diagnostics.Debug.Assert(arrayType.IsArray);
+                Type elementType = arrayType.GetElementType();
+
+                Array paramsArray = Array.CreateInstance(elementType, actualArgCount - i);
+                for (; i < actualArgCount; ++i)
+                {
+                    Type argType = execution.Validation.ExpressionInfo(createExpression.Parameters[i]).ExpressionType;
+                    IRuleExpressionResult argResult = RuleExpressionWalker.Evaluate(execution, createExpression.Parameters[i]);
+                    paramsArray.SetValue(Executor.AdjustType(argType, argResult.Value, elementType), i - numFixedParameters);
+                }
+
+                arguments[numFixedParameters] = paramsArray;
+            }
+
+            return arguments;
         }
 
         internal override void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
@@ -3173,11 +3264,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newCreate;
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodeObjectCreateExpression createExpression = (CodeObjectCreateExpression)expression;
+            CodeObjectCreateExpression createExpression = (CodeObjectCreateExpression)leftExpression;
 
-            if (comperand is not CodeObjectCreateExpression createComperand)
+            if (rightExpression is not CodeObjectCreateExpression createComperand)
                 return false;
             // check types
             if (!TypeReferenceExpression.MatchType(createExpression.CreateType, createComperand.CreateType))
@@ -3198,7 +3289,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         internal override RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
         {
-            string message;
+            string message = null;
 
             CodeArrayCreateExpression createExpression = (CodeArrayCreateExpression)expression;
 
@@ -3243,110 +3334,139 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 if (!validation.PushParentExpression(createExpression))
                     return null;
 
-                if (createExpression.Size < 0)
-                {
-                    ValidationError error = new(Messages.ArraySizeInvalid, ErrorNumbers.Error_ParameterNotSet);
-                    error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
-                    validation.Errors.Add(error);
+                if (!ValidateCreateExpression(validation, ref message, createExpression, resultType))
                     return null;
-                }
-
-                // look up size (if specified)
-                if (createExpression.SizeExpression != null)
-                {
-                    RuleExpressionInfo sizeInfo = RuleExpressionWalker.Validate(validation, createExpression.SizeExpression, false);
-                    if (sizeInfo == null)
-                        return null;
-                    if ((sizeInfo.ExpressionType != typeof(int))
-                        && (sizeInfo.ExpressionType != typeof(uint))
-                        && (sizeInfo.ExpressionType != typeof(long))
-                        && (sizeInfo.ExpressionType != typeof(ulong)))
-                    {
-                        message = string.Format(CultureInfo.CurrentCulture, Messages.ArraySizeTypeInvalid, sizeInfo.ExpressionType.Name);
-                        ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
-                        error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
-                        validation.Errors.Add(error);
-                        return null;
-                    }
-                }
-                bool parameterInvalid = false;
-                for (int i = 0; i < createExpression.Initializers.Count; ++i)
-                {
-                    CodeExpression init = createExpression.Initializers[i];
-                    if (init == null)
-                    {
-                        message = string.Format(CultureInfo.CurrentCulture, Messages.MissingInitializer, resultType.Name);
-                        ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
-                        error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
-                        validation.Errors.Add(error);
-                        return null;
-                    }
-                    RuleExpressionInfo parameterInfo = RuleExpressionWalker.Validate(validation, init, false);
-                    if (parameterInfo == null)
-                    {
-                        parameterInvalid = true;
-                    }
-                    else
-                    {
-                        // can we convert the result type to the array type?
-                        if (!RuleValidation.StandardImplicitConversion(parameterInfo.ExpressionType, resultType, init, out ValidationError error))
-                        {
-                            // types must match
-                            if (error != null)
-                            {
-                                // we got an error from the conversion, so give it back as well as a new error
-                                error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
-                                validation.Errors.Add(error);
-                            }
-                            message = string.Format(CultureInfo.CurrentCulture, Messages.InitializerMismatch, i, resultType.Name);
-                            error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
-                            error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
-                            validation.Errors.Add(error);
-                            return null;
-                        }
-                    }
-                }
-                // if any errors get out
-                if (parameterInvalid)
-                    return null;
-
-                // now it gets tricky. CodeArrayCreateExpression constructors allow:
-                //     1) size as int
-                //     2) size as CodeExpression
-                //     3) initializers as params array
-                // However, we allow a size and initializers, so try to verify size >= #initializers
-                // size can be an int, uint, long, or ulong
-                double size = -1;
-                if (createExpression.SizeExpression != null)
-                {
-                    if ((createExpression.SizeExpression is CodePrimitiveExpression prim) && (prim.Value != null))
-                        size = (double)Executor.AdjustType(prim.Value.GetType(), prim.Value, typeof(double));
-                    if (createExpression.Size > 0)
-                    {
-                        // both size and SizeExpression specified, complain
-                        ValidationError error = new(Messages.ArraySizeBoth, ErrorNumbers.Error_ParameterNotSet);
-                        error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
-                        validation.Errors.Add(error);
-                        return null;
-                    }
-                }
-                else if (createExpression.Size > 0)
-                    size = createExpression.Size;
-
-                if ((size >= 0) && (createExpression.Initializers.Count > size))
-                {
-                    message = string.Format(CultureInfo.CurrentCulture, Messages.InitializerCountMismatch, createExpression.Initializers.Count, size);
-                    ValidationError error = new(message, ErrorNumbers.Error_OperandTypesIncompatible);
-                    error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
-                    validation.Errors.Add(error);
-                    return null;
-                }
             }
             finally
             {
                 validation.PopParentExpression();
             }
             return new RuleExpressionInfo(resultType.MakeArrayType());
+        }
+
+        private static bool ValidateCreateExpression(RuleValidation validation, ref string message, CodeArrayCreateExpression createExpression, Type resultType)
+        {
+            if (createExpression.Size < 0)
+            {
+                ValidationError error = new(Messages.ArraySizeInvalid, ErrorNumbers.Error_ParameterNotSet);
+                error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
+                validation.Errors.Add(error);
+                return false;
+            }
+
+            // look up size (if specified)
+            if (createExpression.SizeExpression != null 
+                && !ValidateArraySizeType(validation, ref message, createExpression))
+                return false;
+
+            bool parameterInvalid = false;
+            for (int i = 0; i < createExpression.Initializers.Count; ++i)
+            {
+                if (!ValidateInitializer(validation, ref message, createExpression, resultType, ref parameterInvalid, i, createExpression.Initializers[i]))
+                    return false;
+            }
+            // if any errors get out
+            if (parameterInvalid)
+                return false;
+
+            // now it gets tricky. CodeArrayCreateExpression constructors allow:
+            //     1) size as int
+            //     2) size as CodeExpression
+            //     3) initializers as params array
+            // However, we allow a size and initializers, so try to verify size >= #initializers
+            // size can be an int, uint, long, or ulong
+            double size = -1;
+            if (createExpression.SizeExpression != null
+                && !ValidateArraySizeSetting(validation, createExpression, ref size))
+                return false;
+
+            else if (createExpression.Size > 0)
+                size = createExpression.Size;
+
+            if ((size >= 0) && (createExpression.Initializers.Count > size))
+            {
+                message = string.Format(CultureInfo.CurrentCulture, Messages.InitializerCountMismatch, createExpression.Initializers.Count, size);
+                ValidationError error = new(message, ErrorNumbers.Error_OperandTypesIncompatible);
+                error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
+                validation.Errors.Add(error);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool ValidateArraySizeSetting(RuleValidation validation, CodeArrayCreateExpression createExpression, ref double size)
+        {
+            if ((createExpression.SizeExpression is CodePrimitiveExpression prim) && (prim.Value != null))
+                size = (double)Executor.AdjustType(prim.Value.GetType(), prim.Value, typeof(double));
+            if (createExpression.Size > 0)
+            {
+                // both size and SizeExpression specified, complain
+                ValidationError error = new(Messages.ArraySizeBoth, ErrorNumbers.Error_ParameterNotSet);
+                error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
+                validation.Errors.Add(error);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool ValidateInitializer(RuleValidation validation, ref string message, CodeArrayCreateExpression createExpression, Type resultType, ref bool parameterInvalid, int i, CodeExpression init)
+        {
+            if (init == null)
+            {
+                message = string.Format(CultureInfo.CurrentCulture, Messages.MissingInitializer, resultType.Name);
+                ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
+                error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
+                validation.Errors.Add(error);
+                return false;
+            }
+            RuleExpressionInfo parameterInfo = RuleExpressionWalker.Validate(validation, init, false);
+            if (parameterInfo == null)
+            {
+                parameterInvalid = true;
+            }
+            else
+            {
+                // can we convert the result type to the array type?
+                if (!RuleValidation.StandardImplicitConversion(parameterInfo.ExpressionType, resultType, init, out ValidationError error))
+                {
+                    // types must match
+                    if (error != null)
+                    {
+                        // we got an error from the conversion, so give it back as well as a new error
+                        error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
+                        validation.Errors.Add(error);
+                    }
+                    message = string.Format(CultureInfo.CurrentCulture, Messages.InitializerMismatch, i, resultType.Name);
+                    error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
+                    error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
+                    validation.Errors.Add(error);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool ValidateArraySizeType(RuleValidation validation, ref string message, CodeArrayCreateExpression createExpression)
+        {
+            RuleExpressionInfo sizeInfo = RuleExpressionWalker.Validate(validation, createExpression.SizeExpression, false);
+            if (sizeInfo == null)
+                return false;
+            if ((sizeInfo.ExpressionType != typeof(int))
+                && (sizeInfo.ExpressionType != typeof(uint))
+                && (sizeInfo.ExpressionType != typeof(long))
+                && (sizeInfo.ExpressionType != typeof(ulong)))
+            {
+                message = string.Format(CultureInfo.CurrentCulture, Messages.ArraySizeTypeInvalid, sizeInfo.ExpressionType.Name);
+                ValidationError error = new(message, ErrorNumbers.Error_ParameterNotSet);
+                error.UserData[RuleUserDataKeys.ErrorObject] = createExpression;
+                validation.Errors.Add(error);
+                return false;
+            }
+
+            return true;
         }
 
         internal override void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
@@ -3472,11 +3592,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newCreate;
         }
 
-        internal override bool Match(CodeExpression expression, CodeExpression comperand)
+        internal override bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
         {
-            CodeArrayCreateExpression createExpression = (CodeArrayCreateExpression)expression;
+            CodeArrayCreateExpression createExpression = (CodeArrayCreateExpression)leftExpression;
 
-            if ((comperand is not CodeArrayCreateExpression createComperand)
+            if ((rightExpression is not CodeArrayCreateExpression createComperand)
                 || (createExpression.Size != createComperand.Size)
                 || (!TypeReferenceExpression.MatchType(createExpression.CreateType, createComperand.CreateType)))
                 return false;
