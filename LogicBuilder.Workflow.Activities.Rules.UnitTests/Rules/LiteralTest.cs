@@ -801,7 +801,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             // Assert
             Assert.NotNull(result);
             Assert.Null(error);
-            Assert.Equal("ObjectEquality", result.Name);
+            Assert.Equal("ObjectEquals", result.Name);
         }
         #endregion
 
@@ -1588,7 +1588,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             object y = x;
 
             // Act
-            bool result = Literal.DefaultOperators.ObjectEquality(x, y);
+            bool result = Literal.DefaultOperators.ObjectEquals(x, y);
 
             // Assert
             Assert.True(result);
@@ -1602,7 +1602,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             object y = new();
 
             // Act
-            bool result = Literal.DefaultOperators.ObjectEquality(x, y);
+            bool result = Literal.DefaultOperators.ObjectEquals(x, y);
 
             // Assert
             Assert.False(result);
@@ -1616,7 +1616,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             object? y = null;
 
             // Act
-            bool result = Literal.DefaultOperators.ObjectEquality(x, y);
+            bool result = Literal.DefaultOperators.ObjectEquals(x, y);
 
             // Assert
             Assert.True(result);

@@ -482,16 +482,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
                 foreach (string sideEffect in sideEffects)
                 {
-                    bool match = false;
-
-                    if (sideEffect.EndsWith("*", StringComparison.Ordinal))
-                    {
-                        match = AnalyzeWildCards(dependencies, sideEffect, match);
-                    }
-                    else
-                    {
-                        match = AnalyzeNonWildCards(dependencies, sideEffect, match);
-                    }
+                    bool match = sideEffect.EndsWith("*", StringComparison.Ordinal)
+                        ? AnalyzeWildCards(dependencies, sideEffect, false)
+                        : AnalyzeNonWildCards(dependencies, sideEffect, false);
 
                     if (match)
                     {

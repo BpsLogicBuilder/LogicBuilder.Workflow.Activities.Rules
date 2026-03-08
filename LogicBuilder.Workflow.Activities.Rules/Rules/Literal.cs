@@ -9,6 +9,7 @@ using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -46,7 +47,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         /// Group types by similar characteristics so we can check if comparisons succeed
         /// </summary>
         [Flags()]
-        enum TypeFlags
+        enum NumberTypes
         {
             SignedNumbers = 0x01,
             UnsignedNumbers = 0x02,
@@ -60,7 +61,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         /// <summary>
         /// Collection of TypeFlags for the supported value types indexed by type
         /// </summary>
-        private static readonly Dictionary<Type, TypeFlags> supportedTypes = CreateTypesDictionary();
+        private static readonly Dictionary<Type, NumberTypes> supportedTypes = CreateTypesDictionary();
 
         private static Dictionary<Type, LiteralMaker> CreateMakersDictionary()
         {
@@ -98,38 +99,38 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return dictionary;
         }
 
-        private static Dictionary<Type, TypeFlags> CreateTypesDictionary()
+        private static Dictionary<Type, NumberTypes> CreateTypesDictionary()
         {
             // Create the literal class factory delegates
-            Dictionary<Type, TypeFlags> dictionary = new(32)
+            Dictionary<Type, NumberTypes> dictionary = new(32)
             {
-                { typeof(byte), TypeFlags.UnsignedNumbers },
-                { typeof(byte?), TypeFlags.UnsignedNumbers },
-                { typeof(sbyte), TypeFlags.SignedNumbers },
-                { typeof(sbyte?), TypeFlags.SignedNumbers },
-                { typeof(short), TypeFlags.SignedNumbers },
-                { typeof(short?), TypeFlags.SignedNumbers },
-                { typeof(int), TypeFlags.SignedNumbers },
-                { typeof(int?), TypeFlags.SignedNumbers },
-                { typeof(long), TypeFlags.SignedNumbers },
-                { typeof(long?), TypeFlags.SignedNumbers },
-                { typeof(ushort), TypeFlags.UnsignedNumbers },
-                { typeof(ushort?), TypeFlags.UnsignedNumbers },
-                { typeof(uint), TypeFlags.UnsignedNumbers },
-                { typeof(uint?), TypeFlags.UnsignedNumbers },
-                { typeof(ulong), TypeFlags.ULong },
-                { typeof(ulong?), TypeFlags.ULong },
-                { typeof(float), TypeFlags.Float },
-                { typeof(float?), TypeFlags.Float },
-                { typeof(double), TypeFlags.Float },
-                { typeof(double?), TypeFlags.Float },
-                { typeof(char), TypeFlags.UnsignedNumbers },
-                { typeof(char?), TypeFlags.UnsignedNumbers },
-                { typeof(string), TypeFlags.String },
-                { typeof(decimal), TypeFlags.Decimal },
-                { typeof(decimal?), TypeFlags.Decimal },
-                { typeof(bool), TypeFlags.Bool },
-                { typeof(bool?), TypeFlags.Bool }
+                { typeof(byte), NumberTypes.UnsignedNumbers },
+                { typeof(byte?), NumberTypes.UnsignedNumbers },
+                { typeof(sbyte), NumberTypes.SignedNumbers },
+                { typeof(sbyte?), NumberTypes.SignedNumbers },
+                { typeof(short), NumberTypes.SignedNumbers },
+                { typeof(short?), NumberTypes.SignedNumbers },
+                { typeof(int), NumberTypes.SignedNumbers },
+                { typeof(int?), NumberTypes.SignedNumbers },
+                { typeof(long), NumberTypes.SignedNumbers },
+                { typeof(long?), NumberTypes.SignedNumbers },
+                { typeof(ushort), NumberTypes.UnsignedNumbers },
+                { typeof(ushort?), NumberTypes.UnsignedNumbers },
+                { typeof(uint), NumberTypes.UnsignedNumbers },
+                { typeof(uint?), NumberTypes.UnsignedNumbers },
+                { typeof(ulong), NumberTypes.ULong },
+                { typeof(ulong?), NumberTypes.ULong },
+                { typeof(float), NumberTypes.Float },
+                { typeof(float?), NumberTypes.Float },
+                { typeof(double), NumberTypes.Float },
+                { typeof(double?), NumberTypes.Float },
+                { typeof(char), NumberTypes.UnsignedNumbers },
+                { typeof(char?), NumberTypes.UnsignedNumbers },
+                { typeof(string), NumberTypes.String },
+                { typeof(decimal), NumberTypes.Decimal },
+                { typeof(decimal?), NumberTypes.Decimal },
+                { typeof(bool), NumberTypes.Bool },
+                { typeof(bool?), NumberTypes.Bool }
             };
             return dictionary;
         }
@@ -372,7 +373,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             public static bool Equality(bool x, bool y) { return x == y; }
             public static bool Equality(string x, string y) { return x == y; }
             // mark object == object since it has special rules
-            public static bool ObjectEquality(object x, object y) { return x == y; }
+            public static bool ObjectEquals(object x, object y) { return x == y; }
 
             public static bool GreaterThan(int x, int y) { return x > y; }
             public static bool GreaterThan(uint x, uint y) { return x > y; }
@@ -422,14 +423,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // note that null values come in as a NullLiteral type
 
             // are the types supported?
-            if ((supportedTypes.TryGetValue(lhs, out TypeFlags lhsFlags)) && (supportedTypes.TryGetValue(rhs, out TypeFlags rhsFlags)))
+            if ((supportedTypes.TryGetValue(lhs, out NumberTypes lhsFlags)) && (supportedTypes.TryGetValue(rhs, out NumberTypes rhsFlags)))
             {
                 // both sides supported
                 if (lhsFlags == rhsFlags)
                 {
                     // both sides the same type, so it's allowed
                     // only allow equality on booleans
-                    if ((lhsFlags == TypeFlags.Bool) && (comparison != CodeBinaryOperatorType.ValueEquality))
+                    if ((lhsFlags == NumberTypes.Bool) && (comparison != CodeBinaryOperatorType.ValueEquality))
                     {
                         string message = string.Format(CultureInfo.CurrentCulture, Messages.RelationalOpBadTypes, comparison,
                             RuleDecompiler.DecompileType(lhs),
@@ -444,14 +445,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 // if not the same, only certain combinations allowed
                 switch (lhsFlags | rhsFlags)
                 {
-                    case TypeFlags.Decimal | TypeFlags.SignedNumbers:
-                    case TypeFlags.Decimal | TypeFlags.UnsignedNumbers:
-                    case TypeFlags.Decimal | TypeFlags.ULong:
-                    case TypeFlags.Float | TypeFlags.SignedNumbers:
-                    case TypeFlags.Float | TypeFlags.UnsignedNumbers:
-                    case TypeFlags.Float | TypeFlags.ULong:
-                    case TypeFlags.ULong | TypeFlags.UnsignedNumbers:
-                    case TypeFlags.SignedNumbers | TypeFlags.UnsignedNumbers:
+                    case NumberTypes.Decimal | NumberTypes.SignedNumbers:
+                    case NumberTypes.Decimal | NumberTypes.UnsignedNumbers:
+                    case NumberTypes.Decimal | NumberTypes.ULong:
+                    case NumberTypes.Float | NumberTypes.SignedNumbers:
+                    case NumberTypes.Float | NumberTypes.UnsignedNumbers:
+                    case NumberTypes.Float | NumberTypes.ULong:
+                    case NumberTypes.ULong | NumberTypes.UnsignedNumbers:
+                    case NumberTypes.SignedNumbers | NumberTypes.UnsignedNumbers:
                         error = null;
                         return new RuleBinaryExpressionInfo(lhs, rhs, typeof(bool));
                 }
@@ -461,26 +462,34 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 error = new ValidationError(message2, ErrorNumbers.Error_OperandTypesIncompatible);
                 return null;
             }
-            else
-            {
-                // see if they override the operator
-                MethodInfo operatorOverride = MapOperatorToMethod(comparison, lhs, lhsExpression, rhs, rhsExpression, validator, out error);
-                if (operatorOverride != null)
-                    return new RuleBinaryExpressionInfo(lhs, rhs, operatorOverride);
 
-                // unable to evaluate, so return false
-                return null;
-            }
+            // see if they override the operator
+            MethodInfo operatorOverride = MapOperatorToMethod(comparison, lhs, lhsExpression, rhs, rhsExpression, validator, out error);
+            if (operatorOverride != null)
+                return new RuleBinaryExpressionInfo(lhs, rhs, operatorOverride);
+
+            // unable to evaluate, so return false
+            return null;
         }
 
         internal enum OperatorGrouping
         {
+            None = -1,
             Arithmetic,
             Equality,
             Relational
         }
 
-        internal static readonly MethodInfo ObjectEquality = typeof(DefaultOperators).GetMethod("ObjectEquality");
+        [ExcludeFromCodeCoverage]
+        private struct OperandTypeDetails(bool lhsNullable, bool rhsNullable, Type lhsType0, Type rhsType0)
+        {
+            public bool lhsNullable = lhsNullable;
+            public bool rhsNullable = rhsNullable;
+            public Type lhsType0 = lhsType0;
+            public Type rhsType0 = rhsType0;
+        }
+
+        internal static readonly MethodInfo ObjectEquality = typeof(DefaultOperators).GetMethod(nameof(DefaultOperators.ObjectEquals));
 
         internal static MethodInfo MapOperatorToMethod(
             CodeBinaryOperatorType op,
@@ -492,76 +501,306 @@ namespace LogicBuilder.Workflow.Activities.Rules
             out ValidationError error)
         {
             // determine what the method name should be
-            string methodName;
-            string message;
-            OperatorGrouping group;
 
-            switch (op)
-            {
-                case CodeBinaryOperatorType.ValueEquality:
-                    methodName = "op_Equality";
-                    group = OperatorGrouping.Equality;
-                    break;
-                case CodeBinaryOperatorType.GreaterThan:
-                    methodName = "op_GreaterThan";
-                    group = OperatorGrouping.Relational;
-                    break;
-                case CodeBinaryOperatorType.GreaterThanOrEqual:
-                    methodName = "op_GreaterThanOrEqual";
-                    group = OperatorGrouping.Relational;
-                    break;
-                case CodeBinaryOperatorType.LessThan:
-                    methodName = "op_LessThan";
-                    group = OperatorGrouping.Relational;
-                    break;
-                case CodeBinaryOperatorType.LessThanOrEqual:
-                    methodName = "op_LessThanOrEqual";
-                    group = OperatorGrouping.Relational;
-                    break;
-                case CodeBinaryOperatorType.Add:
-                    methodName = "op_Addition";
-                    group = OperatorGrouping.Arithmetic;
-                    break;
-                case CodeBinaryOperatorType.Subtract:
-                    methodName = "op_Subtraction";
-                    group = OperatorGrouping.Arithmetic;
-                    break;
-                case CodeBinaryOperatorType.Multiply:
-                    methodName = "op_Multiply";
-                    group = OperatorGrouping.Arithmetic;
-                    break;
-                case CodeBinaryOperatorType.Divide:
-                    methodName = "op_Division";
-                    group = OperatorGrouping.Arithmetic;
-                    break;
-                case CodeBinaryOperatorType.Modulus:
-                    methodName = "op_Modulus";
-                    group = OperatorGrouping.Arithmetic;
-                    break;
-                case CodeBinaryOperatorType.BitwiseAnd:
-                    methodName = "op_BitwiseAnd";
-                    group = OperatorGrouping.Arithmetic;
-                    break;
-                case CodeBinaryOperatorType.BitwiseOr:
-                    methodName = "op_BitwiseOr";
-                    group = OperatorGrouping.Arithmetic;
-                    break;
-                default:
-                    Debug.Assert(false, "Operator " + op + " not implemented");
-                    message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, op);
-                    error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
-                    return null;
-            }
+            string message = null;
+            string methodName = GetOperatorName(op, ref message, out error);
+            if (methodName == null)
+                return null;
+            OperatorGrouping group = GetOperatorGrouping(op, ref message, out error);
+            if (group == OperatorGrouping.None)
+                return null;
 
             // NOTE: types maybe NullLiteral, which signifies the constant "null"
             List<MethodInfo> candidates = [];
             bool lhsNullable = ConditionHelper.IsNullableValueType(lhs);
             bool rhsNullable = ConditionHelper.IsNullableValueType(rhs);
-            Type lhsType0 = (lhsNullable) ? Nullable.GetUnderlyingType(lhs) : lhs;
-            Type rhsType0 = (rhsNullable) ? Nullable.GetUnderlyingType(rhs) : rhs;
+            Type lhsType0 = GetUnderlyingTypeIfNullableValueType(lhs, lhsNullable);
+            Type rhsType0 = GetUnderlyingTypeIfNullableValueType(rhs, rhsNullable);
 
             // special cases for enums
             if (lhsType0.IsEnum)
+            {
+                MethodInfo methodInfoFronLhsEnum = GetMethodInfoFronLhsEnum(op, new OperandTypeDetails(lhsNullable, rhsNullable, lhsType0, rhsType0), lhs, rhs, rhsExpression, ref error);
+                if (methodInfoFronLhsEnum != null)
+                    return methodInfoFronLhsEnum;
+            }
+            else if (rhsType0.IsEnum)
+            {
+                MethodInfo methodInfoFromRhsEnum = GetMethodInfoFromRhsEnum(op, new OperandTypeDetails(lhsNullable, rhsNullable, lhsType0, rhsType0), lhs, lhsExpression, rhs, ref error);
+                if (methodInfoFromRhsEnum != null)
+                    return methodInfoFromRhsEnum;
+            }
+
+            // enum specific operations already handled, see if one side (or both) define operators
+            AddOperatorOverloads(lhsType0, methodName, lhs, rhs, candidates);
+            AddOperatorOverloads(rhsType0, methodName, lhs, rhs, candidates);
+
+            if (CanBeLiftedToNull(lhs, rhs, lhsNullable, rhsNullable))
+            {
+                // need to add in lifted methods
+                AddLiftedOperators(lhsType0, methodName, group, lhsType0, rhsType0, candidates);
+                AddLiftedOperators(rhsType0, methodName, group, lhsType0, rhsType0, candidates);
+            }
+
+            if (candidates.Count == 0)
+            {
+                // no overrides, so get the default list
+                methodName = methodName.Substring(3);       // strip off the op_
+                SetCandidatesFromImplicitConversion(lhs, rhs, methodName, candidates);
+
+                SetCandidatesFromAssignableReferenceTypes(lhs, rhs, methodName, candidates);
+                if (CanBeLiftedToNull(lhs, rhs, lhsNullable, rhsNullable))
+                    SetCandidatesFromLeftingMethodsToNull(methodName, group, candidates, lhsType0, rhsType0);
+            }
+            if (candidates.Count == 1)
+            {
+                // only 1, so it is it
+                error = null;
+                return candidates[0];
+            }
+            else if (candidates.Count == 0)
+            {
+                SetNoCandidatesFoundError(op, lhs, rhs, out error, out message, group);
+                return null;
+            }
+            else
+            {
+                return GetBestFitFromCandidates(op, lhs, rhs, validator, out error, ref message, candidates);
+            }
+
+            static void SetCandidatesFromImplicitConversion(Type lhs, Type rhs, string methodName, List<MethodInfo> candidates)
+            {
+                foreach (MethodInfo mi
+                                    in typeof(DefaultOperators).GetMethods()
+                                    .Where(m => m.Name == methodName))
+                {
+                    ParameterInfo[] parameters = mi.GetParameters();
+                    Type parm1 = parameters[0].ParameterType;
+                    Type parm2 = parameters[1].ParameterType;
+                    if (RuleValidation.ImplicitConversion(lhs, parm1) &&
+                        RuleValidation.ImplicitConversion(rhs, parm2))
+                    {
+                        candidates.Add(mi);
+                    }
+                }
+            }
+
+            static void SetCandidatesFromAssignableReferenceTypes(Type lhs, Type rhs, string methodName, List<MethodInfo> candidates)
+            {
+                // if no candidates and ==, can we use object == object?
+                if ((candidates.Count == 0)
+                    && ("Equality" == methodName)
+                    && (!lhs.IsValueType)
+                    && (!rhs.IsValueType)
+                    && ((lhs == typeof(NullLiteral)) || (rhs == typeof(NullLiteral)) ||
+                        (lhs.IsAssignableFrom(rhs)) || (rhs.IsAssignableFrom(lhs))))
+                {
+                    // C# 7.9.6
+                    // references must be compatible
+                    // no boxing
+                    // value types can't be compared
+                    // they are not classes, so references need to be compatible
+                    // also check for null (which is NullLiteral type) -- null is compatible with any object type
+                    candidates.Add(ObjectEquality);
+                }
+            }
+
+            static void SetCandidatesFromLeftingMethodsToNull(string methodName, OperatorGrouping group, List<MethodInfo> candidates, Type lhsType0, Type rhsType0)
+            {
+                // if no candidates and nullable, add lifted operators
+                if (candidates.Count == 0)
+                {
+                    foreach (MethodInfo mi
+                        in typeof(DefaultOperators).GetMethods()
+                        .Where(m => m.Name == methodName))
+                    {
+                        ParameterInfo[] parameters = mi.GetParameters();
+                        MethodInfo liftedMethod = EvaluateLiftedMethod(mi, parameters, group, lhsType0, rhsType0);
+                        if (liftedMethod != null)
+                            candidates.Add(liftedMethod);
+                    }
+                }
+            }
+
+            static bool CanBeLiftedToNull(Type lhs, Type rhs, bool lhsNullable, bool rhsNullable)
+            {
+                return lhsNullable || rhsNullable || (lhs == typeof(NullLiteral)) || (rhs == typeof(NullLiteral));
+            }
+
+            static OperatorGrouping GetOperatorGrouping(CodeBinaryOperatorType op, ref string message, out ValidationError error)
+            {
+                error = null;
+                switch (op)
+                {
+                    case CodeBinaryOperatorType.ValueEquality:
+                        return OperatorGrouping.Equality;
+                    case CodeBinaryOperatorType.GreaterThan:
+                    case CodeBinaryOperatorType.GreaterThanOrEqual:
+                    case CodeBinaryOperatorType.LessThan:
+                    case CodeBinaryOperatorType.LessThanOrEqual:
+                        return OperatorGrouping.Relational;
+                    case CodeBinaryOperatorType.Add:
+                    case CodeBinaryOperatorType.Subtract:
+                    case CodeBinaryOperatorType.Multiply:
+                    case CodeBinaryOperatorType.Divide:
+                    case CodeBinaryOperatorType.Modulus:
+                    case CodeBinaryOperatorType.BitwiseAnd:
+                    case CodeBinaryOperatorType.BitwiseOr:
+                        return OperatorGrouping.Arithmetic;
+                    default:
+                        Debug.Assert(false, "Operator " + op + " not implemented");
+                        message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, op);
+                        error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
+                        return OperatorGrouping.None;
+                }
+            }
+
+            static string GetOperatorName(CodeBinaryOperatorType op, ref string message, out ValidationError error)
+            {
+                error = null;
+                switch (op)
+                {
+                    case CodeBinaryOperatorType.ValueEquality:
+                        return "op_Equality";
+                    case CodeBinaryOperatorType.GreaterThan:
+                        return "op_GreaterThan";
+                    case CodeBinaryOperatorType.GreaterThanOrEqual:
+                        return "op_GreaterThanOrEqual";
+                    case CodeBinaryOperatorType.LessThan:
+                        return "op_LessThan";
+                    case CodeBinaryOperatorType.LessThanOrEqual:
+                        return "op_LessThanOrEqual";
+                    case CodeBinaryOperatorType.Add:
+                        return "op_Addition";
+                    case CodeBinaryOperatorType.Subtract:
+                        return "op_Subtraction";
+                    case CodeBinaryOperatorType.Multiply:
+                        return "op_Multiply";
+                    case CodeBinaryOperatorType.Divide:
+                        return "op_Division";
+                    case CodeBinaryOperatorType.Modulus:
+                        return "op_Modulus";
+                    case CodeBinaryOperatorType.BitwiseAnd:
+                        return "op_BitwiseAnd";
+                    case CodeBinaryOperatorType.BitwiseOr:
+                        return "op_BitwiseOr";
+                    default:
+                        Debug.Assert(false, "Operator " + op + " not implemented");
+                        message = string.Format(CultureInfo.CurrentCulture, Messages.BinaryOpNotSupported, op);
+                        error = new ValidationError(message, ErrorNumbers.Error_CodeExpressionNotHandled);
+                        return null;
+                }
+            }
+
+            static MethodInfo GetBestFitFromCandidates(CodeBinaryOperatorType op, Type lhs, Type rhs, RuleValidation validator, out ValidationError error, ref string message, List<MethodInfo> candidates)
+            {
+                // more than 1, so pick the best one
+                MethodInfo bestFit = validator.FindBestCandidate(null, candidates, lhs, rhs);
+                if (bestFit != null)
+                {
+                    error = null;
+                    return bestFit;
+                }
+                // must be ambiguous. Since there are at least 2 choices, show only the first 2
+                message = string.Format(CultureInfo.CurrentCulture,
+                    Messages.AmbiguousOperator,
+                    op,
+                    RuleDecompiler.DecompileMethod(candidates[0]),
+                    RuleDecompiler.DecompileMethod(candidates[1]));
+                error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
+                return null;
+            }
+
+            static void SetNoCandidatesFoundError(CodeBinaryOperatorType op, Type lhs, Type rhs, out ValidationError error, out string message, OperatorGrouping group)
+            {
+                // nothing matched
+                message = string.Format(CultureInfo.CurrentCulture,
+                    (group == OperatorGrouping.Arithmetic) ? Messages.ArithOpBadTypes : Messages.RelationalOpBadTypes,
+                    op,
+                    (lhs == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(lhs),
+                    (rhs == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(rhs));
+                error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
+            }
+
+            static MethodInfo GetMethodInfoFromRhsEnum(CodeBinaryOperatorType op, OperandTypeDetails operandTypeDetails, Type lhs, CodeExpression lhsExpression, Type rhs, ref ValidationError error)
+            {
+                // lhs != enum, so only 2 cases (U = underlying type of E):
+                //    E = U + E
+                //    E = U - E
+                // comparisons are E == E, etc., so if the lhs is not an enum, too bad
+                // although we need to check for 0 == E
+                bool rhsNullable = operandTypeDetails.rhsNullable;
+                Type lhsType0 = operandTypeDetails.lhsType0;
+                Type rhsType0 = operandTypeDetails.rhsType0;
+                Type underlyingType;
+                switch (op)
+                {
+                    case CodeBinaryOperatorType.Add:
+                        underlyingType = EnumHelper.GetUnderlyingType(rhsType0);
+                        if ((underlyingType != null) &&
+                            (RuleValidation.TypesAreAssignable(lhsType0, underlyingType, lhsExpression, out error)))
+                        {
+                            error = null;
+                            return new EnumOperationMethodInfo(lhs, op, rhs, false);
+                        }
+                        break;
+
+                    case CodeBinaryOperatorType.Subtract:
+                        underlyingType = EnumHelper.GetUnderlyingType(rhsType0);
+                        MethodInfo substractMethodInfo = GetSubtractMethodInfo(op, lhs, lhsExpression, rhs, ref error, lhsType0, underlyingType);
+                        if (substractMethodInfo != null)
+                            return substractMethodInfo;
+
+                        break;
+
+                    case CodeBinaryOperatorType.ValueEquality:
+                    case CodeBinaryOperatorType.LessThan:
+                    case CodeBinaryOperatorType.LessThanOrEqual:
+                    case CodeBinaryOperatorType.GreaterThan:
+                    case CodeBinaryOperatorType.GreaterThanOrEqual:
+                        if (rhsNullable && (lhs == typeof(NullLiteral)))
+                        {
+                            // handle null op enum?
+                            // treat the lhs as the same nullable enum type
+                            error = null;
+                            return new EnumOperationMethodInfo(rhs, op, rhs, false);
+                        }
+                        else if (DecimalIntegerLiteralZero(lhs, lhsExpression as CodePrimitiveExpression))
+                        {
+                            error = null;
+                            return new EnumOperationMethodInfo(lhs, op, rhs, true);
+                        }
+                        break;
+                }
+
+                // can't do it, sorry
+                // but check if there is a user-defined operator that works
+                return null;
+
+                static MethodInfo GetSubtractMethodInfo(CodeBinaryOperatorType op, Type lhs, CodeExpression lhsExpression, Type rhs, ref ValidationError error, Type lhsType0, Type underlyingType)
+                {
+                    if (underlyingType != null)
+                    {
+                        CodePrimitiveExpression primitive = lhsExpression as CodePrimitiveExpression;
+                        if (DecimalIntegerLiteralZero(lhs, primitive))
+                        {
+                            // 0 - E, can convert 0 to E
+                            error = null;
+                            return new EnumOperationMethodInfo(lhs, op, rhs, true);
+                        }
+                        else if (RuleValidation.TypesAreAssignable(lhsType0, underlyingType, lhsExpression, out error))
+                        {
+                            // expression not passed to TypesAreAssignable, so not looking for constants (since 0 is all we care about)
+                            error = null;
+                            return new EnumOperationMethodInfo(lhs, op, rhs, false);
+                        }
+                    }
+
+                    return null;
+                }
+            }
+
+            static MethodInfo GetMethodInfoFronLhsEnum(CodeBinaryOperatorType op, OperandTypeDetails operandTypeDetails, Type lhs, Type rhs, CodeExpression rhsExpression, ref ValidationError error)
             {
                 // only 3 cases (U = underlying type of E):
                 //    E = E + U
@@ -569,6 +808,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 //    E = E - U
                 // plus the standard comparisons (E == E, E > E, etc.)
                 // need to also allow E == 0
+                bool lhsNullable = operandTypeDetails.lhsNullable;
+                Type lhsType0 = operandTypeDetails.lhsType0;
+                Type rhsType0 = operandTypeDetails.rhsType0;
                 Type underlyingType;
                 switch (op)
                 {
@@ -583,27 +825,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         break;
                     case CodeBinaryOperatorType.Subtract:
                         underlyingType = EnumHelper.GetUnderlyingType(lhsType0);
-                        if (underlyingType != null)
-                        {
-                            if (lhsType0 == rhsType0)
-                            {
-                                // E - E
-                                error = null;
-                                return new EnumOperationMethodInfo(lhs, op, rhs, false);
-                            }
-                            else if (DecimalIntegerLiteralZero(rhs, rhsExpression as CodePrimitiveExpression))
-                            {
-                                // E - 0, can convert 0 to E
-                                error = null;
-                                return new EnumOperationMethodInfo(lhs, op, rhs, true);
-                            }
-                            else if (RuleValidation.TypesAreAssignable(rhsType0, underlyingType, rhsExpression, out error))
-                            {
-                                // expression not passed to TypesAreAssignable, so not looking for constants (since 0 is all we care about)
-                                error = null;
-                                return new EnumOperationMethodInfo(lhs, op, rhs, false);
-                            }
-                        }
+                        MethodInfo substractMethodInfo = GetSubstractMethodInfo(op, lhs, rhs, rhsExpression, ref error, operandTypeDetails, underlyingType);
+                        if (substractMethodInfo != null)
+                            return substractMethodInfo;
                         break;
                     case CodeBinaryOperatorType.ValueEquality:
                     case CodeBinaryOperatorType.LessThan:
@@ -631,164 +855,41 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 }
                 // can't do it, sorry
                 // but check if there is a user-defined operator that works
-            }
-            else if (rhsType0.IsEnum)
-            {
-                // lhs != enum, so only 2 cases (U = underlying type of E):
-                //    E = U + E
-                //    E = U - E
-                // comparisons are E == E, etc., so if the lhs is not an enum, too bad
-                // although we need to check for 0 == E
-                Type underlyingType;
-                switch (op)
+                return null;
+
+                static MethodInfo GetSubstractMethodInfo(CodeBinaryOperatorType op, Type lhs, Type rhs, CodeExpression rhsExpression, ref ValidationError error, OperandTypeDetails operandTypeDetails, Type underlyingType)
                 {
-                    case CodeBinaryOperatorType.Add:
-                        underlyingType = EnumHelper.GetUnderlyingType(rhsType0);
-                        if ((underlyingType != null) &&
-                            (RuleValidation.TypesAreAssignable(lhsType0, underlyingType, lhsExpression, out error)))
+                    Type lhsType0 = operandTypeDetails.lhsType0;
+                    Type rhsType0 = operandTypeDetails.rhsType0;
+                    if (underlyingType != null)
+                    {
+                        if (lhsType0 == rhsType0)
                         {
+                            // E - E
                             error = null;
                             return new EnumOperationMethodInfo(lhs, op, rhs, false);
                         }
-                        break;
-
-                    case CodeBinaryOperatorType.Subtract:
-                        underlyingType = EnumHelper.GetUnderlyingType(rhsType0);
-                        if (underlyingType != null)
+                        else if (DecimalIntegerLiteralZero(rhs, rhsExpression as CodePrimitiveExpression))
                         {
-                            CodePrimitiveExpression primitive = lhsExpression as CodePrimitiveExpression;
-                            if (DecimalIntegerLiteralZero(lhs, primitive))
-                            {
-                                // 0 - E, can convert 0 to E
-                                error = null;
-                                return new EnumOperationMethodInfo(lhs, op, rhs, true);
-                            }
-                            else if (RuleValidation.TypesAreAssignable(lhsType0, underlyingType, lhsExpression, out error))
-                            {
-                                // expression not passed to TypesAreAssignable, so not looking for constants (since 0 is all we care about)
-                                error = null;
-                                return new EnumOperationMethodInfo(lhs, op, rhs, false);
-                            }
-                        }
-                        break;
-
-                    case CodeBinaryOperatorType.ValueEquality:
-                    case CodeBinaryOperatorType.LessThan:
-                    case CodeBinaryOperatorType.LessThanOrEqual:
-                    case CodeBinaryOperatorType.GreaterThan:
-                    case CodeBinaryOperatorType.GreaterThanOrEqual:
-                        if (rhsNullable && (lhs == typeof(NullLiteral)))
-                        {
-                            // handle null op enum?
-                            // treat the lhs as the same nullable enum type
-                            error = null;
-                            return new EnumOperationMethodInfo(rhs, op, rhs, false);
-                        }
-                        else if (DecimalIntegerLiteralZero(lhs, lhsExpression as CodePrimitiveExpression))
-                        {
+                            // E - 0, can convert 0 to E
                             error = null;
                             return new EnumOperationMethodInfo(lhs, op, rhs, true);
                         }
-                        break;
-                }
-
-                // can't do it, sorry
-                // but check if there is a user-defined operator that works
-            }
-
-            // enum specific operations already handled, see if one side (or both) define operators
-            AddOperatorOverloads(lhsType0, methodName, lhs, rhs, candidates);
-            AddOperatorOverloads(rhsType0, methodName, lhs, rhs, candidates);
-            if (lhsNullable || rhsNullable || (lhs == typeof(NullLiteral)) || (rhs == typeof(NullLiteral)))
-            {
-                // need to add in lifted methods
-                AddLiftedOperators(lhsType0, methodName, group, lhsType0, rhsType0, candidates);
-                AddLiftedOperators(rhsType0, methodName, group, lhsType0, rhsType0, candidates);
-            }
-
-            if (candidates.Count == 0)
-            {
-                // no overrides, so get the default list
-                methodName = methodName.Substring(3);       // strip off the op_
-                foreach (MethodInfo mi 
-                    in typeof(DefaultOperators).GetMethods()
-                    .Where(m => m.Name == methodName))
-                {
-                    ParameterInfo[] parameters = mi.GetParameters();
-                    Type parm1 = parameters[0].ParameterType;
-                    Type parm2 = parameters[1].ParameterType;
-                    if (RuleValidation.ImplicitConversion(lhs, parm1) &&
-                        RuleValidation.ImplicitConversion(rhs, parm2))
-                    {
-                        candidates.Add(mi);
+                        else if (RuleValidation.TypesAreAssignable(rhsType0, underlyingType, rhsExpression, out error))
+                        {
+                            // expression not passed to TypesAreAssignable, so not looking for constants (since 0 is all we care about)
+                            error = null;
+                            return new EnumOperationMethodInfo(lhs, op, rhs, false);
+                        }
                     }
-                }
 
-                // if no candidates and ==, can we use object == object?
-                if ((candidates.Count == 0) 
-                    && ("Equality" == methodName) 
-                    && (!lhs.IsValueType) 
-                    && (!rhs.IsValueType)
-                    && ((lhs == typeof(NullLiteral)) || (rhs == typeof(NullLiteral)) ||
-                        (lhs.IsAssignableFrom(rhs)) || (rhs.IsAssignableFrom(lhs))))
-                {
-                    // C# 7.9.6
-                    // references must be compatible
-                    // no boxing
-                    // value types can't be compared
-                    // they are not classes, so references need to be compatible
-                    // also check for null (which is NullLiteral type) -- null is compatible with any object type
-                    candidates.Add(ObjectEquality);
+                    return null;
                 }
+            }
 
-                // if no candidates and nullable, add lifted operators
-                if ((candidates.Count == 0) && ((lhsNullable || rhsNullable || (lhs == typeof(NullLiteral)) || (rhs == typeof(NullLiteral)))))
-                {
-                    foreach (MethodInfo mi 
-                        in typeof(DefaultOperators).GetMethods()
-                        .Where(m => m.Name == methodName))
-                    {
-                        ParameterInfo[] parameters = mi.GetParameters();
-                        MethodInfo liftedMethod = EvaluateLiftedMethod(mi, parameters, group, lhsType0, rhsType0);
-                        if (liftedMethod != null)
-                            candidates.Add(liftedMethod);
-                    }
-                }
-            }
-            if (candidates.Count == 1)
+            static Type GetUnderlyingTypeIfNullableValueType(Type lhs, bool lhsNullable)
             {
-                // only 1, so it is it
-                error = null;
-                return candidates[0];
-            }
-            else if (candidates.Count == 0)
-            {
-                // nothing matched
-                message = string.Format(CultureInfo.CurrentCulture,
-                    (group == OperatorGrouping.Arithmetic) ? Messages.ArithOpBadTypes : Messages.RelationalOpBadTypes,
-                    op,
-                    (lhs == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(lhs),
-                    (rhs == typeof(NullLiteral)) ? Messages.NullValue : RuleDecompiler.DecompileType(rhs));
-                error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
-                return null;
-            }
-            else
-            {
-                // more than 1, so pick the best one
-                MethodInfo bestFit = validator.FindBestCandidate(null, candidates, lhs, rhs);
-                if (bestFit != null)
-                {
-                    error = null;
-                    return bestFit;
-                }
-                // must be ambiguous. Since there are at least 2 choices, show only the first 2
-                message = string.Format(CultureInfo.CurrentCulture,
-                    Messages.AmbiguousOperator,
-                    op,
-                    RuleDecompiler.DecompileMethod(candidates[0]),
-                    RuleDecompiler.DecompileMethod(candidates[1]));
-                error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
-                return null;
+                return (lhsNullable) ? Nullable.GetUnderlyingType(lhs) : lhs;
             }
         }
 
@@ -816,8 +917,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
             foreach (MethodInfo mi in possible)
             {
                 ParameterInfo[] parameters = mi.GetParameters();
-                if ((mi.Name == methodName) 
-                    && (parameters.Length == 2) 
+                if ((mi.Name == methodName)
+                    && (parameters.Length == 2)
                     && EvaluateMethod(parameters, arg1, arg2))
                 {
                     ++numAdded;
@@ -830,19 +931,19 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             // no matches, check direct base class (if there is one)
             type = type.BaseType;
-            if (type != null)
+            if (type == null)
+                return;
+
+            possible = type.GetMethods(BindingFlags.Static | BindingFlags.Public);
+            foreach (MethodInfo mi in possible)
             {
-                possible = type.GetMethods(BindingFlags.Static | BindingFlags.Public);
-                foreach (MethodInfo mi in possible)
+                ParameterInfo[] parameters = mi.GetParameters();
+                if ((mi.Name == methodName)
+                    && (parameters.Length == 2)
+                    && EvaluateMethod(parameters, arg1, arg2)
+                    && !candidates.Contains(mi))
                 {
-                    ParameterInfo[] parameters = mi.GetParameters();
-                    if ((mi.Name == methodName) 
-                        && (parameters.Length == 2)
-                        && EvaluateMethod(parameters, arg1, arg2)
-                        && !candidates.Contains(mi))
-                    {
-                        candidates.Add(mi);
-                    }
+                    candidates.Add(mi);
                 }
             }
         }
@@ -871,9 +972,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             // no matches, check direct base class (if there is one)
             type = type.BaseType;
-            if (type != null)
+            if (type == null)
+                return;
+
+            CheckBaseClassForCandidates(type, methodName, group, arg1, arg2, candidates);
+
+            static void CheckBaseClassForCandidates(Type type, string methodName, OperatorGrouping group, Type arg1, Type arg2, List<MethodInfo> candidates)
             {
-                possible = type.GetMethods(BindingFlags.Static | BindingFlags.Public);
+                MethodInfo[] possible = type.GetMethods(BindingFlags.Static | BindingFlags.Public);
                 foreach (MethodInfo mi in possible)
                 {
                     ParameterInfo[] parameters = mi.GetParameters();
@@ -899,38 +1005,38 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             Type parm1 = parameters[0].ParameterType;
             Type parm2 = parameters[1].ParameterType;
-            if (ConditionHelper.IsNonNullableValueType(parm1) && ConditionHelper.IsNonNullableValueType(parm2))
+            if (!ConditionHelper.IsNonNullableValueType(parm1) || !ConditionHelper.IsNonNullableValueType(parm2))
+                return null;
+
+            // lift the parameters for testing conversions, if possible
+            parm1 = typeof(Nullable<>).MakeGenericType(parm1);
+            parm2 = typeof(Nullable<>).MakeGenericType(parm2);
+            switch (group)
             {
-                // lift the parameters for testing conversions, if possible
-                parm1 = typeof(Nullable<>).MakeGenericType(parm1);
-                parm2 = typeof(Nullable<>).MakeGenericType(parm2);
-                switch (group)
-                {
-                    case OperatorGrouping.Equality:     // for == !=
-                        if (mi.ReturnType == typeof(bool) &&
-                            RuleValidation.ImplicitConversion(arg1, parm1) &&
-                            RuleValidation.ImplicitConversion(arg2, parm2))
-                        {
-                            return new LiftedEqualityOperatorMethodInfo(mi);
-                        }
-                        break;
-                    case OperatorGrouping.Relational:       // for < > <= >=
-                        if (mi.ReturnType == typeof(bool) &&
-                            RuleValidation.ImplicitConversion(arg1, parm1) &&
-                            RuleValidation.ImplicitConversion(arg2, parm2))
-                        {
-                            return new LiftedRelationalOperatorMethodInfo(mi);
-                        }
-                        break;
-                    case OperatorGrouping.Arithmetic:       // for + - * / % & ^
-                        if (ConditionHelper.IsNonNullableValueType(mi.ReturnType) &&
-                            RuleValidation.ImplicitConversion(arg1, parm1) &&
-                            RuleValidation.ImplicitConversion(arg2, parm2))
-                        {
-                            return new LiftedArithmeticOperatorMethodInfo(mi);
-                        }
-                        break;
-                }
+                case OperatorGrouping.Equality:     // for == !=
+                    if (mi.ReturnType == typeof(bool) &&
+                        RuleValidation.ImplicitConversion(arg1, parm1) &&
+                        RuleValidation.ImplicitConversion(arg2, parm2))
+                    {
+                        return new LiftedEqualityOperatorMethodInfo(mi);
+                    }
+                    break;
+                case OperatorGrouping.Relational:       // for < > <= >=
+                    if (mi.ReturnType == typeof(bool) &&
+                        RuleValidation.ImplicitConversion(arg1, parm1) &&
+                        RuleValidation.ImplicitConversion(arg2, parm2))
+                    {
+                        return new LiftedRelationalOperatorMethodInfo(mi);
+                    }
+                    break;
+                case OperatorGrouping.Arithmetic:       // for + - * / % & ^
+                    if (ConditionHelper.IsNonNullableValueType(mi.ReturnType) &&
+                        RuleValidation.ImplicitConversion(arg1, parm1) &&
+                        RuleValidation.ImplicitConversion(arg2, parm2))
+                    {
+                        return new LiftedArithmeticOperatorMethodInfo(mi);
+                    }
+                    break;
             }
             return null;
         }
@@ -1622,9 +1728,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(bool rhs)
+        internal override bool Equal(bool literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
@@ -1672,266 +1778,266 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(float rhs)
+        internal override bool Equal(float literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(double rhs)
+        internal override bool Equal(double literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(decimal rhs)
+        internal override bool Equal(decimal literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(sbyte rhs)
+        internal override bool LessThan(sbyte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(short rhs)
+        internal override bool LessThan(short literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ulong rhs)
+        internal override bool LessThan(ulong literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(float rhs)
+        internal override bool LessThan(float literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(double rhs)
+        internal override bool LessThan(double literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(decimal rhs)
+        internal override bool LessThan(decimal literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(sbyte rhs)
+        internal override bool GreaterThan(sbyte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(short rhs)
+        internal override bool GreaterThan(short literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ulong rhs)
+        internal override bool GreaterThan(ulong literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(float rhs)
+        internal override bool GreaterThan(float literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(double rhs)
+        internal override bool GreaterThan(double literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(decimal rhs)
+        internal override bool GreaterThan(decimal literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(sbyte rhs)
+        internal override bool LessThanOrEqual(sbyte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(short rhs)
+        internal override bool LessThanOrEqual(short literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ulong rhs)
+        internal override bool LessThanOrEqual(ulong literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(float rhs)
+        internal override bool LessThanOrEqual(float literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(double rhs)
+        internal override bool LessThanOrEqual(double literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(decimal rhs)
+        internal override bool LessThanOrEqual(decimal literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(sbyte rhs)
+        internal override bool GreaterThanOrEqual(sbyte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(short rhs)
+        internal override bool GreaterThanOrEqual(short literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
 
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ulong rhs)
+        internal override bool GreaterThanOrEqual(ulong literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(float rhs)
+        internal override bool GreaterThanOrEqual(float literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(double rhs)
+        internal override bool GreaterThanOrEqual(double literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(decimal rhs)
+        internal override bool GreaterThanOrEqual(decimal literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -1959,250 +2065,250 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return (m_value >= 0) && ((ulong)m_value == rhs);
+            return (m_value >= 0) && ((ulong)m_value == literalValue);
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(float rhs)
+        internal override bool Equal(float literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(double rhs)
+        internal override bool Equal(double literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(decimal rhs)
+        internal override bool Equal(decimal literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(sbyte rhs)
+        internal override bool LessThan(sbyte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(short rhs)
+        internal override bool LessThan(short literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(float rhs)
+        internal override bool LessThan(float literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(double rhs)
+        internal override bool LessThan(double literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(decimal rhs)
+        internal override bool LessThan(decimal literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(sbyte rhs)
+        internal override bool GreaterThan(sbyte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(short rhs)
+        internal override bool GreaterThan(short literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(float rhs)
+        internal override bool GreaterThan(float literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(double rhs)
+        internal override bool GreaterThan(double literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(decimal rhs)
+        internal override bool GreaterThan(decimal literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(sbyte rhs)
+        internal override bool LessThanOrEqual(sbyte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(short rhs)
+        internal override bool LessThanOrEqual(short literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(float rhs)
+        internal override bool LessThanOrEqual(float literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(double rhs)
+        internal override bool LessThanOrEqual(double literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(decimal rhs)
+        internal override bool LessThanOrEqual(decimal literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(sbyte rhs)
+        internal override bool GreaterThanOrEqual(sbyte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(short rhs)
+        internal override bool GreaterThanOrEqual(short literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
 
         }
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(float rhs)
+        internal override bool GreaterThanOrEqual(float literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(double rhs)
+        internal override bool GreaterThanOrEqual(double literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(decimal rhs)
+        internal override bool GreaterThanOrEqual(decimal literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -2230,265 +2336,265 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(float rhs)
+        internal override bool Equal(float literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(double rhs)
+        internal override bool Equal(double literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(decimal rhs)
+        internal override bool Equal(decimal literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(sbyte rhs)
+        internal override bool LessThan(sbyte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(short rhs)
+        internal override bool LessThan(short literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ulong rhs)
+        internal override bool LessThan(ulong literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(float rhs)
+        internal override bool LessThan(float literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(double rhs)
+        internal override bool LessThan(double literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(decimal rhs)
+        internal override bool LessThan(decimal literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(sbyte rhs)
+        internal override bool GreaterThan(sbyte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(short rhs)
+        internal override bool GreaterThan(short literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ulong rhs)
+        internal override bool GreaterThan(ulong literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(float rhs)
+        internal override bool GreaterThan(float literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(double rhs)
+        internal override bool GreaterThan(double literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(decimal rhs)
+        internal override bool GreaterThan(decimal literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(sbyte rhs)
+        internal override bool LessThanOrEqual(sbyte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(short rhs)
+        internal override bool LessThanOrEqual(short literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ulong rhs)
+        internal override bool LessThanOrEqual(ulong literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(float rhs)
+        internal override bool LessThanOrEqual(float literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(double rhs)
+        internal override bool LessThanOrEqual(double literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(decimal rhs)
+        internal override bool LessThanOrEqual(decimal literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(sbyte rhs)
+        internal override bool GreaterThanOrEqual(sbyte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(short rhs)
+        internal override bool GreaterThanOrEqual(short literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ulong rhs)
+        internal override bool GreaterThanOrEqual(ulong literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(float rhs)
+        internal override bool GreaterThanOrEqual(float literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(double rhs)
+        internal override bool GreaterThanOrEqual(double literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(decimal rhs)
+        internal override bool GreaterThanOrEqual(decimal literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -2516,225 +2622,225 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(decimal rhs)
+        internal override bool Equal(decimal literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(sbyte rhs)
+        internal override bool LessThan(sbyte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(short rhs)
+        internal override bool LessThan(short literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ulong rhs)
+        internal override bool LessThan(ulong literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(decimal rhs)
+        internal override bool LessThan(decimal literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(sbyte rhs)
+        internal override bool GreaterThan(sbyte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(short rhs)
+        internal override bool GreaterThan(short literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ulong rhs)
+        internal override bool GreaterThan(ulong literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(decimal rhs)
+        internal override bool GreaterThan(decimal literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(sbyte rhs)
+        internal override bool LessThanOrEqual(sbyte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(short rhs)
+        internal override bool LessThanOrEqual(short literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ulong rhs)
+        internal override bool LessThanOrEqual(ulong literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(decimal rhs)
+        internal override bool LessThanOrEqual(decimal literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(sbyte rhs)
+        internal override bool GreaterThanOrEqual(sbyte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(short rhs)
+        internal override bool GreaterThanOrEqual(short literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ulong rhs)
+        internal override bool GreaterThanOrEqual(ulong literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(decimal rhs)
+        internal override bool GreaterThanOrEqual(decimal literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -2762,249 +2868,249 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return (m_value >= 0) && ((ulong)m_value == rhs);
+            return (m_value >= 0) && ((ulong)m_value == literalValue);
         }
-        internal override bool Equal(float rhs)
+        internal override bool Equal(float literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(double rhs)
+        internal override bool Equal(double literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(decimal rhs)
+        internal override bool Equal(decimal literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(sbyte rhs)
+        internal override bool LessThan(sbyte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(short rhs)
+        internal override bool LessThan(short literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(float rhs)
+        internal override bool LessThan(float literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(double rhs)
+        internal override bool LessThan(double literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(decimal rhs)
+        internal override bool LessThan(decimal literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(sbyte rhs)
+        internal override bool GreaterThan(sbyte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(short rhs)
+        internal override bool GreaterThan(short literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(float rhs)
+        internal override bool GreaterThan(float literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(double rhs)
+        internal override bool GreaterThan(double literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(decimal rhs)
+        internal override bool GreaterThan(decimal literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(sbyte rhs)
+        internal override bool LessThanOrEqual(sbyte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(short rhs)
+        internal override bool LessThanOrEqual(short literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(float rhs)
+        internal override bool LessThanOrEqual(float literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(double rhs)
+        internal override bool LessThanOrEqual(double literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(decimal rhs)
+        internal override bool LessThanOrEqual(decimal literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(sbyte rhs)
+        internal override bool GreaterThanOrEqual(sbyte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(short rhs)
+        internal override bool GreaterThanOrEqual(short literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(float rhs)
+        internal override bool GreaterThanOrEqual(float literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(double rhs)
+        internal override bool GreaterThanOrEqual(double literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(decimal rhs)
+        internal override bool GreaterThanOrEqual(decimal literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -3032,265 +3138,265 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return (m_value >= 0) && ((ulong)m_value == rhs);
+            return (m_value >= 0) && ((ulong)m_value == literalValue);
         }
-        internal override bool Equal(float rhs)
+        internal override bool Equal(float literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(double rhs)
+        internal override bool Equal(double literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(decimal rhs)
+        internal override bool Equal(decimal literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(sbyte rhs)
+        internal override bool LessThan(sbyte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(short rhs)
+        internal override bool LessThan(short literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ulong rhs)
+        internal override bool LessThan(ulong literalValue)
         {
-            return (m_value < 0) || ((ulong)m_value < rhs);
+            return (m_value < 0) || ((ulong)m_value < literalValue);
         }
-        internal override bool LessThan(float rhs)
+        internal override bool LessThan(float literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(double rhs)
+        internal override bool LessThan(double literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(decimal rhs)
+        internal override bool LessThan(decimal literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(sbyte rhs)
+        internal override bool GreaterThan(sbyte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(short rhs)
+        internal override bool GreaterThan(short literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ulong rhs)
+        internal override bool GreaterThan(ulong literalValue)
         {
-            return (m_value >= 0) && ((ulong)m_value > rhs);
+            return (m_value >= 0) && ((ulong)m_value > literalValue);
         }
-        internal override bool GreaterThan(float rhs)
+        internal override bool GreaterThan(float literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(double rhs)
+        internal override bool GreaterThan(double literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(decimal rhs)
+        internal override bool GreaterThan(decimal literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(sbyte rhs)
+        internal override bool LessThanOrEqual(sbyte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(short rhs)
+        internal override bool LessThanOrEqual(short literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ulong rhs)
+        internal override bool LessThanOrEqual(ulong literalValue)
         {
-            return (m_value < 0) || ((ulong)m_value <= rhs);
+            return (m_value < 0) || ((ulong)m_value <= literalValue);
         }
-        internal override bool LessThanOrEqual(float rhs)
+        internal override bool LessThanOrEqual(float literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(double rhs)
+        internal override bool LessThanOrEqual(double literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(decimal rhs)
+        internal override bool LessThanOrEqual(decimal literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(sbyte rhs)
+        internal override bool GreaterThanOrEqual(sbyte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(short rhs)
+        internal override bool GreaterThanOrEqual(short literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ulong rhs)
+        internal override bool GreaterThanOrEqual(ulong literalValue)
         {
-            return (m_value >= 0) && ((ulong)m_value >= rhs);
+            return (m_value >= 0) && ((ulong)m_value >= literalValue);
         }
-        internal override bool GreaterThanOrEqual(float rhs)
+        internal override bool GreaterThanOrEqual(float literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(double rhs)
+        internal override bool GreaterThanOrEqual(double literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(decimal rhs)
+        internal override bool GreaterThanOrEqual(decimal literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -3318,265 +3424,265 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return (m_value >= 0) && ((ulong)m_value == rhs);
+            return (m_value >= 0) && ((ulong)m_value == literalValue);
         }
-        internal override bool Equal(float rhs)
+        internal override bool Equal(float literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(double rhs)
+        internal override bool Equal(double literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(decimal rhs)
+        internal override bool Equal(decimal literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(sbyte rhs)
+        internal override bool LessThan(sbyte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(short rhs)
+        internal override bool LessThan(short literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ulong rhs)
+        internal override bool LessThan(ulong literalValue)
         {
-            return (m_value < 0) || ((ulong)m_value < rhs);
+            return (m_value < 0) || ((ulong)m_value < literalValue);
         }
-        internal override bool LessThan(float rhs)
+        internal override bool LessThan(float literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(double rhs)
+        internal override bool LessThan(double literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(decimal rhs)
+        internal override bool LessThan(decimal literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(sbyte rhs)
+        internal override bool GreaterThan(sbyte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(short rhs)
+        internal override bool GreaterThan(short literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ulong rhs)
+        internal override bool GreaterThan(ulong literalValue)
         {
-            return (m_value >= 0) && ((ulong)m_value > rhs);
+            return (m_value >= 0) && ((ulong)m_value > literalValue);
         }
-        internal override bool GreaterThan(float rhs)
+        internal override bool GreaterThan(float literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(double rhs)
+        internal override bool GreaterThan(double literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(decimal rhs)
+        internal override bool GreaterThan(decimal literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(sbyte rhs)
+        internal override bool LessThanOrEqual(sbyte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(short rhs)
+        internal override bool LessThanOrEqual(short literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ulong rhs)
+        internal override bool LessThanOrEqual(ulong literalValue)
         {
-            return (m_value < 0) || ((ulong)m_value <= rhs);
+            return (m_value < 0) || ((ulong)m_value <= literalValue);
         }
-        internal override bool LessThanOrEqual(float rhs)
+        internal override bool LessThanOrEqual(float literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(double rhs)
+        internal override bool LessThanOrEqual(double literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(decimal rhs)
+        internal override bool LessThanOrEqual(decimal literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(sbyte rhs)
+        internal override bool GreaterThanOrEqual(sbyte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(short rhs)
+        internal override bool GreaterThanOrEqual(short literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ulong rhs)
+        internal override bool GreaterThanOrEqual(ulong literalValue)
         {
-            return (m_value >= 0) && ((ulong)m_value >= rhs);
+            return (m_value >= 0) && ((ulong)m_value >= literalValue);
         }
-        internal override bool GreaterThanOrEqual(float rhs)
+        internal override bool GreaterThanOrEqual(float literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(double rhs)
+        internal override bool GreaterThanOrEqual(double literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(decimal rhs)
+        internal override bool GreaterThanOrEqual(decimal literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -3604,265 +3710,265 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(float rhs)
+        internal override bool Equal(float literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(double rhs)
+        internal override bool Equal(double literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(decimal rhs)
+        internal override bool Equal(decimal literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(sbyte rhs)
+        internal override bool LessThan(sbyte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(short rhs)
+        internal override bool LessThan(short literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ulong rhs)
+        internal override bool LessThan(ulong literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(float rhs)
+        internal override bool LessThan(float literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(double rhs)
+        internal override bool LessThan(double literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(decimal rhs)
+        internal override bool LessThan(decimal literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(sbyte rhs)
+        internal override bool GreaterThan(sbyte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(short rhs)
+        internal override bool GreaterThan(short literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ulong rhs)
+        internal override bool GreaterThan(ulong literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(float rhs)
+        internal override bool GreaterThan(float literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(double rhs)
+        internal override bool GreaterThan(double literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(decimal rhs)
+        internal override bool GreaterThan(decimal literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(sbyte rhs)
+        internal override bool LessThanOrEqual(sbyte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(short rhs)
+        internal override bool LessThanOrEqual(short literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ulong rhs)
+        internal override bool LessThanOrEqual(ulong literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(float rhs)
+        internal override bool LessThanOrEqual(float literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(double rhs)
+        internal override bool LessThanOrEqual(double literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(decimal rhs)
+        internal override bool LessThanOrEqual(decimal literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(sbyte rhs)
+        internal override bool GreaterThanOrEqual(sbyte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(short rhs)
+        internal override bool GreaterThanOrEqual(short literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ulong rhs)
+        internal override bool GreaterThanOrEqual(ulong literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(float rhs)
+        internal override bool GreaterThanOrEqual(float literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(double rhs)
+        internal override bool GreaterThanOrEqual(double literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(decimal rhs)
+        internal override bool GreaterThanOrEqual(decimal literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -3890,265 +3996,265 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(float rhs)
+        internal override bool Equal(float literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(double rhs)
+        internal override bool Equal(double literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(decimal rhs)
+        internal override bool Equal(decimal literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(sbyte rhs)
+        internal override bool LessThan(sbyte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(short rhs)
+        internal override bool LessThan(short literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ulong rhs)
+        internal override bool LessThan(ulong literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(float rhs)
+        internal override bool LessThan(float literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(double rhs)
+        internal override bool LessThan(double literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(decimal rhs)
+        internal override bool LessThan(decimal literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(sbyte rhs)
+        internal override bool GreaterThan(sbyte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(short rhs)
+        internal override bool GreaterThan(short literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ulong rhs)
+        internal override bool GreaterThan(ulong literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(float rhs)
+        internal override bool GreaterThan(float literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(double rhs)
+        internal override bool GreaterThan(double literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(decimal rhs)
+        internal override bool GreaterThan(decimal literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(sbyte rhs)
+        internal override bool LessThanOrEqual(sbyte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(short rhs)
+        internal override bool LessThanOrEqual(short literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ulong rhs)
+        internal override bool LessThanOrEqual(ulong literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(float rhs)
+        internal override bool LessThanOrEqual(float literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(double rhs)
+        internal override bool LessThanOrEqual(double literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(decimal rhs)
+        internal override bool LessThanOrEqual(decimal literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(sbyte rhs)
+        internal override bool GreaterThanOrEqual(sbyte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(short rhs)
+        internal override bool GreaterThanOrEqual(short literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ulong rhs)
+        internal override bool GreaterThanOrEqual(ulong literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(float rhs)
+        internal override bool GreaterThanOrEqual(float literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(double rhs)
+        internal override bool GreaterThanOrEqual(double literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(decimal rhs)
+        internal override bool GreaterThanOrEqual(decimal literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -4176,233 +4282,233 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return (rhs >= 0) && (m_value == (ulong)rhs);
+            return (literalValue >= 0) && (m_value == (ulong)literalValue);
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return (rhs >= 0) && (m_value == (ulong)rhs);
+            return (literalValue >= 0) && (m_value == (ulong)literalValue);
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return (rhs >= 0) && (m_value == (ulong)rhs);
+            return (literalValue >= 0) && (m_value == (ulong)literalValue);
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return (rhs >= 0) && (m_value == (ulong)rhs);
+            return (literalValue >= 0) && (m_value == (ulong)literalValue);
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
-        internal override bool Equal(float rhs)
+        internal override bool Equal(float literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(double rhs)
+        internal override bool Equal(double literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(decimal rhs)
+        internal override bool Equal(decimal literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return (rhs >= 0) && (m_value < (ulong)rhs);
+            return (literalValue >= 0) && (m_value < (ulong)literalValue);
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return (rhs >= 0) && (m_value < (ulong)rhs);
+            return (literalValue >= 0) && (m_value < (ulong)literalValue);
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ulong rhs)
+        internal override bool LessThan(ulong literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(float rhs)
+        internal override bool LessThan(float literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(double rhs)
+        internal override bool LessThan(double literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(decimal rhs)
+        internal override bool LessThan(decimal literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return (rhs < 0) || (m_value > (ulong)rhs);
+            return (literalValue < 0) || (m_value > (ulong)literalValue);
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return (rhs < 0) || (m_value > (ulong)rhs);
+            return (literalValue < 0) || (m_value > (ulong)literalValue);
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ulong rhs)
+        internal override bool GreaterThan(ulong literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(float rhs)
+        internal override bool GreaterThan(float literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(double rhs)
+        internal override bool GreaterThan(double literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(decimal rhs)
+        internal override bool GreaterThan(decimal literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return (rhs >= 0) && (m_value <= (ulong)rhs);
+            return (literalValue >= 0) && (m_value <= (ulong)literalValue);
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return (rhs >= 0) && (m_value <= (ulong)rhs);
+            return (literalValue >= 0) && (m_value <= (ulong)literalValue);
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ulong rhs)
+        internal override bool LessThanOrEqual(ulong literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(float rhs)
+        internal override bool LessThanOrEqual(float literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(double rhs)
+        internal override bool LessThanOrEqual(double literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(decimal rhs)
+        internal override bool LessThanOrEqual(decimal literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return (rhs < 0) || (m_value >= (ulong)rhs);
+            return (literalValue < 0) || (m_value >= (ulong)literalValue);
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return (rhs < 0) || (m_value >= (ulong)rhs);
+            return (literalValue < 0) || (m_value >= (ulong)literalValue);
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ulong rhs)
+        internal override bool GreaterThanOrEqual(ulong literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(float rhs)
+        internal override bool GreaterThanOrEqual(float literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(double rhs)
+        internal override bool GreaterThanOrEqual(double literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(decimal rhs)
+        internal override bool GreaterThanOrEqual(decimal literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -4430,245 +4536,245 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(float rhs)
+        internal override bool Equal(float literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
-        internal override bool Equal(double rhs)
+        internal override bool Equal(double literalValue)
         {
-            return Math.Abs(m_value - rhs) < double.Epsilon;
+            return Math.Abs(m_value - literalValue) < double.Epsilon;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(sbyte rhs)
+        internal override bool LessThan(sbyte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(short rhs)
+        internal override bool LessThan(short literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ulong rhs)
+        internal override bool LessThan(ulong literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(float rhs)
+        internal override bool LessThan(float literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(double rhs)
+        internal override bool LessThan(double literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(sbyte rhs)
+        internal override bool GreaterThan(sbyte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(short rhs)
+        internal override bool GreaterThan(short literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ulong rhs)
+        internal override bool GreaterThan(ulong literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(float rhs)
+        internal override bool GreaterThan(float literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(double rhs)
+        internal override bool GreaterThan(double literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(sbyte rhs)
+        internal override bool LessThanOrEqual(sbyte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(short rhs)
+        internal override bool LessThanOrEqual(short literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ulong rhs)
+        internal override bool LessThanOrEqual(ulong literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(float rhs)
+        internal override bool LessThanOrEqual(float literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(double rhs)
+        internal override bool LessThanOrEqual(double literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(sbyte rhs)
+        internal override bool GreaterThanOrEqual(sbyte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(short rhs)
+        internal override bool GreaterThanOrEqual(short literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ulong rhs)
+        internal override bool GreaterThanOrEqual(ulong literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(float rhs)
+        internal override bool GreaterThanOrEqual(float literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(double rhs)
+        internal override bool GreaterThanOrEqual(double literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -4696,245 +4802,245 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(sbyte rhs)
+        internal override bool Equal(sbyte literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(byte rhs)
+        internal override bool Equal(byte literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(char rhs)
+        internal override bool Equal(char literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(short rhs)
+        internal override bool Equal(short literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(ushort rhs)
+        internal override bool Equal(ushort literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(int rhs)
+        internal override bool Equal(int literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(uint rhs)
+        internal override bool Equal(uint literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(long rhs)
+        internal override bool Equal(long literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(ulong rhs)
+        internal override bool Equal(ulong literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(float rhs)
+        internal override bool Equal(float literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
-        internal override bool Equal(double rhs)
+        internal override bool Equal(double literalValue)
         {
-            return Math.Abs(m_value - rhs) < float.Epsilon;
+            return Math.Abs(m_value - literalValue) < float.Epsilon;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(sbyte rhs)
+        internal override bool LessThan(sbyte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(byte rhs)
+        internal override bool LessThan(byte literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(char rhs)
+        internal override bool LessThan(char literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(short rhs)
+        internal override bool LessThan(short literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ushort rhs)
+        internal override bool LessThan(ushort literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(int rhs)
+        internal override bool LessThan(int literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(uint rhs)
+        internal override bool LessThan(uint literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(long rhs)
+        internal override bool LessThan(long literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(ulong rhs)
+        internal override bool LessThan(ulong literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(float rhs)
+        internal override bool LessThan(float literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
-        internal override bool LessThan(double rhs)
+        internal override bool LessThan(double literalValue)
         {
-            return m_value < rhs;
+            return m_value < literalValue;
         }
 
         internal override bool GreaterThan(Literal rhs)
         {
             return rhs.LessThan(m_value);
         }
-        internal override bool GreaterThan(sbyte rhs)
+        internal override bool GreaterThan(sbyte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(byte rhs)
+        internal override bool GreaterThan(byte literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(char rhs)
+        internal override bool GreaterThan(char literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(short rhs)
+        internal override bool GreaterThan(short literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ushort rhs)
+        internal override bool GreaterThan(ushort literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(int rhs)
+        internal override bool GreaterThan(int literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(uint rhs)
+        internal override bool GreaterThan(uint literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(long rhs)
+        internal override bool GreaterThan(long literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(ulong rhs)
+        internal override bool GreaterThan(ulong literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(float rhs)
+        internal override bool GreaterThan(float literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
-        internal override bool GreaterThan(double rhs)
+        internal override bool GreaterThan(double literalValue)
         {
-            return m_value > rhs;
+            return m_value > literalValue;
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(sbyte rhs)
+        internal override bool LessThanOrEqual(sbyte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(byte rhs)
+        internal override bool LessThanOrEqual(byte literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(short rhs)
+        internal override bool LessThanOrEqual(short literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(char rhs)
+        internal override bool LessThanOrEqual(char literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ushort rhs)
+        internal override bool LessThanOrEqual(ushort literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(int rhs)
+        internal override bool LessThanOrEqual(int literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(uint rhs)
+        internal override bool LessThanOrEqual(uint literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(long rhs)
+        internal override bool LessThanOrEqual(long literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(ulong rhs)
+        internal override bool LessThanOrEqual(ulong literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(float rhs)
+        internal override bool LessThanOrEqual(float literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
-        internal override bool LessThanOrEqual(double rhs)
+        internal override bool LessThanOrEqual(double literalValue)
         {
-            return m_value <= rhs;
+            return m_value <= literalValue;
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
         {
             return rhs.LessThanOrEqual(m_value);
         }
-        internal override bool GreaterThanOrEqual(sbyte rhs)
+        internal override bool GreaterThanOrEqual(sbyte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(byte rhs)
+        internal override bool GreaterThanOrEqual(byte literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(char rhs)
+        internal override bool GreaterThanOrEqual(char literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(short rhs)
+        internal override bool GreaterThanOrEqual(short literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ushort rhs)
+        internal override bool GreaterThanOrEqual(ushort literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(int rhs)
+        internal override bool GreaterThanOrEqual(int literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(uint rhs)
+        internal override bool GreaterThanOrEqual(uint literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(long rhs)
+        internal override bool GreaterThanOrEqual(long literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(ulong rhs)
+        internal override bool GreaterThanOrEqual(ulong literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(float rhs)
+        internal override bool GreaterThanOrEqual(float literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
-        internal override bool GreaterThanOrEqual(double rhs)
+        internal override bool GreaterThanOrEqual(double literalValue)
         {
-            return m_value >= rhs;
+            return m_value >= literalValue;
         }
     }
     #endregion
@@ -4962,18 +5068,18 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return rhs.Equal(m_value);
         }
-        internal override bool Equal(string rhs)
+        internal override bool Equal(string literalValue)
         {
-            return m_value == rhs;
+            return m_value == literalValue;
         }
 
         internal override bool LessThan(Literal rhs)
         {
             return rhs.GreaterThan(m_value);
         }
-        internal override bool LessThan(string rhs)
+        internal override bool LessThan(string literalValue)
         {
-            return 0 > string.Compare(m_value, rhs, false, System.Globalization.CultureInfo.CurrentCulture);
+            return 0 > string.Compare(m_value, literalValue, false, System.Globalization.CultureInfo.CurrentCulture);
         }
 
         internal override bool GreaterThan(Literal rhs)
@@ -4984,18 +5090,18 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return true;
         }
-        internal override bool GreaterThan(string rhs)
+        internal override bool GreaterThan(string literalValue)
         {
-            return 0 < string.Compare(m_value, rhs, false, System.Globalization.CultureInfo.CurrentCulture);
+            return 0 < string.Compare(m_value, literalValue, false, System.Globalization.CultureInfo.CurrentCulture);
         }
 
         internal override bool LessThanOrEqual(Literal rhs)
         {
             return rhs.GreaterThanOrEqual(m_value);
         }
-        internal override bool LessThanOrEqual(string rhs)
+        internal override bool LessThanOrEqual(string literalValue)
         {
-            return 0 >= string.Compare(m_value, (string)rhs, false, System.Globalization.CultureInfo.CurrentCulture);
+            return 0 >= string.Compare(m_value, literalValue, false, System.Globalization.CultureInfo.CurrentCulture);
         }
 
         internal override bool GreaterThanOrEqual(Literal rhs)
@@ -5006,9 +5112,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             return true;
         }
-        internal override bool GreaterThanOrEqual(string rhs)
+        internal override bool GreaterThanOrEqual(string literalValue)
         {
-            return 0 <= string.Compare(m_value, rhs, false, System.Globalization.CultureInfo.CurrentCulture);
+            return 0 <= string.Compare(m_value, literalValue, false, System.Globalization.CultureInfo.CurrentCulture);
         }
     }
     #endregion
