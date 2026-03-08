@@ -483,10 +483,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
         [ExcludeFromCodeCoverage]
         private struct OperandTypeDetails(bool lhsNullable, bool rhsNullable, Type lhsType0, Type rhsType0)
         {
-            public bool lhsNullable = lhsNullable;
-            public bool rhsNullable = rhsNullable;
-            public Type lhsType0 = lhsType0;
-            public Type rhsType0 = rhsType0;
+            public readonly bool LhsNullable { get; } = lhsNullable;
+            public readonly bool RhsNullable { get; } = rhsNullable;
+            public readonly Type LhsType0 { get; } = lhsType0;
+            public readonly Type RhsType0 { get; } = rhsType0;
         }
 
         internal static readonly MethodInfo ObjectEquality = typeof(DefaultOperators).GetMethod(nameof(DefaultOperators.ObjectEquals));
@@ -729,9 +729,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 //    E = U - E
                 // comparisons are E == E, etc., so if the lhs is not an enum, too bad
                 // although we need to check for 0 == E
-                bool rhsNullable = operandTypeDetails.rhsNullable;
-                Type lhsType0 = operandTypeDetails.lhsType0;
-                Type rhsType0 = operandTypeDetails.rhsType0;
+                bool rhsNullable = operandTypeDetails.RhsNullable;
+                Type lhsType0 = operandTypeDetails.LhsType0;
+                Type rhsType0 = operandTypeDetails.RhsType0;
                 Type underlyingType;
                 switch (op)
                 {
@@ -808,9 +808,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 //    E = E - U
                 // plus the standard comparisons (E == E, E > E, etc.)
                 // need to also allow E == 0
-                bool lhsNullable = operandTypeDetails.lhsNullable;
-                Type lhsType0 = operandTypeDetails.lhsType0;
-                Type rhsType0 = operandTypeDetails.rhsType0;
+                bool lhsNullable = operandTypeDetails.LhsNullable;
+                Type lhsType0 = operandTypeDetails.LhsType0;
+                Type rhsType0 = operandTypeDetails.RhsType0;
                 Type underlyingType;
                 switch (op)
                 {
@@ -859,8 +859,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
                 static MethodInfo GetSubstractMethodInfo(CodeBinaryOperatorType op, Type lhs, Type rhs, CodeExpression rhsExpression, ref ValidationError error, OperandTypeDetails operandTypeDetails, Type underlyingType)
                 {
-                    Type lhsType0 = operandTypeDetails.lhsType0;
-                    Type rhsType0 = operandTypeDetails.rhsType0;
+                    Type lhsType0 = operandTypeDetails.LhsType0;
+                    Type rhsType0 = operandTypeDetails.RhsType0;
                     if (underlyingType != null)
                     {
                         if (lhsType0 == rhsType0)
