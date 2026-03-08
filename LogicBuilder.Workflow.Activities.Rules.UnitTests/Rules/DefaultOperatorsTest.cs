@@ -1050,7 +1050,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             object y = x;
 
             // Act
-            bool result = Literal.DefaultOperators.ObjectEquality(x, y);
+            bool result = Literal.DefaultOperators.ObjectEquals(x, y);
 
             // Assert
             Assert.True(result);
@@ -1064,7 +1064,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             object y = new();
 
             // Act
-            bool result = Literal.DefaultOperators.ObjectEquality(x, y);
+            bool result = Literal.DefaultOperators.ObjectEquals(x, y);
 
             // Assert
             Assert.False(result);
@@ -1078,7 +1078,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             object? y = null;
 
             // Act
-            bool result = Literal.DefaultOperators.ObjectEquality(x, y);
+            bool result = Literal.DefaultOperators.ObjectEquals(x, y);
 
             // Assert
             Assert.True(result);
@@ -1092,7 +1092,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             object? y = null;
 
             // Act
-            bool result = Literal.DefaultOperators.ObjectEquality(x, y);
+            bool result = Literal.DefaultOperators.ObjectEquals(x, y);
 
             // Assert
             Assert.False(result);
