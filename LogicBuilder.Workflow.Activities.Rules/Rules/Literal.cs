@@ -47,7 +47,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         /// Group types by similar characteristics so we can check if comparisons succeed
         /// </summary>
         [Flags()]
-        enum NumberTypes
+        enum TypeBits
         {
             SignedNumbers = 0x01,
             UnsignedNumbers = 0x02,
@@ -61,7 +61,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         /// <summary>
         /// Collection of TypeFlags for the supported value types indexed by type
         /// </summary>
-        private static readonly Dictionary<Type, NumberTypes> supportedTypes = CreateTypesDictionary();
+        private static readonly Dictionary<Type, TypeBits> supportedTypes = CreateTypesDictionary();
 
         private static Dictionary<Type, LiteralMaker> CreateMakersDictionary()
         {
@@ -99,38 +99,38 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return dictionary;
         }
 
-        private static Dictionary<Type, NumberTypes> CreateTypesDictionary()
+        private static Dictionary<Type, TypeBits> CreateTypesDictionary()
         {
             // Create the literal class factory delegates
-            Dictionary<Type, NumberTypes> dictionary = new(32)
+            Dictionary<Type, TypeBits> dictionary = new(32)
             {
-                { typeof(byte), NumberTypes.UnsignedNumbers },
-                { typeof(byte?), NumberTypes.UnsignedNumbers },
-                { typeof(sbyte), NumberTypes.SignedNumbers },
-                { typeof(sbyte?), NumberTypes.SignedNumbers },
-                { typeof(short), NumberTypes.SignedNumbers },
-                { typeof(short?), NumberTypes.SignedNumbers },
-                { typeof(int), NumberTypes.SignedNumbers },
-                { typeof(int?), NumberTypes.SignedNumbers },
-                { typeof(long), NumberTypes.SignedNumbers },
-                { typeof(long?), NumberTypes.SignedNumbers },
-                { typeof(ushort), NumberTypes.UnsignedNumbers },
-                { typeof(ushort?), NumberTypes.UnsignedNumbers },
-                { typeof(uint), NumberTypes.UnsignedNumbers },
-                { typeof(uint?), NumberTypes.UnsignedNumbers },
-                { typeof(ulong), NumberTypes.ULong },
-                { typeof(ulong?), NumberTypes.ULong },
-                { typeof(float), NumberTypes.Float },
-                { typeof(float?), NumberTypes.Float },
-                { typeof(double), NumberTypes.Float },
-                { typeof(double?), NumberTypes.Float },
-                { typeof(char), NumberTypes.UnsignedNumbers },
-                { typeof(char?), NumberTypes.UnsignedNumbers },
-                { typeof(string), NumberTypes.String },
-                { typeof(decimal), NumberTypes.Decimal },
-                { typeof(decimal?), NumberTypes.Decimal },
-                { typeof(bool), NumberTypes.Bool },
-                { typeof(bool?), NumberTypes.Bool }
+                { typeof(byte), TypeBits.UnsignedNumbers },
+                { typeof(byte?), TypeBits.UnsignedNumbers },
+                { typeof(sbyte), TypeBits.SignedNumbers },
+                { typeof(sbyte?), TypeBits.SignedNumbers },
+                { typeof(short), TypeBits.SignedNumbers },
+                { typeof(short?), TypeBits.SignedNumbers },
+                { typeof(int), TypeBits.SignedNumbers },
+                { typeof(int?), TypeBits.SignedNumbers },
+                { typeof(long), TypeBits.SignedNumbers },
+                { typeof(long?), TypeBits.SignedNumbers },
+                { typeof(ushort), TypeBits.UnsignedNumbers },
+                { typeof(ushort?), TypeBits.UnsignedNumbers },
+                { typeof(uint), TypeBits.UnsignedNumbers },
+                { typeof(uint?), TypeBits.UnsignedNumbers },
+                { typeof(ulong), TypeBits.ULong },
+                { typeof(ulong?), TypeBits.ULong },
+                { typeof(float), TypeBits.Float },
+                { typeof(float?), TypeBits.Float },
+                { typeof(double), TypeBits.Float },
+                { typeof(double?), TypeBits.Float },
+                { typeof(char), TypeBits.UnsignedNumbers },
+                { typeof(char?), TypeBits.UnsignedNumbers },
+                { typeof(string), TypeBits.String },
+                { typeof(decimal), TypeBits.Decimal },
+                { typeof(decimal?), TypeBits.Decimal },
+                { typeof(bool), TypeBits.Bool },
+                { typeof(bool?), TypeBits.Bool }
             };
             return dictionary;
         }
@@ -423,14 +423,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // note that null values come in as a NullLiteral type
 
             // are the types supported?
-            if ((supportedTypes.TryGetValue(lhs, out NumberTypes lhsFlags)) && (supportedTypes.TryGetValue(rhs, out NumberTypes rhsFlags)))
+            if ((supportedTypes.TryGetValue(lhs, out TypeBits lhsFlags)) && (supportedTypes.TryGetValue(rhs, out TypeBits rhsFlags)))
             {
                 // both sides supported
                 if (lhsFlags == rhsFlags)
                 {
                     // both sides the same type, so it's allowed
                     // only allow equality on booleans
-                    if ((lhsFlags == NumberTypes.Bool) && (comparison != CodeBinaryOperatorType.ValueEquality))
+                    if ((lhsFlags == TypeBits.Bool) && (comparison != CodeBinaryOperatorType.ValueEquality))
                     {
                         string message = string.Format(CultureInfo.CurrentCulture, Messages.RelationalOpBadTypes, comparison,
                             RuleDecompiler.DecompileType(lhs),
@@ -445,14 +445,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 // if not the same, only certain combinations allowed
                 switch (lhsFlags | rhsFlags)
                 {
-                    case NumberTypes.Decimal | NumberTypes.SignedNumbers:
-                    case NumberTypes.Decimal | NumberTypes.UnsignedNumbers:
-                    case NumberTypes.Decimal | NumberTypes.ULong:
-                    case NumberTypes.Float | NumberTypes.SignedNumbers:
-                    case NumberTypes.Float | NumberTypes.UnsignedNumbers:
-                    case NumberTypes.Float | NumberTypes.ULong:
-                    case NumberTypes.ULong | NumberTypes.UnsignedNumbers:
-                    case NumberTypes.SignedNumbers | NumberTypes.UnsignedNumbers:
+                    case TypeBits.Decimal | TypeBits.SignedNumbers:
+                    case TypeBits.Decimal | TypeBits.UnsignedNumbers:
+                    case TypeBits.Decimal | TypeBits.ULong:
+                    case TypeBits.Float | TypeBits.SignedNumbers:
+                    case TypeBits.Float | TypeBits.UnsignedNumbers:
+                    case TypeBits.Float | TypeBits.ULong:
+                    case TypeBits.ULong | TypeBits.UnsignedNumbers:
+                    case TypeBits.SignedNumbers | TypeBits.UnsignedNumbers:
                         error = null;
                         return new RuleBinaryExpressionInfo(lhs, rhs, typeof(bool));
                 }
