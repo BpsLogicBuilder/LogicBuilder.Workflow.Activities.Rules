@@ -952,7 +952,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 return null;
 
             // Is it possible to set fi by validation.ResolveFieldOrProperty(targetType, fieldExpr.FieldName)?
-            validation.IsAuthorized(fi.FieldType);
+            RuleValidation.IsAuthorized(fi.FieldType);
             return new RuleFieldExpressionInfo(fi);
         }
 
@@ -1074,7 +1074,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 bindingFlags |= BindingFlags.NonPublic;//NOSONAR - safe for referencing members in the same assembly as the root object.
                 includeNonPublic = true;
             }
-            PropertyInfo pi = validation.ResolveProperty(targetType, propGetExpr.PropertyName, bindingFlags);
+            PropertyInfo pi = RuleValidation.ResolveProperty(targetType, propGetExpr.PropertyName, bindingFlags);
 
             if (pi == null)
             {

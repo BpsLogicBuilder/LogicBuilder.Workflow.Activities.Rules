@@ -53,9 +53,9 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             (
                 new CodeTypeReferenceExpression(typeof(System.Diagnostics.Debug)),
                 "Writeline",
-                [new CodePrimitiveExpression("SomeText")]
+                new CodePrimitiveExpression("SomeText")
             );
-            var thenActions = new List<RuleAction> { new RuleStatementAction(methodInvoke) };
+            var thenActions = new List<IRuleAction> { new RuleStatementAction(methodInvoke) };
 
             // Act
             var rule = new Rule(ruleName, condition, thenActions);
@@ -78,10 +78,10 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             (
                 new CodeTypeReferenceExpression(typeof(System.Diagnostics.Debug)),
                 "Writeline",
-                [new CodePrimitiveExpression("SomeText")]
+                new CodePrimitiveExpression("SomeText")
             );
-            var thenActions = new List<RuleAction> { new RuleStatementAction(methodInvoke) };
-            var elseActions = new List<RuleAction> { new RuleStatementAction(methodInvoke) };
+            var thenActions = new List<IRuleAction> { new RuleStatementAction(methodInvoke) };
+            var elseActions = new List<IRuleAction> { new RuleStatementAction(methodInvoke) };
 
             // Act
             var rule = new Rule(ruleName, condition, thenActions, elseActions);
@@ -299,7 +299,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             (
                 new CodeTypeReferenceExpression(typeof(System.Diagnostics.Debug)),
                 "Writeline",
-                [new CodePrimitiveExpression("SomeText")]
+                new CodePrimitiveExpression("SomeText")
             );
             originalRule.ThenActions.Add(new RuleStatementAction(methodInvoke));
             originalRule.ElseActions.Add(new RuleStatementAction(methodInvoke));
@@ -483,13 +483,13 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             (
                 new CodeTypeReferenceExpression(typeof(System.Diagnostics.Debug)),
                 "Writeline",
-                [new CodePrimitiveExpression("SomeText")]
+                new CodePrimitiveExpression("SomeText")
             );
             var methodInvoke2 = new CodeMethodInvokeExpression
             (
                 new CodeTypeReferenceExpression(typeof(System.Diagnostics.Debug)),
                 "Writeline",
-                [new CodePrimitiveExpression("SomeOtherText")]
+                new CodePrimitiveExpression("SomeOtherText")
             );
             var rule1 = new Rule("TestRule");
             rule1.ThenActions.Add(new RuleStatementAction(methodInvoke));
@@ -508,13 +508,13 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             (
                 new CodeTypeReferenceExpression(typeof(System.Diagnostics.Debug)),
                 "Writeline",
-                [new CodePrimitiveExpression("SomeText")]
+                new CodePrimitiveExpression("SomeText")
             );
             var methodInvoke2 = new CodeMethodInvokeExpression
             (
                 new CodeTypeReferenceExpression(typeof(System.Diagnostics.Debug)),
                 "Writeline",
-                [new CodePrimitiveExpression("SomeOtherText")]
+                new CodePrimitiveExpression("SomeOtherText")
             );
             var rule1 = new Rule("TestRule");
             rule1.ElseActions.Add(new RuleStatementAction(methodInvoke));
@@ -542,7 +542,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             (
                 new CodeTypeReferenceExpression(typeof(System.Diagnostics.Debug)),
                 "Writeline",
-                [new CodePrimitiveExpression("SomeText")]
+                new CodePrimitiveExpression("SomeText")
             );
             rule1.ThenActions.Add(new RuleStatementAction(methodInvoke));
             rule1.ElseActions.Add(new RuleStatementAction(methodInvoke));

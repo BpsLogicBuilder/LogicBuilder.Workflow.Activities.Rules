@@ -293,7 +293,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         protected ParameterInfo[] expectedParameters;
         protected Type resultType;
 
-        public BaseMethodInfo(MethodInfo method)
+        protected BaseMethodInfo(MethodInfo method)
             : base()
         {
             Debug.Assert(method.IsStatic, "Expected static method as an lifted method");
@@ -388,10 +388,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override int GetHashCode()
         {
-            int result = actualMethod.GetHashCode() ^ resultType.GetHashCode();
-            for (int i = 0; i < expectedParameters.Length; ++i)
-                result ^= expectedParameters[i].ParameterType.GetHashCode();
-            return result;
+            return actualMethod.GetHashCode();
         }
     }
 
@@ -522,16 +519,16 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         readonly CodeBinaryOperatorType op;
         readonly ParameterInfo[] expectedParameters;
-        readonly Type resultType;        // may be nullable, enum, or value type
-        readonly bool resultIsNullable;  // true if resultType is nullable
+        Type resultType;        // may be nullable, enum, or value type
+        bool resultIsNullable;  // true if resultType is nullable
 
         readonly Type lhsBaseType;       // non-Nullable, may be enum
         readonly Type rhsBaseType;
-        readonly Type resultBaseType;
+        Type resultBaseType;
 
         Type lhsRootType;       // underlying type (int, long, ushort, etc)
         Type rhsRootType;
-        readonly Type resultRootType;
+        Type resultRootType;
 
         public EnumOperationMethodInfo(Type lhs, CodeBinaryOperatorType operation, Type rhs, bool isZero)
         {
@@ -574,45 +571,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             switch (op)
             {
                 case CodeBinaryOperatorType.Add:
-                    // add always produces an enum, except enum + enum
-                    if ((lhsBaseType.IsEnum) && (rhs.IsEnum))
-                        resultBaseType = lhsRootType;
-                    else if (lhsBaseType.IsEnum)
-                        resultBaseType = lhsBaseType;
-                    else
-                        resultBaseType = rhsBaseType;
-                    // if either side is nullable, result is nullable
-                    resultIsNullable = (lhsNullable || rhsNullable);
-                    resultType = (resultIsNullable) ? typeof(Nullable<>).MakeGenericType(resultBaseType) : resultBaseType;
+                    SetAddMembers(rhs, lhsNullable, rhsNullable);
                     break;
                 case CodeBinaryOperatorType.Subtract:
-                    // subtract can be an enum or the underlying type
-                    if (rhsBaseType.IsEnum && lhsBaseType.IsEnum)
-                    {
-                        resultRootType = rhsRootType;
-                        resultBaseType = rhsRootType;
-                    }
-                    else if (lhsBaseType.IsEnum)
-                    {
-                        // special case for E - 0
-                        // if 0 is the underlying type, then use E - U
-                        // if not the underlying type, then 0 becomes E, use E - E
-                        resultRootType = lhsRootType;
-                        resultBaseType = isZero && rhsBaseType != lhsRootType
-                            ? lhsRootType
-                            : lhsBaseType;
-                    }
-                    else    // rhsType.IsEnum
-                    {
-                        // special case for 0 - E
-                        // in all cases 0 becomes E, use E - E
-                        resultRootType = rhsRootType;
-                        resultBaseType = isZero
-                            ? rhsRootType
-                            : rhsBaseType;
-                    }
-                    resultIsNullable = (lhsNullable || rhsNullable);
-                    resultType = (resultIsNullable) ? typeof(Nullable<>).MakeGenericType(resultBaseType) : resultBaseType;
+                    SetSubtractMembers(isZero, lhsNullable, rhsNullable);
                     break;
                 case CodeBinaryOperatorType.ValueEquality:
                 case CodeBinaryOperatorType.LessThan:
@@ -622,6 +584,53 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     resultType = typeof(bool);
                     break;
             }
+
+            
+        }
+
+        private void SetAddMembers(Type rhs, bool lhsNullable, bool rhsNullable)
+        {
+            // add always produces an enum, except enum + enum
+            if ((lhsBaseType.IsEnum) && (rhs.IsEnum))
+                resultBaseType = lhsRootType;
+            else if (lhsBaseType.IsEnum)
+                resultBaseType = lhsBaseType;
+            else
+                resultBaseType = rhsBaseType;
+            // if either side is nullable, result is nullable
+            resultIsNullable = (lhsNullable || rhsNullable);
+            resultType = resultIsNullable ? typeof(Nullable<>).MakeGenericType(resultBaseType) : resultBaseType;
+        }
+
+        private void SetSubtractMembers(bool isZero, bool lhsNullable, bool rhsNullable)
+        {
+            // subtract can be an enum or the underlying type
+            if (rhsBaseType.IsEnum && lhsBaseType.IsEnum)
+            {
+                resultRootType = rhsRootType;
+                resultBaseType = rhsRootType;
+            }
+            else if (lhsBaseType.IsEnum)
+            {
+                // special case for E - 0
+                // if 0 is the underlying type, then use E - U
+                // if not the underlying type, then 0 becomes E, use E - E
+                resultRootType = lhsRootType;
+                resultBaseType = isZero && rhsBaseType != lhsRootType
+                    ? lhsRootType
+                    : lhsBaseType;
+            }
+            else    // rhsType.IsEnum
+            {
+                // special case for 0 - E
+                // in all cases 0 becomes E, use E - E
+                resultRootType = rhsRootType;
+                resultBaseType = isZero
+                    ? rhsRootType
+                    : rhsBaseType;
+            }
+            resultIsNullable = (lhsNullable || rhsNullable);
+            resultType = resultIsNullable ? typeof(Nullable<>).MakeGenericType(resultBaseType) : resultBaseType;
         }
 
         public override MethodInfo GetBaseDefinition()
@@ -904,9 +913,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
             get
             {
                 // we never use this method, so add use of EventHandlers to keep compiler happy
-                TypesChanged?.Invoke(this, null);
-                TypeLoadErrorsChanged?.Invoke(this, null);
-                return null;
+                TypesChanged?.Invoke(this, EventArgs.Empty);
+                TypeLoadErrorsChanged?.Invoke(this, EventArgs.Empty);
+                return new Dictionary<object, Exception>();
             }
         }
 
@@ -1183,28 +1192,149 @@ namespace LogicBuilder.Workflow.Activities.Rules
             bool toIsNullable = ConditionHelper.IsNullableValueType(toType);
             Type fromType0 = (fromIsNullable) ? Nullable.GetUnderlyingType(fromType) : fromType;
             Type toType0 = (toIsNullable) ? Nullable.GetUnderlyingType(toType) : toType;
-
-            if (fromType0.IsClass)
-            {
-                AddImplicitConversions(fromType0, fromType, toType, candidates);
-                Type baseType = fromType0.BaseType;
-                while ((baseType != null) && (baseType != typeof(object)))
-                {
-                    AddImplicitConversions(baseType, fromType, toType, candidates);
-                    baseType = baseType.BaseType;
-                }
-            }
-            else if (IsStruct(fromType0))
-            {
-                AddImplicitConversions(fromType0, fromType, toType, candidates);
-            }
-            if ((toType0.IsClass) || (IsStruct(toType0)))
-            {
-                AddImplicitConversions(toType0, fromType, toType, candidates);
-            }
+            GetCandidatesFromSourceAndTargetTypes(fromType, toType, candidates, fromType0, toType0);
 
             // if both types are nullable, add the lifted operators
             if (fromIsNullable && toIsNullable)
+            {
+                AddLiftedCandidatesWhenSourceAndTargetAreNullable(candidates, fromType0, toType0);
+            }
+
+            if (candidates.Count == 0)
+            {
+                // no overrides, so must be false
+                string message = string.Format(CultureInfo.CurrentCulture,
+                    Messages.NoConversion,
+                    RuleDecompiler.DecompileType(fromType),
+                    RuleDecompiler.DecompileType(toType));
+                error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
+                return null;
+            }
+
+            FindTheMostSpecificSourceType(fromType, toType, candidates, out Type sx, out Type tx);
+
+            // see how many candidates convert from sx to tx, ignoring lifted methods
+            int numMatches = 0;
+            int position = 0;
+            error = null;
+            MethodInfo convertedWithoutLifting = ConvertWithoutLifting(ref error, candidates, sx, tx, ref numMatches, ref position);
+            if (convertedWithoutLifting != null)
+                return convertedWithoutLifting;
+
+            // now check for lifted conversions
+            if (toIsNullable && numMatches == 0 && fromIsNullable)
+            {
+                FindFromLiftedMethods(candidates, sx, tx, ref numMatches, ref position);
+                if (numMatches == 1)
+                {
+                    // found what we are looking for
+                    error = null;
+                    return candidates[position];
+                }
+            }
+
+            if (toIsNullable && numMatches == 0 && !fromIsNullable)
+            {
+                // we are doing a conversion T? = S, so a conversion from S -> T is valid
+                MethodInfo result = FindImplicitConversion(fromType, toType0, out _);
+                if (result != null)
+                {
+                    error = null;
+                    // return it as a lifted method so the wrapping to T? is done
+                    return new LiftedConversionMethodInfo(result);
+                }
+            }
+
+            // no exact matches, so it's an error
+            string message2 = string.Format(CultureInfo.CurrentCulture,
+                Messages.AmbiguousConversion,
+                RuleDecompiler.DecompileType(fromType),
+                RuleDecompiler.DecompileType(toType));
+            error = new ValidationError(message2, ErrorNumbers.Error_OperandTypesIncompatible);
+            return null;
+
+            static void FindTheMostSpecificSourceType(Type fromType, Type toType, List<MethodInfo> candidates, out Type sx, out Type tx)
+            {
+                // find the most specific source type
+                sx = candidates[0].GetParameters()[0].ParameterType;
+                if (sx != fromType)
+                {
+                    for (int i = 1; i < candidates.Count; ++i)
+                    {
+                        Type testType = candidates[i].GetParameters()[0].ParameterType;
+                        if (testType == fromType)
+                        {
+                            // we have a match with the source type, so that's the correct answer
+                            sx = fromType;
+                            break;
+                        }
+                        if (StandardImplicitConversion(testType, sx, null, out _))
+                            sx = testType;
+                    }
+                }
+
+                // find the most specific target type
+                tx = candidates[0].ReturnType;
+                if (tx == toType)
+                    return;
+                tx = TryImplicitConversionOnTarget(toType, candidates, tx);
+
+                static Type TryImplicitConversionOnTarget(Type toType, List<MethodInfo> candidates, Type tx)
+                {
+                    for (int i = 1; i < candidates.Count; ++i)
+                    {
+                        Type testType = candidates[i].ReturnType;
+                        if (testType == toType)
+                        {
+                            // we have a match with the target type, so that's the correct answer
+                            tx = toType;
+                            break;
+                        }
+                        if (StandardImplicitConversion(tx, testType, null, out _))
+                            tx = testType;
+                    }
+
+                    return tx;
+                }
+            }
+
+            static MethodInfo ConvertWithoutLifting(ref ValidationError error, List<MethodInfo> candidates, Type sx, Type tx, ref int numMatches, ref int position)
+            {
+                for (int i = 0; i < candidates.Count; ++i)
+                {
+                    if ((candidates[i].ReturnType == tx) &&
+                        (candidates[i].GetParameters()[0].ParameterType == sx) &&
+                        (candidates[i] is not LiftedConversionMethodInfo))
+                    {
+                        position = i;
+                        ++numMatches;
+                    }
+                }
+                if (numMatches == 1)
+                {
+                    // found what we are looking for
+                    error = null;
+                    return candidates[position];
+                }
+
+                return null;
+            }
+
+            static void FindFromLiftedMethods(List<MethodInfo> candidates, Type sx, Type tx, ref int numMatches, ref int position)
+            {
+                for (int i = 0; i < candidates.Count; ++i)
+                {
+                    if ((candidates[i].ReturnType == tx) &&
+                        (candidates[i].GetParameters()[0].ParameterType == sx) &&
+                        (candidates[i] is LiftedConversionMethodInfo))
+                    {
+                        position = i;
+                        ++numMatches;
+                    }
+                }
+            }
+
+            static void AddLiftedCandidatesWhenSourceAndTargetAreNullable(List<MethodInfo> candidates, Type fromType0, Type toType0)
             {
                 // start by finding all the conversion operators from S0 -> T0
                 List<MethodInfo> liftedCandidates = [];
@@ -1212,7 +1342,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 {
                     AddImplicitConversions(fromType0, fromType0, toType0, liftedCandidates);
                     Type baseType = fromType0.BaseType;
-                    while ((baseType != null) && (baseType != typeof(object)))
+                    while (BaseTypeIsNullOrObjectType(baseType))
                     {
                         AddImplicitConversions(baseType, fromType0, toType0, liftedCandidates);
                         baseType = baseType.BaseType;
@@ -1236,6 +1366,51 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     if (ConditionHelper.IsNonNullableValueType(mi.ReturnType) && ConditionHelper.IsNonNullableValueType(parameters[0].ParameterType))
                         candidates.Add(new LiftedConversionMethodInfo(mi));
                 }
+
+                static bool BaseTypeIsNullOrObjectType(Type baseType)
+                {
+                    return (baseType != null) && (baseType != typeof(object));
+                }
+            }
+
+            static void GetCandidatesFromSourceAndTargetTypes(Type fromType, Type toType, List<MethodInfo> candidates, Type fromType0, Type toType0)
+            {
+                if (fromType0.IsClass)
+                {
+                    AddImplicitConversions(fromType0, fromType, toType, candidates);
+                    Type baseType = fromType0.BaseType;
+                    while ((baseType != null) && (baseType != typeof(object)))
+                    {
+                        AddImplicitConversions(baseType, fromType, toType, candidates);
+                        baseType = baseType.BaseType;
+                    }
+                }
+                else if (IsStruct(fromType0))
+                {
+                    AddImplicitConversions(fromType0, fromType, toType, candidates);
+                }
+                if ((toType0.IsClass) || (IsStruct(toType0)))
+                {
+                    AddImplicitConversions(toType0, fromType, toType, candidates);
+                }
+            }
+        }
+
+        internal static MethodInfo FindExplicitConversion(Type fromType, Type toType, out ValidationError error)
+        {
+            List<MethodInfo> candidates = [];
+            // don't return transient errors
+
+            bool fromIsNullable = ConditionHelper.IsNullableValueType(fromType);
+            bool toIsNullable = ConditionHelper.IsNullableValueType(toType);
+            Type fromType0 = (fromIsNullable) ? Nullable.GetUnderlyingType(fromType) : fromType;
+            Type toType0 = (toIsNullable) ? Nullable.GetUnderlyingType(toType) : toType;
+            GetCandidatesFromSourceAndTargetTypes(fromType, toType, candidates, fromType0, toType0);
+
+            // if both types are nullable, add the lifted operators
+            if (fromIsNullable && toIsNullable)
+            {
+                AddLiftedCandidatesWhenSourceAndTargetAreNullable(candidates, fromType0, toType0);
             }
 
             if (candidates.Count == 0)
@@ -1249,95 +1424,32 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 return null;
             }
 
-            // find the most specific source type
-            Type sx = candidates[0].GetParameters()[0].ParameterType;
-            if (sx != fromType)
-            {
-                for (int i = 1; i < candidates.Count; ++i)
-                {
-                    Type testType = candidates[i].GetParameters()[0].ParameterType;
-                    if (testType == fromType)
-                    {
-                        // we have a match with the source type, so that's the correct answer
-                        sx = fromType;
-                        break;
-                    }
-                    if (StandardImplicitConversion(testType, sx, null, out _))
-                        sx = testType;
-                }
-            }
+            Type sx = FindTheMostSpecificSourceType(fromType, candidates);
+            Type tx = FindTheMostSpecificTargettype(toType, candidates);
 
-            // find the most specific target type
-            Type tx = candidates[0].ReturnType;
-            if (tx != toType)
-            {
-                for (int i = 1; i < candidates.Count; ++i)
-                {
-                    Type testType = candidates[i].ReturnType;
-                    if (testType == toType)
-                    {
-                        // we have a match with the target type, so that's the correct answer
-                        tx = toType;
-                        break;
-                    }
-                    if (StandardImplicitConversion(tx, testType, null, out _))
-                        tx = testType;
-                }
-            }
-
-            // see how many candidates convert from sx to tx, ignoring lifted methods
-            int numMatches = 0;
-            int position = 0;
-            for (int i = 0; i < candidates.Count; ++i)
-            {
-                if ((candidates[i].ReturnType == tx) &&
-                    (candidates[i].GetParameters()[0].ParameterType == sx) &&
-                    (candidates[i] is not LiftedConversionMethodInfo))
-                {
-                    position = i;
-                    ++numMatches;
-                }
-            }
-            if (numMatches == 1)
-            {
-                // found what we are looking for
-                error = null;
-                return candidates[position];
-            }
+            error = null;
+            MethodInfo converted = ConvertWithoutLifting(ref error, candidates, sx, tx, out int numMatches, out int position);
+            if (converted != null)
+                return converted;
 
             // now check for lifted conversions
-            if ((toIsNullable) && (numMatches == 0))
+            if (toIsNullable && numMatches == 0 && fromIsNullable)
             {
-                if (fromIsNullable)
+                FindFromLiftedMethods(candidates, sx, tx, ref numMatches, ref position);
+
+                if (numMatches == 1)
                 {
-                    for (int i = 0; i < candidates.Count; ++i)
-                    {
-                        if ((candidates[i].ReturnType == tx) &&
-                            (candidates[i].GetParameters()[0].ParameterType == sx) &&
-                            (candidates[i] is LiftedConversionMethodInfo))
-                        {
-                            position = i;
-                            ++numMatches;
-                        }
-                    }
-                    if (numMatches == 1)
-                    {
-                        // found what we are looking for
-                        error = null;
-                        return candidates[position];
-                    }
+                    // found what we are looking for
+                    error = null;
+                    return candidates[position];
                 }
-                else
-                {
-                    // we are doing a conversion T? = S, so a conversion from S -> T is valid
-                    MethodInfo result = FindImplicitConversion(fromType, toType0, out _);
-                    if (result != null)
-                    {
-                        error = null;
-                        // return it as a lifted method so the wrapping to T? is done
-                        return new LiftedConversionMethodInfo(result);
-                    }
-                }
+            }
+
+            if (toIsNullable && numMatches == 0 && !fromIsNullable)
+            {
+                MethodInfo leftedResult = LiftUnderlyingTypeToNullable(fromType, ref error, toType0);
+                if (leftedResult != null)
+                    return leftedResult;
             }
 
             // no exact matches, so it's an error
@@ -1347,49 +1459,172 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 RuleDecompiler.DecompileType(toType));
             error = new ValidationError(message2, ErrorNumbers.Error_OperandTypesIncompatible);
             return null;
-        }
 
-        internal static MethodInfo FindExplicitConversion(Type fromType, Type toType, out ValidationError error)
-        {
-            List<MethodInfo> candidates = [];
-            // don't return transient errors
-
-            bool fromIsNullable = ConditionHelper.IsNullableValueType(fromType);
-            bool toIsNullable = ConditionHelper.IsNullableValueType(toType);
-            Type fromType0 = (fromIsNullable) ? Nullable.GetUnderlyingType(fromType) : fromType;
-            Type toType0 = (toIsNullable) ? Nullable.GetUnderlyingType(toType) : toType;
-
-            if (fromType0.IsClass)
+            static MethodInfo ConvertWithoutLifting(ref ValidationError error, List<MethodInfo> candidates, Type sx, Type tx, out int numMatches, out int position)
             {
-                AddExplicitConversions(fromType0, fromType, toType, candidates);
-                Type baseType = fromType0.BaseType;
-                while ((baseType != null) && (baseType != typeof(object)))
+                // see how many candidates convert from sx to tx, ignoring lifted methods
+                numMatches = 0;
+                position = 0;
+                for (int i = 0; i < candidates.Count; ++i)
                 {
-                    AddExplicitConversions(baseType, fromType, toType, candidates);
-                    baseType = baseType.BaseType;
+                    if ((candidates[i].ReturnType == tx) &&
+                            (candidates[i].GetParameters()[0].ParameterType == sx) &&
+                            (candidates[i] is not LiftedConversionMethodInfo))
+                    {
+                        position = i;
+                        ++numMatches;
+                    }
+                }
+                if (numMatches == 1)
+                {
+                    // found what we are looking for
+                    error = null;
+                    return candidates[position];
+                }
+
+                return null;
+            }
+
+            static Type FindTheMostSpecificSourceType(Type fromType, List<MethodInfo> candidates)
+            {
+                // find the most specific source type
+                // if any are s, s is the answer
+                Type sx = candidates.Select(c => c.GetParameters()[0]?.ParameterType).FirstOrDefault(p => p == fromType);
+
+                // if no match, find the most encompassed type if the type encompasses s
+                if (sx != null)
+                    return sx;
+
+                for (int i = 0; i < candidates.Count; ++i)
+                {
+                    Type testType = candidates[i].GetParameters()[0].ParameterType;
+                    sx = GetUsingFromTypeToTestTypeConversion(fromType, sx, testType);
+                }
+
+                // still no match, find most encompassing type
+                if (sx != null)
+                    return sx;
+
+                for (int i = 0; i < candidates.Count; ++i)
+                {
+                    Type testType = candidates[i].GetParameters()[0].ParameterType;
+                    sx = GetUsingTestTypeToFromTypeConversion(fromType, sx, testType);
+                }
+
+                return sx;
+
+                static Type GetUsingFromTypeToTestTypeConversion(Type fromType, Type sx, Type testType)
+                {
+                    if (StandardImplicitConversion(fromType, testType, null, out _))
+                    {
+                        if (sx == null)
+                            sx = testType;
+                        else if (StandardImplicitConversion(testType, sx, null, out _))
+                            sx = testType;
+                    }
+
+                    return sx;
+                }
+
+                static Type GetUsingTestTypeToFromTypeConversion(Type fromType, Type sx, Type testType)
+                {
+                    if (StandardImplicitConversion(testType, fromType, null, out _))
+                    {
+                        if (sx == null)
+                            sx = testType;
+                        else if (StandardImplicitConversion(sx, testType, null, out _))
+                            sx = testType;
+                    }
+
+                    return sx;
                 }
             }
-            else if (IsStruct(fromType0))
+
+            static Type FindTheMostSpecificTargettype(Type toType, List<MethodInfo> candidates)
             {
-                AddExplicitConversions(fromType0, fromType, toType, candidates);
-            }
-            if (toType0.IsClass)
-            {
-                AddExplicitConversions(toType0, fromType, toType, candidates);
-                Type baseType = toType0.BaseType;
-                while ((baseType != null) && (baseType != typeof(object)))
+                // find the most specific target type
+                // if any are t, t is the answer
+                Type tx = candidates.Select(c => c.ReturnType).FirstOrDefault(r => r == toType);
+
+                // if no match, find the most encompassed type if the type encompasses s
+                if (tx != null)
+                    return tx;
+
+                for (int i = 0; i < candidates.Count; ++i)
                 {
-                    AddExplicitConversions(baseType, fromType, toType, candidates);
-                    baseType = baseType.BaseType;
+                    Type testType = candidates[i].ReturnType;
+                    tx = GetUsingTestTypeToToTypeConversion(toType, tx, testType);
+                }
+
+
+                if (tx != null)
+                    return tx;
+
+                // still no match, find most encompassing type
+                for (int i = 0; i < candidates.Count; ++i)
+                {
+                    Type testType = candidates[i].ReturnType;
+                    tx = GetUsingToTyoeToTestTypeConversion(toType, tx, testType);
+                }
+
+                return tx;
+
+                static Type GetUsingTestTypeToToTypeConversion(Type toType, Type tx, Type testType)
+                {
+                    if (StandardImplicitConversion(testType, toType, null, out _))
+                    {
+                        if (tx == null)
+                            tx = testType;
+                        else if (StandardImplicitConversion(tx, testType, null, out _))
+                            tx = testType;
+                    }
+
+                    return tx;
+                }
+
+                static Type GetUsingToTyoeToTestTypeConversion(Type toType, Type tx, Type testType)
+                {
+                    if (StandardImplicitConversion(toType, testType, null, out _))
+                    {
+                        if (tx == null)
+                            tx = testType;
+                        else if (StandardImplicitConversion(testType, tx, null, out _))
+                            tx = testType;
+                    }
+
+                    return tx;
                 }
             }
-            else if (IsStruct(toType0))
+
+            static void FindFromLiftedMethods(List<MethodInfo> candidates, Type sx, Type tx, ref int numMatches, ref int position)
             {
-                AddExplicitConversions(toType0, fromType, toType, candidates);
+                for (int i = 0; i < candidates.Count; ++i)
+                {
+                    if ((candidates[i].ReturnType == tx) &&
+                        (candidates[i].GetParameters()[0].ParameterType == sx) &&
+                        (candidates[i] is LiftedConversionMethodInfo))
+                    {
+                        position = i;
+                        ++numMatches;
+                    }
+                }
             }
 
-            // if both types are nullable, add the lifted operators
-            if (fromIsNullable && toIsNullable)
+            static MethodInfo LiftUnderlyingTypeToNullable(Type fromType, ref ValidationError error, Type toType0)
+            {
+                // we are doing a conversion T? = S, so a conversion from S -> T is valid
+                MethodInfo result = FindExplicitConversion(fromType, toType0, out _);
+                if (result != null)
+                {
+                    error = null;
+                    // return it as a lifted method so the wrapping to T? is done
+                    return new LiftedConversionMethodInfo(result);
+                }
+
+                return null;
+            }
+
+            static List<MethodInfo> GetLiftedCandidatesWhenSourceAndTargetAreNullable(Type fromType0, Type toType0)
             {
                 // start by finding all the conversion operators from S0 -> T0
                 List<MethodInfo> liftedCandidates = [];
@@ -1422,172 +1657,49 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     AddExplicitConversions(toType0, fromType0, toType0, liftedCandidates);
                 }
 
+                return liftedCandidates;
+            }
+
+            static void GetCandidatesFromSourceAndTargetTypes(Type fromType, Type toType, List<MethodInfo> candidates, Type fromType0, Type toType0)
+            {
+                if (fromType0.IsClass)
+                {
+                    AddExplicitConversions(fromType0, fromType, toType, candidates);
+                    Type baseType = fromType0.BaseType;
+                    while ((baseType != null) && (baseType != typeof(object)))
+                    {
+                        AddExplicitConversions(baseType, fromType, toType, candidates);
+                        baseType = baseType.BaseType;
+                    }
+                }
+                else if (IsStruct(fromType0))
+                {
+                    AddExplicitConversions(fromType0, fromType, toType, candidates);
+                }
+                if (toType0.IsClass)
+                {
+                    AddExplicitConversions(toType0, fromType, toType, candidates);
+                    Type baseType = toType0.BaseType;
+                    while ((baseType != null) && (baseType != typeof(object)))
+                    {
+                        AddExplicitConversions(baseType, fromType, toType, candidates);
+                        baseType = baseType.BaseType;
+                    }
+                }
+                else if (IsStruct(toType0))
+                {
+                    AddExplicitConversions(toType0, fromType, toType, candidates);
+                }
+            }
+
+            static void AddLiftedCandidatesWhenSourceAndTargetAreNullable(List<MethodInfo> candidates, Type fromType0, Type toType0)
+            {
+                List<MethodInfo> liftedCandidates = GetLiftedCandidatesWhenSourceAndTargetAreNullable(fromType0, toType0);
+
                 // add them all to the candidates list as lifted methods (which wraps them appropriately)
                 foreach (MethodInfo mi in liftedCandidates)
                     candidates.Add(new LiftedConversionMethodInfo(mi));
             }
-
-            if (candidates.Count == 0)
-            {
-                // no overrides, so must be false
-                string message = string.Format(CultureInfo.CurrentCulture,
-                    Messages.NoConversion,
-                    RuleDecompiler.DecompileType(fromType),
-                    RuleDecompiler.DecompileType(toType));
-                error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
-                return null;
-            }
-
-            // find the most specific source type
-            // if any are s, s is the answer
-            Type sx = null;
-            for (int i = 0; i < candidates.Count; ++i)
-            {
-                Type testType = candidates[i].GetParameters()[0].ParameterType;
-                if (testType == fromType)
-                {
-                    // we have a match with the source type, so that's the correct answer
-                    sx = fromType;
-                    break;
-                }
-            }
-            // if no match, find the most encompassed type if the type encompasses s
-            if (sx == null)
-            {
-                for (int i = 0; i < candidates.Count; ++i)
-                {
-                    Type testType = candidates[i].GetParameters()[0].ParameterType;
-                    if (StandardImplicitConversion(fromType, testType, null, out _))
-                    {
-                        if (sx == null)
-                            sx = testType;
-                        else if (StandardImplicitConversion(testType, sx, null, out _))
-                            sx = testType;
-                    }
-                }
-            }
-            // still no match, find most encompassing type
-            if (sx == null)
-            {
-                for (int i = 0; i < candidates.Count; ++i)
-                {
-                    Type testType = candidates[i].GetParameters()[0].ParameterType;
-                    if (StandardImplicitConversion(testType, fromType, null, out _))
-                    {
-                        if (sx == null)
-                            sx = testType;
-                        else if (StandardImplicitConversion(sx, testType, null, out _))
-                            sx = testType;
-                    }
-                }
-            }
-
-            // find the most specific target type
-            // if any are t, t is the answer
-            Type tx = null;
-            for (int i = 0; i < candidates.Count; ++i)
-            {
-                Type testType = candidates[i].ReturnType;
-                if (testType == toType)
-                {
-                    // we have a match with the target type, so that's the correct answer
-                    tx = toType;
-                    break;
-                }
-            }
-            // if no match, find the most encompassed type if the type encompasses s
-            if (tx == null)
-            {
-                for (int i = 0; i < candidates.Count; ++i)
-                {
-                    Type testType = candidates[i].ReturnType;
-                    if (StandardImplicitConversion(testType, toType, null, out _))
-                    {
-                        if (tx == null)
-                            tx = testType;
-                        else if (StandardImplicitConversion(tx, testType, null, out _))
-                            tx = testType;
-                    }
-                }
-            }
-            // still no match, find most encompassing type
-            if (tx == null)
-            {
-                for (int i = 0; i < candidates.Count; ++i)
-                {
-                    Type testType = candidates[i].ReturnType;
-                    if (StandardImplicitConversion(toType, testType, null, out _))
-                    {
-                        if (tx == null)
-                            tx = testType;
-                        else if (StandardImplicitConversion(testType, tx, null, out _))
-                            tx = testType;
-                    }
-                }
-            }
-
-            // see how many candidates convert from sx to tx, ignoring lifted methods
-            int numMatches = 0;
-            int position = 0;
-            for (int i = 0; i < candidates.Count; ++i)
-            {
-                if ((candidates[i].ReturnType == tx) &&
-                        (candidates[i].GetParameters()[0].ParameterType == sx) &&
-                        (candidates[i] is not LiftedConversionMethodInfo))
-                {
-                    position = i;
-                    ++numMatches;
-                }
-            }
-            if (numMatches == 1)
-            {
-                // found what we are looking for
-                error = null;
-                return candidates[position];
-            }
-
-            // now check for lifted conversions
-            if ((toIsNullable) && (numMatches == 0))
-            {
-                if (fromIsNullable)
-                {
-                    for (int i = 0; i < candidates.Count; ++i)
-                    {
-                        if ((candidates[i].ReturnType == tx) &&
-                            (candidates[i].GetParameters()[0].ParameterType == sx) &&
-                            (candidates[i] is LiftedConversionMethodInfo))
-                        {
-                            position = i;
-                            ++numMatches;
-                        }
-                    }
-                    if (numMatches == 1)
-                    {
-                        // found what we are looking for
-                        error = null;
-                        return candidates[position];
-                    }
-                }
-                else
-                {
-                    // we are doing a conversion T? = S, so a conversion from S -> T is valid
-                    MethodInfo result = FindExplicitConversion(fromType, toType0, out _);
-                    if (result != null)
-                    {
-                        error = null;
-                        // return it as a lifted method so the wrapping to T? is done
-                        return new LiftedConversionMethodInfo(result);
-                    }
-                }
-            }
-
-            // no exact matches, so it's an error
-            string message2 = string.Format(CultureInfo.CurrentCulture,
-                Messages.AmbiguousConversion,
-                RuleDecompiler.DecompileType(fromType),
-                RuleDecompiler.DecompileType(toType));
-            error = new ValidationError(message2, ErrorNumbers.Error_OperandTypesIncompatible);
-            return null;
         }
 
         private static bool IsStruct(Type type)
@@ -1609,68 +1721,119 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             return sourceTypeCode switch
             {
-                TypeCode.SByte => testTypeCode switch
+                TypeCode.SByte => CanConvertToSByte(testTypeCode),
+                TypeCode.Byte => CanConvertToByte(testTypeCode),
+                TypeCode.Int16 => CanConvertToInt16(testTypeCode),
+                TypeCode.UInt16 => CanConvertToUInt16(testTypeCode),
+                TypeCode.Int32 => CanConvertToUInt32(testTypeCode),
+                TypeCode.UInt32 => CanConvertToUInt32(testTypeCode),
+                TypeCode.Int64 => CanConvertToInt64(testTypeCode),
+                TypeCode.UInt64 => CanConvertToUInt64(testTypeCode),
+                TypeCode.Char => CanConvertToChar(testTypeCode),
+                TypeCode.Single => Single(testTypeCode),
+                TypeCode.Double => CanConvertToDouble(testTypeCode),
+                TypeCode.Decimal => CanConvertToDecimal(testTypeCode),
+                _ => false,
+            };
+
+            static bool CanConvertToSByte(TypeCode testTypeCode)
+            {
+                return testTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
                     _ => false,
-                },
-                TypeCode.Byte => testTypeCode switch
+                };
+            }
+
+            static bool CanConvertToByte(TypeCode testTypeCode)
+            {
+                return testTypeCode switch
                 {
                     TypeCode.Byte or TypeCode.SByte or TypeCode.Char or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
                     _ => false,
-                },
-                TypeCode.Int16 => testTypeCode switch
+                };
+            }
+
+            static bool CanConvertToInt16(TypeCode testTypeCode)
+            {
+                return testTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
                     _ => false,
-                },
-                TypeCode.UInt16 => testTypeCode switch
+                };
+            }
+
+            static bool CanConvertToUInt16(TypeCode testTypeCode)
+            {
+                return testTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Char or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
                     _ => false,
-                },
-                TypeCode.Int32 => testTypeCode switch
+                };
+            }
+
+            static bool CanConvertToUInt32(TypeCode testTypeCode)
+            {
+                return testTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Int64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
                     _ => false,
-                },
-                TypeCode.UInt32 => testTypeCode switch
-                {
-                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Char or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
-                    _ => false,
-                },
-                TypeCode.Int64 => testTypeCode switch
-                {
-                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
-                    _ => false,
-                },
-                TypeCode.UInt64 => testTypeCode switch
+                };
+            }
+
+            static bool CanConvertToInt64(TypeCode testTypeCode)
+            {
+                return testTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
                     _ => false,
-                },
-                TypeCode.Char => testTypeCode switch
+                };
+            }
+
+            static bool CanConvertToUInt64(TypeCode testTypeCode)
+            {
+                return testTypeCode switch
+                {
+                    TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
+                    _ => false,
+                };
+            }
+
+            static bool CanConvertToChar(TypeCode testTypeCode)
+            {
+                return testTypeCode switch
                 {
                     TypeCode.Char or TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
                     _ => false,
-                },
-                TypeCode.Single => testTypeCode switch
+                };
+            }
+
+            static bool Single(TypeCode testTypeCode)
+            {
+                return testTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Decimal or TypeCode.Double => true,
                     _ => false,
-                },
-                TypeCode.Double => testTypeCode switch
+                };
+            }
+
+            static bool CanConvertToDouble(TypeCode testTypeCode)
+            {
+                return testTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
                     _ => false,
-                },
-                TypeCode.Decimal => testTypeCode switch
+                };
+            }
+
+            static bool CanConvertToDecimal(TypeCode testTypeCode)
+            {
+                return testTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char or TypeCode.Single or TypeCode.Double or TypeCode.Decimal => true,
                     _ => false,
-                },
-                _ => false,
-            };
+                };
+            }
         }
 
 
@@ -1741,6 +1904,19 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // 6.1.3 implicit enumeration conversions
             if (lhsType.IsEnum)
             {
+                return CanConvertIfLhsIsEnum(rhsExpression);
+            }
+
+            if (rhsType.IsEnum)
+            {
+                // don't treat enums as numbers
+                return false;
+            }
+
+            return CheckConversionByPrimitiveType(rhsType, lhsType, rhsExpression, ref error);
+
+            static bool CanConvertIfLhsIsEnum(CodeExpression rhsExpression)
+            {
                 // right-hand side can be decimal-integer-literal 0
                 if ((rhsExpression is not CodePrimitiveExpression primitive) || (primitive.Value == null))
                 {
@@ -1749,24 +1925,22 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 }
                 return Type.GetTypeCode(primitive.Value.GetType()) switch
                 {
-                    TypeCode.SByte => ((sbyte)primitive.Value == 0),
-                    TypeCode.Byte => ((byte)primitive.Value == 0),
-                    TypeCode.Int16 => ((short)primitive.Value == 0),
-                    TypeCode.UInt16 => ((ushort)primitive.Value == 0),
-                    TypeCode.Int32 => ((int)primitive.Value == 0),
-                    TypeCode.UInt32 => ((uint)primitive.Value == 0),
-                    TypeCode.Int64 => ((long)primitive.Value == 0),
-                    TypeCode.UInt64 => ((ulong)primitive.Value == 0),
-                    TypeCode.Char => ((char)primitive.Value == 0),
+                    TypeCode.SByte => (sbyte)primitive.Value == 0,
+                    TypeCode.Byte => (byte)primitive.Value == 0,
+                    TypeCode.Int16 => (short)primitive.Value == 0,
+                    TypeCode.UInt16 => (ushort)primitive.Value == 0,
+                    TypeCode.Int32 => (int)primitive.Value == 0,
+                    TypeCode.UInt32 => (uint)primitive.Value == 0,
+                    TypeCode.Int64 => (long)primitive.Value == 0,
+                    TypeCode.UInt64 => (ulong)primitive.Value == 0,
+                    TypeCode.Char => (char)primitive.Value == 0,
                     _ => false,
                 };
             }
-            if (rhsType.IsEnum)
-            {
-                // don't treat enums as numbers
-                return false;
-            }
+        }
 
+        private static bool CheckConversionByPrimitiveType(Type rhsType, Type lhsType, CodeExpression rhsExpression, ref ValidationError error)
+        {
             // 6.1.2 implicit numeric conversions
             // 6.1.6 implicit constant expression conversions
             // not assignable, but the assignment might still be valid for
@@ -1776,77 +1950,137 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             return lhsTypeCode switch
             {
-                TypeCode.Decimal => rhsTypeCode switch
+                TypeCode.Decimal => CanCovertToDecimal(rhsTypeCode),
+                TypeCode.Double => CanCovertToDoube(rhsTypeCode),
+                TypeCode.Single => CanCovertToSingle(rhsTypeCode),
+                TypeCode.Char => CanCovertToChar(lhsType, rhsExpression, ref error, rhsTypeCode),
+                TypeCode.SByte => CanCovertToSByte(lhsType, rhsExpression, ref error, rhsTypeCode),
+                TypeCode.Byte => CanCovertToByte(lhsType, rhsExpression, ref error, rhsTypeCode),
+                TypeCode.Int16 => CanCovertToInt16(lhsType, rhsExpression, ref error, rhsTypeCode),
+                TypeCode.Int32 => CanCovertToInt32(lhsType, rhsExpression, ref error, rhsTypeCode),
+                TypeCode.Int64 => CanCovertToInt64(lhsType, rhsExpression, ref error, rhsTypeCode),
+                TypeCode.UInt16 => CanCovertToUInt16(lhsType, rhsExpression, ref error, rhsTypeCode),
+                TypeCode.UInt32 => CanCovertToUInt32(lhsType, rhsExpression, ref error, rhsTypeCode),
+                TypeCode.UInt64 => CanCovertToUInt64(lhsType, rhsExpression, ref error, rhsTypeCode),
+                _ => false,// It wasn't a numeric type, it was some other kind of value type (e.g., bool,
+                           // DateTime, etc).  There will be no conversions.
+            };
+
+            static bool CanCovertToDecimal(TypeCode rhsTypeCode)
+            {
+                return rhsTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Decimal or TypeCode.Char => true,
                     _ => false,
-                },
-                TypeCode.Double => rhsTypeCode switch
+                };
+            }
+
+            static bool CanCovertToDoube(TypeCode rhsTypeCode)
+            {
+                return rhsTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Double or TypeCode.Char => true,
                     _ => false,
-                },
-                TypeCode.Single => rhsTypeCode switch
+                };
+            }
+
+            static bool CanCovertToSingle(TypeCode rhsTypeCode)
+            {
+                return rhsTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Char => true,
                     _ => false,
-                },
-                TypeCode.Char => rhsTypeCode switch
+                };
+            }
+
+            static bool CanCovertToChar(Type lhsType, CodeExpression rhsExpression, ref ValidationError error, TypeCode rhsTypeCode)
+            {
+                return rhsTypeCode switch
                 {
                     TypeCode.Char => true,
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
                     _ => false,
-                },
-                TypeCode.SByte => rhsTypeCode switch
+                };
+            }
+
+            static bool CanCovertToSByte(Type lhsType, CodeExpression rhsExpression, ref ValidationError error, TypeCode rhsTypeCode)
+            {
+                return rhsTypeCode switch
                 {
                     TypeCode.SByte => true,
                     TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
                     _ => false,
-                },
-                TypeCode.Byte => rhsTypeCode switch
+                };
+            }
+
+            static bool CanCovertToByte(Type lhsType, CodeExpression rhsExpression, ref ValidationError error, TypeCode rhsTypeCode)
+            {
+                return rhsTypeCode switch
                 {
                     TypeCode.Byte => true,
                     TypeCode.SByte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
                     _ => false,
-                },
-                TypeCode.Int16 => rhsTypeCode switch
+                };
+            }
+
+            static bool CanCovertToInt16(Type lhsType, CodeExpression rhsExpression, ref ValidationError error, TypeCode rhsTypeCode)
+            {
+                return rhsTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 => true,
                     TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Char => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
                     _ => false,
-                },
-                TypeCode.Int32 => rhsTypeCode switch
+                };
+            }
+
+            static bool CanCovertToInt32(Type lhsType, CodeExpression rhsExpression, ref ValidationError error, TypeCode rhsTypeCode)
+            {
+                return rhsTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.Char => true,
                     TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
                     _ => false,
-                },
-                TypeCode.Int64 => rhsTypeCode switch
+                };
+            }
+
+            static bool CanCovertToInt64(Type lhsType, CodeExpression rhsExpression, ref ValidationError error, TypeCode rhsTypeCode)
+            {
+                return rhsTypeCode switch
                 {
                     TypeCode.SByte or TypeCode.Byte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.Char => true,
                     TypeCode.UInt64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
                     _ => false,
-                },
-                TypeCode.UInt16 => rhsTypeCode switch
-                {
-                    TypeCode.Byte or TypeCode.UInt16 or TypeCode.Char => true,
-                    TypeCode.SByte or TypeCode.Int16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
-                    _ => false,
-                },
-                TypeCode.UInt32 => rhsTypeCode switch
+                };
+            }
+
+            static bool CanCovertToUInt32(Type lhsType, CodeExpression rhsExpression, ref ValidationError error, TypeCode rhsTypeCode)
+            {
+                return rhsTypeCode switch
                 {
                     TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.Char => true,
                     TypeCode.SByte or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 or TypeCode.UInt64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
                     _ => false,
-                },
-                TypeCode.UInt64 => rhsTypeCode switch
+                };
+            }
+
+            static bool CanCovertToUInt64(Type lhsType, CodeExpression rhsExpression, ref ValidationError error, TypeCode rhsTypeCode)
+            {
+                return rhsTypeCode switch
                 {
                     TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64 or TypeCode.Char => true,
                     TypeCode.SByte or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
                     _ => false,
-                },
-                _ => false,// It wasn't a numeric type, it was some other kind of value type (e.g., bool,
-                           // DateTime, etc).  There will be no conversions.
+                };
+            }
+        }
+
+        private static bool CanCovertToUInt16(Type lhsType, CodeExpression rhsExpression, ref ValidationError error, TypeCode rhsTypeCode)
+        {
+            return rhsTypeCode switch
+            {
+                TypeCode.Byte or TypeCode.UInt16 or TypeCode.Char => true,
+                TypeCode.SByte or TypeCode.Int16 or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 => CheckValueRange(rhsExpression, lhsType, out error),// Maybe, if the value is in range.
+                _ => false,
             };
         }
 
@@ -1912,29 +2146,65 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return false;
         }
 
+        [ExcludeFromCodeCoverage]
+        private readonly struct MemberDetails(Assembly memberAssembly, bool isPrivate, bool isInternal, bool isStatic, bool isTypeReference)
+        {
+            internal readonly Assembly MemberAssembly { get; } = memberAssembly;
+            internal readonly bool Private { get; } = isPrivate;
+            internal readonly bool Internal { get; } = isInternal;
+            internal readonly bool IsStatic { get; } = isStatic;
+            internal readonly bool IsTypeReference { get; } = isTypeReference;
+        }
+
         internal bool ValidateMemberAccess(
             CodeExpression targetExpression, Type targetType, FieldInfo accessorMethod, string memberName, CodeExpression parentExpr)
         {
-            return this.ValidateMemberAccess(
-                targetExpression, targetType, memberName, parentExpr,
-                accessorMethod.DeclaringType.Assembly, RuleValidation.IsPrivate(accessorMethod), RuleValidation.IsInternal(accessorMethod), accessorMethod.IsStatic);
+            return this.ValidateMemberAccess
+            (
+                targetType, 
+                memberName, 
+                parentExpr,
+                new MemberDetails
+                (
+                    accessorMethod.DeclaringType.Assembly,
+                    RuleValidation.IsPrivate(accessorMethod),
+                    RuleValidation.IsInternal(accessorMethod),
+                    accessorMethod.IsStatic,
+                    targetExpression is CodeTypeReferenceExpression
+                )
+            );
         }
 
         internal bool ValidateMemberAccess(
             CodeExpression targetExpression, Type targetType, MethodInfo accessorMethod, string memberName, CodeExpression parentExpr)
         {
-            return this.ValidateMemberAccess(
-                targetExpression, targetType, memberName, parentExpr,
-                accessorMethod.DeclaringType.Assembly, RuleValidation.IsPrivate(accessorMethod), RuleValidation.IsInternal(accessorMethod), accessorMethod.IsStatic);
+            return this.ValidateMemberAccess
+            (
+                targetType, 
+                memberName, 
+                parentExpr,
+                new MemberDetails
+                (
+                    accessorMethod.DeclaringType.Assembly, 
+                    RuleValidation.IsPrivate(accessorMethod), 
+                    RuleValidation.IsInternal(accessorMethod), 
+                    accessorMethod.IsStatic, 
+                    targetExpression is CodeTypeReferenceExpression
+                )
+            );
         }
-
+        
         private bool ValidateMemberAccess(
-            CodeExpression targetExpression, Type targetType, string memberName, CodeExpression parentExpr,
-            Assembly methodAssembly, bool isPrivate, bool isInternal, bool isStatic)
+            Type targetType, string memberName, CodeExpression parentExpr, MemberDetails memberDetails)
         {
+            Assembly methodAssembly = memberDetails.MemberAssembly;
+            bool isPrivate= memberDetails.Private;
+            bool isInternal= memberDetails.Internal;
+            bool isStatic= memberDetails.IsStatic;
+            bool isTypeReference= memberDetails.IsTypeReference;
             string message;
 
-            if (isStatic != (targetExpression is CodeTypeReferenceExpression))
+            if (isStatic != isTypeReference)
             {
                 // If it's static, then the target object must be a type ref, and vice versa.
 
@@ -1991,7 +2261,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy;
             if (AllowInternalMembers(targetType))
-                bindingFlags |= BindingFlags.NonPublic;
+                bindingFlags |= BindingFlags.NonPublic;//NOSONAR - used when the current type belongs to the same assembly as the root object.
+
 
             // Look up a field or property of the given name.
             MemberInfo[] results = targetType.GetMember(name, MemberTypes.Field | MemberTypes.Property, bindingFlags);
@@ -2014,13 +2285,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         System.Diagnostics.Debug.Assert(member.MemberType == MemberTypes.Property, "only properties can be overloaded");
 
                         PropertyInfo pi = (PropertyInfo)member;
-                        ParameterInfo[] parms = pi?.GetIndexParameters() ?? [];
+                        ParameterInfo[] parms = pi.GetIndexParameters() ?? [];
                         if (parms.Length == 0)
                         {
-                            if (pi != null)
-                            {
-                                IsAuthorized(pi.PropertyType);
-                            }
+                            IsAuthorized(pi.PropertyType);
                             return pi;
                         }
                     }
@@ -2036,7 +2304,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return null;
         }
 
-        internal PropertyInfo ResolveProperty(Type targetType, string propertyName, BindingFlags bindingFlags)
+        internal static PropertyInfo ResolveProperty(Type targetType, string propertyName, BindingFlags bindingFlags)
         {
 
             PropertyInfo pi = GetProperty(targetType, propertyName, bindingFlags);
@@ -2088,7 +2356,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         #region Method resolution
 
-        private class Argument
+        private sealed class Argument
         {
             internal readonly CodeExpression expression;
             internal readonly FieldDirection direction;
@@ -2113,7 +2381,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
 
         [ExcludeFromCodeCoverage]
-        private class CandidateParameter
+        private sealed class CandidateParameter
         {
             private readonly Type type;
             private readonly FieldDirection direction;
@@ -2286,24 +2554,33 @@ namespace LogicBuilder.Workflow.Activities.Rules
                         break;
 
                     case TypeCode.Object:
-                        // it is possible that the types are nullable
-                        if (ConditionHelper.IsNullableValueType(t1))
-                        {
-                            t1 = t1.GetGenericArguments()[0];
-                            // t2 may already be a value type
-                            if (ConditionHelper.IsNullableValueType(t2))
-                                t2 = t2.GetGenericArguments()[0];
-                            return BetterSignedConversion(t1, t2);
-                        }
+                        bool? conversion = ConvertNulables(ref t1, ref t2);
+                        if (conversion.HasValue)
+                            return conversion.Value;
                         return false;
                 }
 
                 return false;
+
+                static bool? ConvertNulables(ref Type t1, ref Type t2)
+                {
+                    // it is possible that the types are nullable
+                    if (ConditionHelper.IsNullableValueType(t1))
+                    {
+                        t1 = t1.GetGenericArguments()[0];
+                        // t2 may already be a value type
+                        if (ConditionHelper.IsNullableValueType(t2))
+                            t2 = t2.GetGenericArguments()[0];
+                        return BetterSignedConversion(t1, t2);
+                    }
+
+                    return null;
+                }
             }
         }
 
         [ExcludeFromCodeCoverage]
-        private class CandidateMember
+        private sealed class CandidateMember
         {
             internal enum Form
             {
@@ -2350,17 +2627,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 Type otherDeclaringType = other.Member.DeclaringType;
                 if (thisDeclaringType != otherDeclaringType)
                 {
-                    if (otherDeclaringType.IsAssignableFrom(thisDeclaringType))
+                    int? comparisonWithUnequalDeclaringTypes = CompareWithUnequalDeclaringTypes(better, worse, thisDeclaringType, otherDeclaringType);
+                    if (comparisonWithUnequalDeclaringTypes.HasValue)
                     {
-                        // This declaring type can be converted to the other declaring type,
-                        // which means this one is more derived.
-                        return better;
-                    }
-                    else if (thisDeclaringType.IsAssignableFrom(otherDeclaringType))
-                    {
-                        // The other declaring type can be converted to this declaring type,
-                        // which means the other one is more derived.
-                        return worse;
+                        return comparisonWithUnequalDeclaringTypes.Value;
                     }
                 }
 
@@ -2381,145 +2651,208 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     return worse;
                 else if ((thisExtension != null))
                 {
-                    // we have 2 extension methods, which one is better
-                    string[] thisNameSpace = thisExtension.DeclaringType.FullName.Split('.');
-                    string[] otherNameSpace = otherExtension.DeclaringType.FullName.Split('.');
-                    string[] bestNameSpace = validator.thisType.FullName.Split('.');
-                    int thisMatch = MatchNameSpace(thisNameSpace, bestNameSpace);
-                    int otherMatch = MatchNameSpace(otherNameSpace, bestNameSpace);
-                    if (thisMatch > otherMatch)
-                        return better;
-                    else if (thisMatch < otherMatch)
-                        return worse;
-
-                    // compare arguments, including the "this" argument
-                    CandidateParameter thisDeclaringParam = new(thisExtension.AssumedDeclaringType);
-                    CandidateParameter otherDeclaringParam = new(otherExtension.AssumedDeclaringType);
-                    if (!thisDeclaringParam.Equals(otherDeclaringParam))
+                    int? comparisonWithNeitherExtensionNull = CompareWithNeitherExtensionNull(targetType, other, arguments, validator, ref hasAtLeastOneBetterConversion, ref hasAtLeastOneWorseConversion, ref signaturesAreIdentical);
+                    if (comparisonWithNeitherExtensionNull.HasValue)
                     {
-                        signaturesAreIdentical = false;
-                        int conversionResult = thisDeclaringParam.CompareConversion(otherDeclaringParam, new Argument(targetType));
-                        if (conversionResult < 0)
-                        {
-                            // A conversion was found that was worse, so this candidate is not better.
-                            hasAtLeastOneWorseConversion = true;
-                        }
-                        else if (conversionResult > 0)
-                        {
-                            // This candidate had at least one conversion that was better.  (But
-                            // we have to keep looking in case there's one that's worse.)
-                            hasAtLeastOneBetterConversion = true;
-                        }
-                    }
-
-                    // this check compares parameter lists correctly (see below)
-                    for (int p = 0; p < arguments.Count; ++p)
-                    {
-                        CandidateParameter thisParam = this.signature[p];
-                        CandidateParameter otherParam = other.signature[p];
-
-                        if (!thisParam.Equals(otherParam))
-                            signaturesAreIdentical = false;
-
-                        int conversionResult = thisParam.CompareConversion(otherParam, arguments[p]);
-                        if (conversionResult < 0)
-                        {
-                            // A conversion was found that was worse, so this candidate is not better.
-                            hasAtLeastOneWorseConversion = true;
-                        }
-                        else if (conversionResult > 0)
-                        {
-                            // This candidate had at least one conversion that was better.  (But
-                            // we have to keep looking in case there's one that's worse.)
-                            hasAtLeastOneBetterConversion = true;
-                        }
-                    }
-                    if (hasAtLeastOneBetterConversion && !hasAtLeastOneWorseConversion)
-                    {
-                        // At least one conversion was better than the "other" candidate
-                        // and no other arguments were worse, so this one is better.
-                        return better;
-                    }
-                    else if (!hasAtLeastOneBetterConversion && hasAtLeastOneWorseConversion)
-                    {
-                        // At least one conversion was worse than the "other" candidate
-                        // and no other arguments were better, so this one is worse.
-                        return worse;
+                        return comparisonWithNeitherExtensionNull.Value;
                     }
                 }
                 else
                 {
-                    // NOTE: this is the original v1 code
-                    // It doesn't check for worse parameters correctly.
-                    // However, for backwards compatability, we can't change it
-                    for (int p = 0; p < arguments.Count; ++p)
+                    int? comparisonWithBothExtensionsNull = CompareWithBothExtensionsNull(other, arguments, better, worse, ref hasAtLeastOneBetterConversion, ref signaturesAreIdentical);
+                    if (comparisonWithBothExtensionsNull.HasValue)
                     {
-                        CandidateParameter thisParam = this.signature[p];
-                        CandidateParameter otherParam = other.signature[p];
-
-                        if (!thisParam.Equals(otherParam))
-                            signaturesAreIdentical = false;
-
-                        int conversionResult = thisParam.CompareConversion(otherParam, arguments[p]);
-                        if (conversionResult < 0)
-                        {
-                            // A conversion was found that was worse, so this candidate is not better.
-                            return worse;
-                        }
-                        else if (conversionResult > 0)
-                        {
-                            // This candidate had at least one conversion that was better.  (But
-                            // we have to keep looking in case there's one that's worse.)
-                            hasAtLeastOneBetterConversion = true;
-                        }
-                    }
-
-                    if (hasAtLeastOneBetterConversion)
-                    {
-                        // At least one conversion was better than the "other" candidate, so this one
-                        // is better.
-                        return better;
+                        return comparisonWithBothExtensionsNull.Value;
                     }
                 }
 
-                if (signaturesAreIdentical)
+                if (!signaturesAreIdentical)
                 {
-                    // The signatures were "tied".  Try some disambiguating rules for expanded signatures
-                    // vs normal signatures.
-                    if (this.form == Form.Normal && other.form == Form.Expanded)
-                    {
-                        // This candidate matched in its normal form, but the other one matched only after
-                        // expansion of a params array.  This one is better.
-                        return better;
-                    }
-                    else if (this.form == Form.Expanded && other.form == Form.Normal)
-                    {
-                        // This candidate matched in its expanded form, but the other one matched in its
-                        // normal form.  The other one was better.
-                        return worse;
-                    }
-                    else if (this.form == Form.Expanded && other.form == Form.Expanded)
-                    {
-                        // Both candidates matched in their expanded forms.  
-
-                        int thisParameterCount = this.memberParameters.Length;
-                        int otherParameterCount = other.memberParameters.Length;
-
-                        if (thisParameterCount > otherParameterCount)
-                        {
-                            // This candidate had more declared parameters, so it is better.
-                            return better;
-                        }
-                        else if (otherParameterCount > thisParameterCount)
-                        {
-                            // The other candidate had more declared parameters, so it was better.
-                            return worse;
-                        }
-                    }
+                    // Nothing worked, the two candidates are equally applicable.
+                    return equal;
                 }
+
+                int? comparison = CompareWhenSignaturesAreIdentical(other, better, worse);
+                if (comparison.HasValue)
+                    return comparison.Value;
 
                 // Nothing worked, the two candidates are equally applicable.
                 return equal;
+            }
+
+            private static int? CompareWithUnequalDeclaringTypes(int better, int worse, Type thisDeclaringType, Type otherDeclaringType)
+            {
+                if (otherDeclaringType.IsAssignableFrom(thisDeclaringType))
+                {
+                    // This declaring type can be converted to the other declaring type,
+                    // which means this one is more derived.
+                    return better;
+                }
+                else if (thisDeclaringType.IsAssignableFrom(otherDeclaringType))
+                {
+                    // The other declaring type can be converted to this declaring type,
+                    // which means the other one is more derived.
+                    return worse;
+                }
+
+                return null;
+            }
+
+            private int? CompareWithNeitherExtensionNull(Type targetType, CandidateMember other, List<Argument> arguments, RuleValidation validator, ref bool hasAtLeastOneBetterConversion, ref bool hasAtLeastOneWorseConversion, ref bool signaturesAreIdentical)
+            {
+                int better = 1;
+                int worse = -1;
+                ExtensionMethodInfo thisExtension = (ExtensionMethodInfo)this.Member;
+                ExtensionMethodInfo otherExtension = (ExtensionMethodInfo)other.Member;
+
+                // we have 2 extension methods, which one is better
+                string[] thisNameSpace = thisExtension.DeclaringType.FullName.Split('.');
+                string[] otherNameSpace = otherExtension.DeclaringType.FullName.Split('.');
+                string[] bestNameSpace = validator.thisType.FullName.Split('.');
+                int thisMatch = MatchNameSpace(thisNameSpace, bestNameSpace);
+                int otherMatch = MatchNameSpace(otherNameSpace, bestNameSpace);
+                if (thisMatch > otherMatch)
+                    return better;
+                else if (thisMatch < otherMatch)
+                    return worse;
+
+                // compare arguments, including the "this" argument
+                CandidateParameter thisDeclaringParam = new(thisExtension.AssumedDeclaringType);
+                CandidateParameter otherDeclaringParam = new(otherExtension.AssumedDeclaringType);
+                if (!thisDeclaringParam.Equals(otherDeclaringParam))
+                {
+                    signaturesAreIdentical = false;
+                    int conversionResult = thisDeclaringParam.CompareConversion(otherDeclaringParam, new Argument(targetType));
+                    if (conversionResult < 0)
+                    {
+                        // A conversion was found that was worse, so this candidate is not better.
+                        hasAtLeastOneWorseConversion = true;
+                    }
+                    else if (conversionResult > 0)
+                    {
+                        // This candidate had at least one conversion that was better.  (But
+                        // we have to keep looking in case there's one that's worse.)
+                        hasAtLeastOneBetterConversion = true;
+                    }
+                }
+
+                CompareParameterConversions(other, arguments, ref hasAtLeastOneBetterConversion, ref hasAtLeastOneWorseConversion, ref signaturesAreIdentical);
+
+                if (hasAtLeastOneBetterConversion && !hasAtLeastOneWorseConversion)
+                {
+                    // At least one conversion was better than the "other" candidate
+                    // and no other arguments were worse, so this one is better.
+                    return better;
+                }
+                else if (!hasAtLeastOneBetterConversion && hasAtLeastOneWorseConversion)
+                {
+                    // At least one conversion was worse than the "other" candidate
+                    // and no other arguments were better, so this one is worse.
+                    return worse;
+                }
+
+                return null;
+            }
+
+            private void CompareParameterConversions(CandidateMember other, List<Argument> arguments, ref bool hasAtLeastOneBetterConversion, ref bool hasAtLeastOneWorseConversion, ref bool signaturesAreIdentical)
+            {
+                // this check compares parameter lists correctly (see below)
+                for (int p = 0; p < arguments.Count; ++p)
+                {
+                    CandidateParameter thisParam = this.signature[p];
+                    CandidateParameter otherParam = other.signature[p];
+
+                    if (!thisParam.Equals(otherParam))
+                        signaturesAreIdentical = false;
+
+                    int conversionResult = thisParam.CompareConversion(otherParam, arguments[p]);
+                    if (conversionResult < 0)
+                    {
+                        // A conversion was found that was worse, so this candidate is not better.
+                        hasAtLeastOneWorseConversion = true;
+                    }
+                    else if (conversionResult > 0)
+                    {
+                        // This candidate had at least one conversion that was better.  (But
+                        // we have to keep looking in case there's one that's worse.)
+                        hasAtLeastOneBetterConversion = true;
+                    }
+                }
+            }
+
+            private int? CompareWithBothExtensionsNull(CandidateMember other, List<Argument> arguments, int better, int worse, ref bool hasAtLeastOneBetterConversion, ref bool signaturesAreIdentical)
+            {
+                // NOTE: this is the original v1 code
+                // It doesn't check for worse parameters correctly.
+                // However, for backwards compatability, we can't change it
+                for (int p = 0; p < arguments.Count; ++p)
+                {
+                    CandidateParameter thisParam = this.signature[p];
+                    CandidateParameter otherParam = other.signature[p];
+
+                    if (!thisParam.Equals(otherParam))
+                        signaturesAreIdentical = false;
+
+                    int conversionResult = thisParam.CompareConversion(otherParam, arguments[p]);
+                    if (conversionResult < 0)
+                    {
+                        // A conversion was found that was worse, so this candidate is not better.
+                        return worse;
+                    }
+                    else if (conversionResult > 0)
+                    {
+                        // This candidate had at least one conversion that was better.  (But
+                        // we have to keep looking in case there's one that's worse.)
+                        hasAtLeastOneBetterConversion = true;
+                    }
+                }
+
+                if (hasAtLeastOneBetterConversion)
+                {
+                    // At least one conversion was better than the "other" candidate, so this one
+                    // is better.
+                    return better;
+                }
+
+                return null;
+            }
+
+            private int? CompareWhenSignaturesAreIdentical(CandidateMember other, int better, int worse)
+            {
+                // The signatures were "tied".  Try some disambiguating rules for expanded signatures
+                // vs normal signatures.
+                if (this.form == Form.Normal && other.form == Form.Expanded)
+                {
+                    // This candidate matched in its normal form, but the other one matched only after
+                    // expansion of a params array.  This one is better.
+                    return better;
+                }
+                else if (this.form == Form.Expanded && other.form == Form.Normal)
+                {
+                    // This candidate matched in its expanded form, but the other one matched in its
+                    // normal form.  The other one was better.
+                    return worse;
+                }
+                else if (this.form == Form.Expanded && other.form == Form.Expanded)
+                {
+                    // Both candidates matched in their expanded forms.  
+
+                    int thisParameterCount = this.memberParameters.Length;
+                    int otherParameterCount = other.memberParameters.Length;
+
+                    if (thisParameterCount > otherParameterCount)
+                    {
+                        // This candidate had more declared parameters, so it is better.
+                        return better;
+                    }
+                    else if (otherParameterCount > thisParameterCount)
+                    {
+                        // The other candidate had more declared parameters, so it was better.
+                        return worse;
+                    }
+                }
+
+                return null;
             }
 
             private static int MatchNameSpace(string[] test, string[] reference)
@@ -2591,139 +2924,151 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 {
                     error = buildArgCountMismatchError(candidateName, numArguments);
                 }
+
+                return;
             }
-            else
+
+            EvaluateCandidatesWithParameters(candidates, candidateMember, parameters, arguments, ref error, buildArgCountMismatchError);
+        }
+
+        private static void EvaluateCandidatesWithParameters(List<CandidateMember> candidates, MemberInfo candidateMember, ParameterInfo[] parameters, List<Argument> arguments, ref ValidationError error, BuildArgCountMismatchError buildArgCountMismatchError)
+        {
+            int numArguments = arguments.Count;
+            string candidateName = candidateMember.Name;
+            List<CandidateParameter> signature = [];
+            int parameterCount = parameters.Length;
+            int fixedParameterCount = parameterCount;
+
+            // Check to see if the last parameter is (1) an array and (2) has a ParamArrayAttribute
+            // (i.e., it is a "params" array).
+            ParameterInfo lastParam = parameters[parameterCount - 1];
+            if (lastParam.ParameterType.IsArray)
             {
-                List<CandidateParameter> signature = [];
+                object[] attrs = lastParam.GetCustomAttributes(typeof(ParamArrayAttribute), false);
+                if (attrs != null && attrs.Length > 0)
+                    fixedParameterCount -= 1;
+            }
 
-                int parameterCount = parameters.Length;
+            if (InvalidArgumentCount(parameters, numArguments, parameterCount, fixedParameterCount))
+            {
+                // Not enough arguments were passed for this to be a candidate.
+                error = buildArgCountMismatchError(candidateName, numArguments);
 
-                int fixedParameterCount = parameterCount;
+                return;
+            }
 
-                // Check to see if the last parameter is (1) an array and (2) has a ParamArrayAttribute
-                // (i.e., it is a "params" array).
-                ParameterInfo lastParam = parameters[parameterCount - 1];
-                if (lastParam.ParameterType.IsArray)
+            // For the fixed part of the method signature, make sure each argument can
+            // be implicitly converted to the corresponding parameter.
+            int p = 0;
+            ValidateArgumentsAgainstParameterInfos(parameters, arguments, ref error, candidateName, signature, fixedParameterCount, ref p);
+
+            if (p != fixedParameterCount)
+            {
+                // We didn't match all of the fixed part.  This method is not a candidate.
+                return;
+            }
+
+            if (fixedParameterCount >= parameterCount)
+            {
+                // The last parameter wasn't "params".  This candidate matched in its normal form.
+                candidates.Add(new CandidateMember(candidateMember, parameters, signature, CandidateMember.Form.Normal));
+                return;
+            }
+
+            // The last parameter was a "params" array.  As long as zero or more arguments
+            // are assignable, it's a valid candidate in the expanded form.
+
+            CandidateMember candidateMethod = null;
+
+            if (numArguments == fixedParameterCount
+                || (numArguments < fixedParameterCount && parameters[numArguments].IsOptional))
+            {
+                // Zero arguments were passed as the params array.  The method is a candidate
+                // in its expanded form.
+                candidateMethod = new CandidateMember(candidateMember, parameters, signature, CandidateMember.Form.Expanded);
+            }
+            else if (numArguments == parameterCount)
+            {
+                // Special case:  one argument was passed as the params array.
+                CandidateParameter candidateParam = new(lastParam);
+                if (candidateParam.Match(arguments[p], candidateName, p + 1, out error))
                 {
-                    object[] attrs = lastParam.GetCustomAttributes(typeof(ParamArrayAttribute), false);
-                    if (attrs != null && attrs.Length > 0)
-                        fixedParameterCount -= 1;
-                }
-
-                if (numArguments < fixedParameterCount && !parameters[numArguments].IsOptional)
-                {
-                    // Not enough arguments were passed for this to be a candidate.
-                    error = buildArgCountMismatchError(candidateName, numArguments);
-
-                    return;
-                }
-                else if (fixedParameterCount == parameterCount && numArguments > parameterCount)//invalid "numArguments < parameterCount" fail on line 3000.
-                {
-                    // Too many arguments were passed for this to be a candidate.
-                    error = buildArgCountMismatchError(candidateName, numArguments);
-
-                    return;
-                }
-
-                // For the fixed part of the method signature, make sure each argument can
-                // be implicitly converted to the corresponding parameter.
-                int p = 0;
-                for (; p < fixedParameterCount; ++p)
-                {
-                    CandidateParameter candidateParam = new(parameters[p]);
-                    if (p < numArguments)
-                    {
-                        if (!candidateParam.Match(arguments[p], candidateName, p + 1, out error))
-                            break; // argument #p didn't match
-                    }
-                    else
-                    {
-                        if (!parameters[p].IsOptional)//we shouldn't get here.  Bail out on 3005
-                            throw new ArgumentException
-                            (
-                                string.Format
-                                (
-                                    CultureInfo.CurrentCulture,
-                                    Messages.MissingParameterExpression,
-                                    parameters[p].Name
-                                ),
-                                "arguments"
-                            );
-                    }
-
-                    // If we get here, then so far so good.
+                    // It was the same array type as the params array, so the candidate 
+                    // matched in its normal form.
                     signature.Add(candidateParam);
-                }
-
-                if (p != fixedParameterCount)
-                {
-                    // We didn't match all of the fixed part.  This method is not a candidate.
-                    return;
-                }
-
-                if (fixedParameterCount < parameterCount)
-                {
-                    // The last parameter was a "params" array.  As long as zero or more arguments
-                    // are assignable, it's a valid candidate in the expanded form.
-
-                    CandidateMember candidateMethod = null;
-
-                    if (numArguments == fixedParameterCount)
-                    {
-                        // Zero arguments were passed as the params array.  The method is a candidate
-                        // in its expanded form.
-                        candidateMethod = new CandidateMember(candidateMember, parameters, signature, CandidateMember.Form.Expanded);
-                    }
-                    else if (numArguments < fixedParameterCount && parameters[numArguments].IsOptional)
-                    {
-                        // Zero arguments were passed as the params array.  The method is a candidate
-                        // in its expanded form.
-                        candidateMethod = new CandidateMember(candidateMember, parameters, signature, CandidateMember.Form.Expanded);
-                    }
-                    else if (numArguments == parameterCount)
-                    {
-                        // Special case:  one argument was passed as the params array.
-                        CandidateParameter candidateParam = new(lastParam);
-                        if (candidateParam.Match(arguments[p], candidateName, p + 1, out error))
-                        {
-                            // It was the same array type as the params array, so the candidate 
-                            // matched in its normal form.
-                            signature.Add(candidateParam);
-                            candidateMethod = new CandidateMember(candidateMember, parameters, signature, CandidateMember.Form.Normal);
-                        }
-                    }
-
-                    if (candidateMethod == null)
-                    {
-                        // One or more arguments were passed as the params array.  As long
-                        // as they match the element type, this method is a candidate.
-                        CandidateParameter candidateParam = new(lastParam.ParameterType.GetElementType());
-
-                        for (; p < numArguments; ++p)
-                        {
-                            if (!candidateParam.Match(arguments[p], candidateName, p + 1, out error))
-                            {
-                                // Not all of the trailing arguments matched the params array's element type;
-                                // this cannot be a candidate.
-                                return;
-                            }
-
-                            // If we get here, then so far so good.
-                            signature.Add(candidateParam);
-                        }
-
-                        // All the trailing arguments matched, so this is a candidate in the expanded form.
-                        candidateMethod = new CandidateMember(candidateMember, parameters, signature, CandidateMember.Form.Expanded);
-                    }
-
-                    candidates.Add(candidateMethod);
-                }
-                else
-                {
-                    // The last parameter wasn't "params".  This candidate matched in its normal form.
-                    candidates.Add(new CandidateMember(candidateMember, parameters, signature, CandidateMember.Form.Normal));
+                    candidateMethod = new CandidateMember(candidateMember, parameters, signature, CandidateMember.Form.Normal);
                 }
             }
+
+            candidateMethod ??= GetCandidateForMethodWithParamsArray(candidateMember, parameters, arguments, ref error, signature, lastParam, ref p);
+
+            if (candidateMethod == null)
+                return;
+
+            candidates.Add(candidateMethod);
+
+
+        }
+
+        private static bool InvalidArgumentCount(ParameterInfo[] parameters, int numArguments, int parameterCount, int fixedParameterCount)
+        {
+            return numArguments < fixedParameterCount && !parameters[numArguments].IsOptional
+                            || (fixedParameterCount == parameterCount && numArguments > parameterCount);
+        }
+
+        private static void ValidateArgumentsAgainstParameterInfos(ParameterInfo[] parameters, List<Argument> arguments, ref ValidationError error, string candidateName, List<CandidateParameter> signature, int fixedParameterCount, ref int p)
+        {
+            int numArguments = arguments.Count;
+            for (; p < fixedParameterCount; ++p)
+            {
+                CandidateParameter candidateParam = new(parameters[p]);
+                if (p < numArguments)
+                {
+                    if (!candidateParam.Match(arguments[p], candidateName, p + 1, out error))
+                        break; // argument #p didn't match
+                }
+                else if (!parameters[p].IsOptional)//we shouldn't get here (the parameter is not optional but missing from the arguments list).  Should have returned earlier: Call to InvalidArgumentCount (numArguments < fixedParameterCount && !parameters[numArguments].IsOptional)
+                {
+                    throw new ArgumentException
+                    (
+                        string.Format
+                        (
+                            CultureInfo.CurrentCulture,
+                            Messages.MissingParameterExpression,
+                            parameters[p].Name
+                        ),
+                        nameof(arguments)
+                    );
+                }
+
+                // If we get here, then so far so good.
+                signature.Add(candidateParam);
+            }
+        }
+
+        private static CandidateMember GetCandidateForMethodWithParamsArray(MemberInfo candidateMember, ParameterInfo[] parameters, List<Argument> arguments, ref ValidationError error, List<CandidateParameter> signature, ParameterInfo lastParam, ref int p)
+        {
+            int numArguments = arguments.Count;
+            string candidateName = candidateMember.Name;
+            // One or more arguments were passed as the params array.  As long
+            // as they match the element type, this method is a candidate.
+            CandidateParameter candidateParam = new(lastParam.ParameterType.GetElementType());
+
+            for (; p < numArguments; ++p)
+            {
+                if (!candidateParam.Match(arguments[p], candidateName, p + 1, out error))
+                {
+                    // Not all of the trailing arguments matched the params array's element type
+                    // this cannot be a candidate.
+                    return null;
+                }
+
+                // If we get here, then so far so good.
+                signature.Add(candidateParam);
+            }
+
+            // All the trailing arguments matched, so this is a candidate in the expanded form.
+            return new CandidateMember(candidateMember, parameters, signature, CandidateMember.Form.Expanded);
         }
 
         private CandidateMember FindBestCandidate(Type targetType, List<CandidateMember> candidates, List<Argument> arguments)
@@ -2785,7 +3130,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             List<CandidateMember> candidates = new(methods.Count);
             foreach (MethodInfo method in methods)
             {
-                EvaluateCandidate(candidates, method, method.GetParameters(), arguments, out ValidationError tempError,
+                EvaluateCandidate(candidates, method, method.GetParameters(), arguments, out _,
                                   delegate (string name, int numArguments)
                                   {
                                       string message = string.Format(CultureInfo.CurrentCulture, Messages.MethodArgCountMismatch, name, numArguments);
@@ -2824,7 +3169,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             List<CandidateMember> candidateConstructors = GetCandidateConstructors(constructors, arguments, out error);
 
             // If the list is null, then no candidates matched.
-            if (candidateConstructors == null)
+            if (candidateConstructors == null || candidateConstructors.Count == 0)
                 return null;
 
             // We found candidate methods in this type.
@@ -2865,7 +3210,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             List<CandidateMember> candidateMethods = GetCandidateMethods(methodName, methods, arguments, out error);
 
             // If the list is null, then no candidates matched.
-            if (candidateMethods == null)
+            if (candidateMethods == null || candidateMethods.Count == 0)
                 return null;
 
             // We found candidate methods in this type.
@@ -2963,11 +3308,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         private void SetExtensionAttribute()
         {
             // use the TypeProvider first
-            extensionAttribute = typeProvider.GetType(ExtensionAttributeFullName, false);
-            if (extensionAttribute == null)
-            {
-                extensionAttribute = defaultExtensionAttribute;
-            }
+            extensionAttribute = typeProvider.GetType(ExtensionAttributeFullName, false) ?? defaultExtensionAttribute;
         }
 
         public List<ExtensionMethodInfo> ExtensionMethods
@@ -3134,7 +3475,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     error = new ValidationError(message, ErrorNumbers.Error_MethodOverloadNotFound);
                 }
 
-                return null;
+                return [];
             }
             else
             {
@@ -3178,7 +3519,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     error = new ValidationError(message, ErrorNumbers.Error_MethodOverloadNotFound);
                 }
 
-                return null;
+                return [];
             }
             else
             {
@@ -3220,7 +3561,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             List<CandidateMember> candidateIndexers = GetCandidateIndexers(indexerProperties, arguments, out error);
 
             // If the list is null, then no candidates matched.
-            if (candidateIndexers == null)
+            if (candidateIndexers == null || candidateIndexers.Count == 0)
                 return null;
 
             // We found candidate methods in this type.
@@ -3259,16 +3600,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     PropertyInfo pi = properties[p];
 
                     // Select only those properties whose name matches the default name.
-                    bool matchedName = false;
-                    for (int dm = 0; dm < defaultMemberAttrs.Length; ++dm)
-                    {
-                        if (defaultMemberAttrs[dm].MemberName == pi.Name)
-                        {
-                            matchedName = true;
-                            break;
-                        }
-                    }
-
+                    bool matchedName = defaultMemberAttrs.Any(attr => attr.MemberName == pi.Name);
                     if (matchedName)
                     {
                         // We matched the name...
@@ -3319,7 +3651,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     error = new ValidationError(message, ErrorNumbers.Error_IndexerOverloadNotFound);
                 }
 
-                return null;
+                return [];
             }
             else
             {
@@ -3342,90 +3674,59 @@ namespace LogicBuilder.Workflow.Activities.Rules
         public Type ResolveType(CodeTypeReference typeRef)
         {
 
-            if (!typeRefMap.TryGetValue(typeRef, out Type resultType))
+            if (typeRefMap.TryGetValue(typeRef, out Type resultType))
+                return resultType;
+
+            string message;
+
+            resultType = FindType(typeRef.BaseType);
+
+            if (resultType == null)
             {
-                string message;
-
-                resultType = FindType(typeRef.BaseType);
-
-                if (resultType == null)
+                // check if we have a qualifiedname saved, and if we do, use it
+                string qualifiedName = typeRef.UserData[RuleUserDataKeys.QualifiedName] as string;
+                resultType = ResolveType(qualifiedName);
+                if (resultType != null)
                 {
-                    // check if we have a qualifiedname saved, and if we do, use it
-                    string qualifiedName = typeRef.UserData[RuleUserDataKeys.QualifiedName] as string;
-                    resultType = ResolveType(qualifiedName);
-                    if (resultType != null)
-                    {
-                        // qualified name returned the complete type, save it and we're done
-                        typeRefMap.Add(typeRef, resultType);
-                        return resultType;
-                    }
-                    message = string.Format(CultureInfo.CurrentCulture, Messages.UnknownType, typeRef.BaseType);
-                    ValidationError error = new(message, ErrorNumbers.Error_UnableToResolveType);
-                    error.UserData[RuleUserDataKeys.ErrorObject] = typeRef;
-                    Errors.Add(error);
+                    // qualified name returned the complete type, save it and we're done
+                    typeRefMap.Add(typeRef, resultType);
+                    return resultType;
+                }
+                message = string.Format(CultureInfo.CurrentCulture, Messages.UnknownType, typeRef.BaseType);
+                ValidationError error = new(message, ErrorNumbers.Error_UnableToResolveType);
+                error.UserData[RuleUserDataKeys.ErrorObject] = typeRef;
+                Errors.Add(error);
+                return null;
+            }
+
+            // Handle generic type arguments.
+            if (typeRef.TypeArguments.Count > 0)
+            {
+                message = null;
+                bool resultTypeCreated = CreateResultTypeFromTypeArguments(typeRef, ref resultType, ref message);
+                if (!resultTypeCreated)
+                {
                     return null;
                 }
+            }
 
-                // Handle generic type arguments.
-                if (typeRef.TypeArguments.Count > 0)
+            CodeTypeReference arrayTypeRef = typeRef;
+            if (arrayTypeRef.ArrayRank > 0)
+            {
+                do
                 {
-                    Type[] typeArguments = new Type[typeRef.TypeArguments.Count];
-                    for (int i = 0; i < typeRef.TypeArguments.Count; ++i)
-                    {
-                        // design-time types don't have fully-qualified names, so when they are
-                        // used in a generic CodeTypeReference constructor leaves them with []
-                        // surrounding them. Remove the [] if possible
-                        CodeTypeReference arg = typeRef.TypeArguments[i];
-                        if (arg.BaseType.StartsWith("[", StringComparison.Ordinal))
-                            arg.BaseType = arg.BaseType.Substring(1, arg.BaseType.Length - 2);
+                    resultType = (arrayTypeRef.ArrayRank == 1) ? resultType.MakeArrayType() : resultType.MakeArrayType(arrayTypeRef.ArrayRank);
 
-                        typeArguments[i] = ResolveType(arg);
-                        if (typeArguments[i] == null)
-                            return null;
-                    }
+                    arrayTypeRef = arrayTypeRef.ArrayElementType;
+                } while (arrayTypeRef.ArrayRank > 0);
+            }
 
-                    resultType = resultType.MakeGenericType(typeArguments);
-                    if (resultType == null)
-                    {
-                        StringBuilder sb = new(typeRef.BaseType);
-                        string prefix = "<";
-                        foreach (Type t in typeArguments)
-                        {
-                            sb.Append(prefix);
-                            prefix = ",";
-                            sb.Append(RuleDecompiler.DecompileType(t));
-                        }
-                        sb.Append(">");
-                        message = string.Format(CultureInfo.CurrentCulture, Messages.UnknownGenericType, sb);
-                        ValidationError error = new(message, ErrorNumbers.Error_UnableToResolveType);
-                        error.UserData[RuleUserDataKeys.ErrorObject] = typeRef;
-                        Errors.Add(error);
-                        return null;
-                    }
-                }
+            if (resultType != null)
+            {
+                typeRefMap.Add(typeRef, resultType);
 
-
-                if (resultType != null)
-                {
-                    CodeTypeReference arrayTypeRef = typeRef;
-                    if (arrayTypeRef.ArrayRank > 0)
-                    {
-                        do
-                        {
-                            resultType = (arrayTypeRef.ArrayRank == 1) ? resultType.MakeArrayType() : resultType.MakeArrayType(arrayTypeRef.ArrayRank);
-
-                            arrayTypeRef = arrayTypeRef.ArrayElementType;
-                        } while (arrayTypeRef.ArrayRank > 0);
-                    }
-                }
-
-                if (resultType != null)
-                {
-                    typeRefMap.Add(typeRef, resultType);
-
-                    // at runtime we may not have the assembly loaded, so keep the fully qualified name around
-                    typeRef.UserData[RuleUserDataKeys.QualifiedName] = resultType.AssemblyQualifiedName;
-                }
+                // at runtime we may not have the assembly loaded, so keep the fully qualified name around
+                typeRef.UserData[RuleUserDataKeys.QualifiedName] = resultType.AssemblyQualifiedName;
             }
 
             return resultType;
@@ -3436,15 +3737,48 @@ namespace LogicBuilder.Workflow.Activities.Rules
             Type resultType = null;
             if (qualifiedName != null)
             {
-                resultType = typeProvider.GetType(qualifiedName, false);
-
-                // if the Typeprovider can't find it, use the framework, 
-                // since it should be an AssemblyQualifiedName
-                if (resultType == null)
-                    resultType = Type.GetType(qualifiedName, false);
-
+                resultType = typeProvider.GetType(qualifiedName, false) ?? Type.GetType(qualifiedName, false);
             }
             return resultType;
+        }
+
+        private bool CreateResultTypeFromTypeArguments(CodeTypeReference typeRef, ref Type resultType, ref string message)
+        {
+            Type[] typeArguments = new Type[typeRef.TypeArguments.Count];
+            for (int i = 0; i < typeRef.TypeArguments.Count; ++i)
+            {
+                // design-time types don't have fully-qualified names, so when they are
+                // used in a generic CodeTypeReference constructor leaves them with []
+                // surrounding them. Remove the [] if possible
+                CodeTypeReference arg = typeRef.TypeArguments[i];
+                if (arg.BaseType.StartsWith("[", StringComparison.Ordinal))
+                    arg.BaseType = arg.BaseType.Substring(1, arg.BaseType.Length - 2);
+
+                typeArguments[i] = ResolveType(arg);
+                if (typeArguments[i] == null)
+                    return false;
+            }
+
+            resultType = resultType.MakeGenericType(typeArguments);
+            if (resultType == null)
+            {
+                StringBuilder sb = new(typeRef.BaseType);
+                string prefix = "<";
+                foreach (Type t in typeArguments)
+                {
+                    sb.Append(prefix);
+                    prefix = ",";
+                    sb.Append(RuleDecompiler.DecompileType(t));
+                }
+                sb.Append(">");
+                message = string.Format(CultureInfo.CurrentCulture, Messages.UnknownGenericType, sb);
+                ValidationError error = new(message, ErrorNumbers.Error_UnableToResolveType);
+                error.UserData[RuleUserDataKeys.ErrorObject] = typeRef;
+                Errors.Add(error);
+                return false;
+            }
+
+            return true;
         }
 
         private Type FindType(string typeName)
@@ -3469,7 +3803,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return type;
         }
 
-        internal void IsAuthorized(Type type)
+        internal static void IsAuthorized(Type type)
         {
             //checkStaticType is always false
             Debug.Assert(!type.IsPointer && !type.IsByRef,

@@ -57,8 +57,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             string firstPart = parts[0];
             int startOfRelativePortion = 0;
-            ValidationError error;
-            string message;
+            ValidationError error = null;
+            string message = null;
             if (attributeTarget == RuleAttributeTarget.This)
             {
                 // When target is "This", the path is allowed to start with the token "this".  It is
@@ -73,9 +73,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 bool found = false;
                 for (int p = 0; p < (parameters?.Length ?? 0); ++p)
                 {
-                    if (parameters == null)
-                        throw new ArgumentNullException(nameof(parameters));
-
                     ParameterInfo param = parameters[p];
                     if (param.Name == firstPart)
                     {
@@ -99,6 +96,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 ++startOfRelativePortion;
             }
 
+            ValidateAttributePath(validation, contextType, ref valid, parts, startOfRelativePortion, ref error, ref message);
+
+            return valid;
+        }
+
+        private void ValidateAttributePath(RuleValidation validation, Type contextType, ref bool valid, string[] parts, int startOfRelativePortion, ref ValidationError error, ref string message)
+        {
             int numParts = parts.Length;
 
             // Check the last part.  The last part is allowed to be empty, or "*".
@@ -130,33 +134,30 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 // Make sure the member exists in the current type.
                 BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy;
                 if (validation.AllowInternalMembers(currentType))
-                    bindingFlags |= BindingFlags.NonPublic;
+                    bindingFlags |= BindingFlags.NonPublic; //NOSONAR - used when the current type belongs to the same assembly as the root object.
 
                 FieldInfo field = currentType.GetField(parts[i], bindingFlags);
                 if (field != null)
                 {
                     currentType = field.FieldType;
+                    continue;
+                }
+
+                PropertyInfo property = currentType.GetProperty(parts[i], bindingFlags);
+                if (property != null)
+                {
+                    currentType = property.PropertyType;
                 }
                 else
                 {
-                    PropertyInfo property = currentType.GetProperty(parts[i], bindingFlags);
-                    if (property != null)
-                    {
-                        currentType = property.PropertyType;
-                    }
-                    else
-                    {
-                        message = string.Format(CultureInfo.CurrentCulture, Messages.UpdateUnknownFieldOrProperty, parts[i]);
-                        error = new ValidationError(message, ErrorNumbers.Error_UnknownFieldOrProperty);
-                        error.UserData[RuleUserDataKeys.ErrorObject] = this;
-                        validation.AddError(error);
-                        valid = false;
-                        break;
-                    }
+                    message = string.Format(CultureInfo.CurrentCulture, Messages.UpdateUnknownFieldOrProperty, parts[i]);
+                    error = new ValidationError(message, ErrorNumbers.Error_UnknownFieldOrProperty);
+                    error.UserData[RuleUserDataKeys.ErrorObject] = this;
+                    validation.AddError(error);
+                    valid = false;
+                    break;
                 }
             }
-
-            return valid;
         }
 
         internal void AnalyzeReadWrite(RuleAnalysis analysis, CodeExpression targetExpression, RulePathQualifier targetQualifier, CodeExpressionCollection argumentExpressions, ParameterInfo[] parameters, List<CodeExpression> attributedExpressions)
@@ -175,65 +176,69 @@ namespace LogicBuilder.Workflow.Activities.Rules
                     for (int i = 0; i < argumentExpressions.Count; ++i)
                         attributedExpressions.Add(argumentExpressions[i]);
                 }
+                return;
             }
-            else
+
+            string suffix = attributePath;
+
+            bool isRead = !analysis.ForWrites;
+            bool isWrite = analysis.ForWrites;
+
+            if (attributeTarget == RuleAttributeTarget.This)
             {
-                string suffix = attributePath;
+                // Target is "This", so perform the analysis on the target expression.
 
-                bool isRead = !analysis.ForWrites;
-                bool isWrite = analysis.ForWrites;
+                // Remove the optional "this/" token if present.
+                string optionalPrefix = "this/";
+                if (suffix.StartsWith(optionalPrefix, StringComparison.Ordinal))
+                    suffix = suffix.Substring(optionalPrefix.Length);
 
-                if (attributeTarget == RuleAttributeTarget.This)
+                RuleExpressionWalker.AnalyzeUsage(analysis, targetExpression, isRead, isWrite, new RulePathQualifier(suffix, targetQualifier));
+                attributedExpressions.Add(targetExpression);
+            }
+            else if (attributeTarget == RuleAttributeTarget.Parameter)
+            {
+                AnalyzeNonEmptyParameterAttribute(analysis, argumentExpressions, parameters, attributedExpressions, suffix, isRead, isWrite);
+            }
+
+            static void AnalyzeNonEmptyParameterAttribute(RuleAnalysis analysis, CodeExpressionCollection argumentExpressions, ParameterInfo[] parameters, List<CodeExpression> attributedExpressions, string suffix, bool isRead, bool isWrite)
+            {
+                string paramName = null;
+
+                int firstSlash = suffix.IndexOf('/');
+                if (firstSlash >= 0)
                 {
-                    // Target is "This", so perform the analysis on the target expression.
-
-                    // Remove the optional "this/" token if present.
-                    string optionalPrefix = "this/";
-                    if (suffix.StartsWith(optionalPrefix, StringComparison.Ordinal))
-                        suffix = suffix.Substring(optionalPrefix.Length);
-
-                    RuleExpressionWalker.AnalyzeUsage(analysis, targetExpression, isRead, isWrite, new RulePathQualifier(suffix, targetQualifier));
-                    attributedExpressions.Add(targetExpression);
+                    paramName = suffix.Substring(0, firstSlash);
+                    suffix = suffix.Substring(firstSlash + 1);
                 }
-                else if (attributeTarget == RuleAttributeTarget.Parameter)
+                else
                 {
-                    string paramName = null;
+                    paramName = suffix;
+                    suffix = null;
+                }
 
-                    int firstSlash = suffix.IndexOf('/');
-                    if (firstSlash >= 0)
+                // Find the ParameterInfo that corresponds to this attribute path.
+                ParameterInfo param = Array.Find<ParameterInfo>(parameters,
+                                                                delegate (ParameterInfo p) { return p.Name == paramName; });
+                if (param != null)
+                {
+                    RulePathQualifier qualifier = string.IsNullOrEmpty(suffix) ? null : new RulePathQualifier(suffix, null);
+
+                    // 99.9% of the time, the parameter usage attribute only applies to one argument.  However,
+                    // if this attribute corresponds to the last parameter, then just assume that all the trailing
+                    // arguments correspond.  (In other words, if the caller passed more arguments then there
+                    // are parameters, we assume it was a params array.)
+                    //
+                    // Usually this loop will only execute once.
+                    int end = param.Position + 1;
+                    if (param.Position == parameters.Length - 1)
+                        end = argumentExpressions.Count;
+
+                    for (int i = param.Position; i < end; ++i)
                     {
-                        paramName = suffix.Substring(0, firstSlash);
-                        suffix = suffix.Substring(firstSlash + 1);
-                    }
-                    else
-                    {
-                        paramName = suffix;
-                        suffix = null;
-                    }
-
-                    // Find the ParameterInfo that corresponds to this attribute path.
-                    ParameterInfo param = Array.Find<ParameterInfo>(parameters,
-                                                                    delegate(ParameterInfo p) { return p.Name == paramName; });
-                    if (param != null)
-                    {
-                        RulePathQualifier qualifier = string.IsNullOrEmpty(suffix) ? null : new RulePathQualifier(suffix, null);
-
-                        // 99.9% of the time, the parameter usage attribute only applies to one argument.  However,
-                        // if this attribute corresponds to the last parameter, then just assume that all the trailing
-                        // arguments correspond.  (In other words, if the caller passed more arguments then there
-                        // are parameters, we assume it was a params array.)
-                        //
-                        // Usually this loop will only execute once.
-                        int end = param.Position + 1;
-                        if (param.Position == parameters.Length - 1)
-                            end = argumentExpressions.Count;
-
-                        for (int i = param.Position; i < end; ++i)
-                        {
-                            CodeExpression argExpr = argumentExpressions[i];
-                            RuleExpressionWalker.AnalyzeUsage(analysis, argExpr, isRead, isWrite, qualifier);
-                            attributedExpressions.Add(argExpr);
-                        }
+                        CodeExpression argExpr = argumentExpressions[i];
+                        RuleExpressionWalker.AnalyzeUsage(analysis, argExpr, isRead, isWrite, qualifier);
+                        attributedExpressions.Add(argExpr);
                     }
                 }
             }
@@ -328,7 +333,16 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             // Go through all the methods and properties on the target context,
             // looking for all the ones that match the name on the attribute.
-            MemberInfo[] members = contextType.GetMember(methodInvoked, MemberTypes.Method | MemberTypes.Property, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            MemberInfo[] members = contextType.GetMember
+            (
+                methodInvoked, 
+                MemberTypes.Method | MemberTypes.Property, 
+                BindingFlags.Instance 
+                    | BindingFlags.Static 
+                    | BindingFlags.Public 
+                    | BindingFlags.NonPublic //NOSONAR - used when the current type belongs to the same assembly as the root object.
+                    | BindingFlags.FlattenHierarchy
+            );
 
             if (members == null || members.Length == 0)
             {
@@ -337,54 +351,61 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 error = new ValidationError(message, ErrorNumbers.Warning_RuleAttributeNoMatch, true);
                 error.UserData[RuleUserDataKeys.ErrorObject] = this;
                 validation.AddError(error);
-                valid = false;
+                return false;
             }
-            else
+
+            for (int i = 0; i < members.Length; ++i)
             {
-                for (int i = 0; i < members.Length; ++i)
+                MemberInfo mi = members[i];
+                if (methodStack.Contains(mi)) // Prevent recursion
+                    continue;
+                methodStack.Push(mi);
+
+                object[] attrs = mi.GetCustomAttributes(typeof(RuleAttribute), true);
+                if (attrs != null && attrs.Length != 0)
                 {
-                    MemberInfo mi = members[i];
-                    if (!methodStack.Contains(mi)) // Prevent recursion
-                    {
-                        methodStack.Push(mi);
-
-                        object[] attrs = mi.GetCustomAttributes(typeof(RuleAttribute), true);
-                        if (attrs != null && attrs.Length != 0)
-                        {
-                            foreach (RuleAttribute invokedRuleAttr in attrs.OfType<RuleAttribute>())
-                            {
-                                if (invokedRuleAttr is RuleReadWriteAttribute readWriteAttr)
-                                {
-                                    // This read/write attribute may not specify a target of "Parameter", since
-                                    // we can't map from the invoker's parameters to the invokee's parameters.
-                                    if (readWriteAttr.Target == RuleAttributeTarget.Parameter)
-                                    {
-                                        message = string.Format(CultureInfo.CurrentCulture, Messages.InvokeAttrRefersToParameterAttribute, mi.Name);
-                                        error = new ValidationError(message, ErrorNumbers.Error_InvokeAttrRefersToParameterAttribute, true);
-                                        error.UserData[RuleUserDataKeys.ErrorObject] = this;
-                                        validation.AddError(error);
-                                        valid = false;
-                                    }
-                                    else
-                                    {
-                                        // Validate the read/write attribute normally.
-                                        readWriteAttr.Validate(validation, mi, contextType, null);
-                                    }
-                                }
-                                else
-                                {
-                                    RuleInvokeAttribute invokeAttr = (RuleInvokeAttribute)invokedRuleAttr;
-                                    invokeAttr.ValidateInvokeAttribute(validation, mi, contextType, methodStack);
-                                }
-                            }
-                        }
-
-                        methodStack.Pop();
-                    }
+                    message = null;
+                    error = null;
+                   
+                    ValidateMemberAttributes(validation, new MemberContext(contextType, methodStack), ref message, ref error, ref valid, mi, attrs);
                 }
+
+                methodStack.Pop();
             }
 
             return valid;
+        }
+
+        private void ValidateMemberAttributes(RuleValidation validation, MemberContext memberContext, ref string message, ref ValidationError error, ref bool valid, MemberInfo mi, object[] attrs)
+        {
+            Type contextType = memberContext.ContextType;
+            Stack<MemberInfo> methodStack = memberContext.MethodStack;
+            foreach (RuleAttribute invokedRuleAttr in attrs.OfType<RuleAttribute>())
+            {
+                if (invokedRuleAttr is RuleReadWriteAttribute readWriteAttr)
+                {
+                    // This read/write attribute may not specify a target of "Parameter", since
+                    // we can't map from the invoker's parameters to the invokee's parameters.
+                    if (readWriteAttr.Target == RuleAttributeTarget.Parameter)
+                    {
+                        message = string.Format(CultureInfo.CurrentCulture, Messages.InvokeAttrRefersToParameterAttribute, mi.Name);
+                        error = new ValidationError(message, ErrorNumbers.Error_InvokeAttrRefersToParameterAttribute, true);
+                        error.UserData[RuleUserDataKeys.ErrorObject] = this;
+                        validation.AddError(error);
+                        valid = false;
+                    }
+                    else
+                    {
+                        // Validate the read/write attribute normally.
+                        readWriteAttr.Validate(validation, mi, contextType, null);
+                    }
+                }
+                else
+                {
+                    RuleInvokeAttribute invokeAttr = (RuleInvokeAttribute)invokedRuleAttr;
+                    invokeAttr.ValidateInvokeAttribute(validation, mi, contextType, methodStack);
+                }
+            }
         }
 
         internal override void Analyze(RuleAnalysis analysis, MemberInfo member, CodeExpression targetExpression, RulePathQualifier targetQualifier, CodeExpressionCollection argumentExpressions, ParameterInfo[] parameters, List<CodeExpression> attributedExpressions)
@@ -392,47 +413,64 @@ namespace LogicBuilder.Workflow.Activities.Rules
             Stack<MemberInfo> methodStack = new();
             methodStack.Push(member);
 
-            AnalyzeInvokeAttribute(analysis, member.DeclaringType, methodStack, targetExpression, targetQualifier, argumentExpressions, parameters, attributedExpressions);
+            AnalyzeInvokeAttribute(analysis, new MemberContext(member.DeclaringType, methodStack), targetExpression, targetQualifier, argumentExpressions, parameters, attributedExpressions);
 
             methodStack.Pop();
         }
 
-        private void AnalyzeInvokeAttribute(RuleAnalysis analysis, Type contextType, Stack<MemberInfo> methodStack, CodeExpression targetExpression, RulePathQualifier targetQualifier, CodeExpressionCollection argumentExpressions, ParameterInfo[] parameters, List<CodeExpression> attributedExpressions)
+        private readonly struct MemberContext(Type contextType, Stack<MemberInfo> methodStack)
         {
+            public Stack<MemberInfo> MethodStack { get; } = methodStack;
+            public Type ContextType { get; } = contextType;
+        }
+
+        private void AnalyzeInvokeAttribute(RuleAnalysis analysis, MemberContext methodContext, CodeExpression targetExpression, RulePathQualifier targetQualifier, CodeExpressionCollection argumentExpressions, ParameterInfo[] parameters, List<CodeExpression> attributedExpressions)
+        {
+            Type contextType = methodContext.ContextType;
+            Stack<MemberInfo> methodStack = methodContext.MethodStack;
             // Go through all the methods and properties on the target context,
             // looking for all the ones that match the name on the attribute.
-            MemberInfo[] members = contextType.GetMember(methodInvoked, MemberTypes.Method | MemberTypes.Property, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            MemberInfo[] members = contextType.GetMember
+            (
+                methodInvoked,
+                MemberTypes.Method | MemberTypes.Property,
+                BindingFlags.Instance
+                    | BindingFlags.Static
+                    | BindingFlags.Public
+                    | BindingFlags.NonPublic //NOSONAR - used when the current type belongs to the same assembly as the root object.
+                    | BindingFlags.FlattenHierarchy
+            );
 
             for (int m = 0; m < members.Length; ++m)
             {
                 MemberInfo mi = members[m];
-                if (!methodStack.Contains(mi)) // Prevent recursion
+                if (methodStack.Contains(mi)) // Prevent recursion
+                    continue;
+
+                methodStack.Push(mi);
+
+                object[] attrs = mi.GetCustomAttributes(typeof(RuleAttribute), true);
+                if (attrs != null && attrs.Length != 0)
                 {
-                    methodStack.Push(mi);
-
-                    object[] attrs = mi.GetCustomAttributes(typeof(RuleAttribute), true);
-                    if (attrs != null && attrs.Length != 0)
+                    RuleAttribute[] ruleAttrs = (RuleAttribute[])attrs;
+                    for (int i = 0; i < ruleAttrs.Length; ++i)
                     {
-                        RuleAttribute[] ruleAttrs = (RuleAttribute[])attrs;
-                        for (int i = 0; i < ruleAttrs.Length; ++i)
-                        {
-                            RuleAttribute ruleAttr = ruleAttrs[i];
+                        RuleAttribute ruleAttr = ruleAttrs[i];
 
-                            if (ruleAttr is RuleReadWriteAttribute readWriteAttr)
-                            {
-                                // Just analyze the read/write attribute normally.
-                                readWriteAttr.Analyze(analysis, mi, targetExpression, targetQualifier, argumentExpressions, parameters, attributedExpressions);
-                            }
-                            else
-                            {
-                                RuleInvokeAttribute invokeAttr = (RuleInvokeAttribute)ruleAttr;
-                                invokeAttr.AnalyzeInvokeAttribute(analysis, contextType, methodStack, targetExpression, targetQualifier, argumentExpressions, parameters, attributedExpressions);
-                            }
+                        if (ruleAttr is RuleReadWriteAttribute readWriteAttr)
+                        {
+                            // Just analyze the read/write attribute normally.
+                            readWriteAttr.Analyze(analysis, mi, targetExpression, targetQualifier, argumentExpressions, parameters, attributedExpressions);
+                        }
+                        else
+                        {
+                            RuleInvokeAttribute invokeAttr = (RuleInvokeAttribute)ruleAttr;
+                            invokeAttr.AnalyzeInvokeAttribute(analysis, new MemberContext(contextType, methodStack), targetExpression, targetQualifier, argumentExpressions, parameters, attributedExpressions);
                         }
                     }
-
-                    methodStack.Pop();
                 }
+
+                methodStack.Pop();
             }
         }
     }

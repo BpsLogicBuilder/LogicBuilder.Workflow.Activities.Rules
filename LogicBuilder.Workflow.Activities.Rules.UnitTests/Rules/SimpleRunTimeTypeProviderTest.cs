@@ -369,7 +369,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var errors = provider.TypeLoadErrors;
 
             // Assert
-            Assert.Null(errors);
+            Assert.Empty(errors);
         }
 
         #endregion

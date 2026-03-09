@@ -9,39 +9,38 @@ using System;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
-    [Serializable]
-    public abstract class RuleAction
+    public interface IRuleAction
     {
-        public abstract bool Validate(RuleValidation validator);
-        public abstract void Execute(RuleExecution context);
-        public abstract ICollection<string> GetSideEffects(RuleValidation validation);
-        public abstract RuleAction Clone();
+        bool Validate(RuleValidation validator);
+        void Execute(RuleExecution context);
+        ICollection<string> GetSideEffects(RuleValidation validation);
+        IRuleAction Clone();
     }
 
     [Serializable]
-    public class RuleHaltAction : RuleAction
+    public class RuleHaltAction : IRuleAction
     {
-        public override bool Validate(RuleValidation validator)
+        public bool Validate(RuleValidation validator)
         {
             // Trivial... nothing to validate.
             return true;
         }
 
-        public override void Execute(RuleExecution context)
+        public void Execute(RuleExecution context)
         {
             if (context == null)
                 throw new ArgumentNullException("context");
             context.Halted = true;
         }
 
-        public override ICollection<string> GetSideEffects(RuleValidation validation)
+        public ICollection<string> GetSideEffects(RuleValidation validation)
         {
-            return null;
+            return [];
         }
 
-        public override RuleAction Clone()
+        public IRuleAction Clone()
         {
-            return (RuleAction)this.MemberwiseClone();
+            return (IRuleAction)this.MemberwiseClone();
         }
 
         public override string ToString()
@@ -62,33 +61,27 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
 
     [Serializable]
-    public class RuleUpdateAction : RuleAction
+    public class RuleUpdateAction : IRuleAction
     {
-        private string path;
-
         public RuleUpdateAction(string path)
         {
-            this.path = path;
+            this.Path = path;
         }
 
         public RuleUpdateAction()
         {
         }
 
-        public string Path
-        {
-            get { return path; }
-            set { path = value; }
-        }
+        public string Path { get; set; }
 
-        public override bool Validate(RuleValidation validator)
+        public bool Validate(RuleValidation validator)
         {
             if (validator == null)
                 throw new ArgumentNullException("validator");
 
             bool success = true;
 
-            if (path == null)
+            if (Path == null)
             {
                 ValidationError error = new(Messages.NullUpdate, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = this;
@@ -97,64 +90,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
 
             // now make sure that the path is valid
-            string[] parts = path?.Split('/') ?? [];
+            string[] parts = Path?.Split('/') ?? [];
             if (parts.Length > 0 && parts[0] == "this")
             {
                 Type currentType = validator.ThisType;
-                for (int i = 1; i < parts.Length; ++i)
-                {
-                    if (parts[i] == "*")
-                    {
-                        if (i < parts.Length - 1)
-                        {
-                            // The "*" occurred in the middle of the path, which is a no-no.
-                            ValidationError error = new(Messages.InvalidWildCardInPathQualifier, ErrorNumbers.Error_InvalidWildCardInPathQualifier);
-                            error.UserData[RuleUserDataKeys.ErrorObject] = this;
-                            validator.AddError(error);
-                            success = false;
-                            break;
-                        }
-                        else
-                        {
-                            // It occurred at the end, which is okay.
-                            break;
-                        }
-                    }
-                    else if (string.IsNullOrEmpty(parts[i]) && i == parts.Length - 1)
-                    {
-                        // It's okay to end with a "/".
-                        break;
-                    }
-
-                    while (currentType.IsArray)
-                        currentType = currentType.GetElementType();
-
-                    BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy;
-                    if (validator.AllowInternalMembers(currentType))
-                        bindingFlags |= BindingFlags.NonPublic;
-                    FieldInfo field = currentType.GetField(parts[i], bindingFlags);
-                    if (field != null)
-                    {
-                        currentType = field.FieldType;
-                    }
-                    else
-                    {
-                        PropertyInfo property = currentType.GetProperty(parts[i], bindingFlags);
-                        if (property != null)
-                        {
-                            currentType = property.PropertyType;
-                        }
-                        else
-                        {
-                            string message = string.Format(CultureInfo.CurrentCulture, Messages.UpdateUnknownFieldOrProperty, parts[i]);
-                            ValidationError error = new(message, ErrorNumbers.Error_InvalidUpdate);
-                            error.UserData[RuleUserDataKeys.ErrorObject] = this;
-                            validator.AddError(error);
-                            success = false;
-                            break;
-                        }
-                    }
-                }
+                ValidatePathSegments(validator, ref success, parts, ref currentType);
             }
             else
             {
@@ -167,24 +107,87 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return success;
         }
 
-        public override void Execute(RuleExecution context)
+        private void ValidatePathSegments(RuleValidation validator, ref bool success, string[] parts, ref Type currentType)
+        {
+            for (int i = 1; i < parts.Length; ++i)
+            {
+                if (parts[i] == "*")
+                {
+                    success = ValidateWildCards(validator, success, parts, i);
+                    break;
+                }
+                else if (string.IsNullOrEmpty(parts[i]) && i == parts.Length - 1)
+                {
+                    // It's okay to end with a "/".
+                    break;
+                }
+
+                while (currentType.IsArray)
+                    currentType = currentType.GetElementType();
+
+                BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy;
+                if (validator.AllowInternalMembers(currentType))
+                    bindingFlags |= BindingFlags.NonPublic;//NOSONAR - used when the current type belongs to the same assembly as the root object.
+                FieldInfo field = currentType.GetField(parts[i], bindingFlags);
+                if (field != null)
+                {
+                    currentType = field.FieldType;
+                    continue;
+                }
+
+                PropertyInfo property = currentType.GetProperty(parts[i], bindingFlags);
+                if (property != null)
+                {
+                    currentType = property.PropertyType;
+                }
+                else
+                {
+                    string message = string.Format(CultureInfo.CurrentCulture, Messages.UpdateUnknownFieldOrProperty, parts[i]);
+                    ValidationError error = new(message, ErrorNumbers.Error_InvalidUpdate);
+                    error.UserData[RuleUserDataKeys.ErrorObject] = this;
+                    validator.AddError(error);
+                    success = false;
+                    break;
+                }
+            }
+        }
+
+        private bool ValidateWildCards(RuleValidation validator, bool success, string[] parts, int i)
+        {
+            if (i < parts.Length - 1)
+            {
+                // The "*" occurred in the middle of the path, which is a no-no.
+                ValidationError error = new(Messages.InvalidWildCardInPathQualifier, ErrorNumbers.Error_InvalidWildCardInPathQualifier);
+                error.UserData[RuleUserDataKeys.ErrorObject] = this;
+                validator.AddError(error);
+                success = false;
+            }
+            else
+            {
+                // It occurred at the end, which is okay.
+            }
+
+            return success;
+        }
+
+        public void Execute(RuleExecution context)
         {
             // This action has no execution behaviour.
         }
 
-        public override ICollection<string> GetSideEffects(RuleValidation validation)
+        public ICollection<string> GetSideEffects(RuleValidation validation)
         {
-            return [this.path];
+            return [this.Path];
         }
 
-        public override RuleAction Clone()
+        public IRuleAction Clone()
         {
-            return (RuleAction)this.MemberwiseClone();
+            return (IRuleAction)this.MemberwiseClone();
         }
 
         public override string ToString()
         {
-            return "Update(\"" + this.path + "\")";
+            return "Update(\"" + this.Path + "\")";
         }
 
         public override bool Equals(object obj)
@@ -196,41 +199,35 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            return 1;
         }
     }
 
     [Serializable]
-    public class RuleStatementAction : RuleAction
+    public class RuleStatementAction : IRuleAction
     {
-        private CodeStatement codeDomStatement;
-
         public RuleStatementAction(CodeStatement codeDomStatement)
         {
-            this.codeDomStatement = codeDomStatement;
+            this.CodeDomStatement = codeDomStatement;
         }
 
         public RuleStatementAction(CodeExpression codeDomExpression)
         {
-            this.codeDomStatement = new CodeExpressionStatement(codeDomExpression);
+            this.CodeDomStatement = new CodeExpressionStatement(codeDomExpression);
         }
 
         public RuleStatementAction()
         {
         }
 
-        public CodeStatement CodeDomStatement
-        {
-            get { return codeDomStatement; }
-            set { codeDomStatement = value; }
-        }
+        public CodeStatement CodeDomStatement { get; set; }
 
-        public override bool Validate(RuleValidation validator)
+        public bool Validate(RuleValidation validator)
         {
             if (validator == null)
                 throw new ArgumentNullException("validator");
 
-            if (codeDomStatement == null)
+            if (CodeDomStatement == null)
             {
                 ValidationError error = new(Messages.NullStatement, ErrorNumbers.Error_ParameterNotSet);
                 error.UserData[RuleUserDataKeys.ErrorObject] = this;
@@ -239,39 +236,39 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
             else
             {
-                return CodeDomStatementWalker.Validate(validator, codeDomStatement);
+                return CodeDomStatementWalker.Validate(validator, CodeDomStatement);
             }
         }
 
-        public override void Execute(RuleExecution context)
+        public void Execute(RuleExecution context)
         {
-            if (codeDomStatement == null)
+            if (CodeDomStatement == null)
                 throw new InvalidOperationException(Messages.NullStatement);
-            CodeDomStatementWalker.Execute(context, codeDomStatement);
+            CodeDomStatementWalker.Execute(context, CodeDomStatement);
         }
 
-        public override ICollection<string> GetSideEffects(RuleValidation validation)
+        public ICollection<string> GetSideEffects(RuleValidation validation)
         {
             RuleAnalysis analysis = new(validation, true);
-            if (codeDomStatement != null)
-                CodeDomStatementWalker.AnalyzeUsage(analysis, codeDomStatement);
+            if (CodeDomStatement != null)
+                CodeDomStatementWalker.AnalyzeUsage(analysis, CodeDomStatement);
             return analysis.GetSymbols();
         }
 
-        public override RuleAction Clone()
+        public IRuleAction Clone()
         {
             RuleStatementAction newAction = (RuleStatementAction)this.MemberwiseClone();
-            newAction.codeDomStatement = CodeDomStatementWalker.Clone(codeDomStatement);
+            newAction.CodeDomStatement = CodeDomStatementWalker.Clone(CodeDomStatement);
             return newAction;
         }
 
         public override string ToString()
         {
-            if (codeDomStatement == null)
+            if (CodeDomStatement == null)
                 return "";
 
             StringBuilder decompilation = new();
-            CodeDomStatementWalker.Decompile(decompilation, codeDomStatement);
+            CodeDomStatementWalker.Decompile(decompilation, CodeDomStatement);
             return decompilation.ToString();
         }
 
@@ -284,7 +281,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            return 1;
         }
     }
 }
