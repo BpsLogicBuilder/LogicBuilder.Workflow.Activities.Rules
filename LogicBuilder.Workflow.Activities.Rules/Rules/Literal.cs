@@ -481,7 +481,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
 
         [ExcludeFromCodeCoverage]
-        private struct OperandTypeDetails(bool lhsNullable, bool rhsNullable, Type lhsType0, Type rhsType0)
+        private readonly struct OperandTypeDetails(bool lhsNullable, bool rhsNullable, Type lhsType0, Type rhsType0)
         {
             public readonly bool LhsNullable { get; } = lhsNullable;
             public readonly bool RhsNullable { get; } = rhsNullable;

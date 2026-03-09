@@ -27,8 +27,8 @@ namespace LogicBuilder.Workflow.Activities.Rules
         internal RuleReevaluationBehavior behavior = RuleReevaluationBehavior.Always;
         internal bool active = true;
         internal RuleCondition condition;
-        internal IList<RuleAction> thenActions;
-        internal IList<RuleAction> elseActions;
+        internal IList<IRuleAction> thenActions;
+        internal IList<IRuleAction> elseActions;
         private bool runtimeInitialized;
 
         public Rule()
@@ -40,14 +40,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
             this.name = name;
         }
 
-        public Rule(string name, RuleCondition condition, IList<RuleAction> thenActions)
+        public Rule(string name, RuleCondition condition, IList<IRuleAction> thenActions)
         {
             this.name = name;
             this.condition = condition;
             this.thenActions = thenActions;
         }
 
-        public Rule(string name, RuleCondition condition, IList<RuleAction> thenActions, IList<RuleAction> elseActions)
+        public Rule(string name, RuleCondition condition, IList<IRuleAction> thenActions, IList<IRuleAction> elseActions)
         {
             this.name = name;
             this.condition = condition;
@@ -122,13 +122,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-        public IList<RuleAction> ThenActions
+        public IList<IRuleAction> ThenActions
         {
             get { thenActions ??= []; return thenActions; }
         }
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-        public IList<RuleAction> ElseActions
+        public IList<IRuleAction> ElseActions
         {
             get { elseActions ??= []; return elseActions; }
         }
@@ -156,41 +156,40 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
             // fix up the error messages by prepending the rule name
             ValidationErrorCollection errors = validation.Errors;
-            if (errors.Count > oldErrorCount)
+            if (errors.Count <= oldErrorCount)
+                return;
+
+            string prefix = string.Format(CultureInfo.CurrentCulture, Messages.RuleValidationError, name);
+
+            int newErrorCount = errors.Count;
+            for (int i = oldErrorCount; i < newErrorCount; ++i)
             {
-                string prefix = string.Format(CultureInfo.CurrentCulture, Messages.RuleValidationError, name);
+                ValidationError oldError = errors[i];
 
-                int newErrorCount = errors.Count;
-                for (int i = oldErrorCount; i < newErrorCount; ++i)
+                ValidationError newError = new(prefix + oldError.ErrorText, oldError.ErrorNumber, oldError.IsWarning);
+                foreach (DictionaryEntry de in oldError.UserData)
+                    newError.UserData[de.Key] = de.Value;
+
+                errors[i] = newError;
+
+                if (!string.IsNullOrEmpty(name))
+                    UpdateErrorsByRuleName();
+
+                void UpdateErrorsByRuleName()
                 {
-                    ValidationError oldError = errors[i];
-
-                    ValidationError newError = new(prefix + oldError.ErrorText, oldError.ErrorNumber, oldError.IsWarning);
-                    foreach (DictionaryEntry de in oldError.UserData)
-                        newError.UserData[de.Key] = de.Value;
-
-                    errors[i] = newError;
-
-                    //TODO: skip if name is null or empty.
-                    if (!string.IsNullOrEmpty(name))
-                        UpdateErrorsByRuleName();
-
-                    void UpdateErrorsByRuleName()
-                    {
-                        if (validation.ErrorsByRuleName.TryGetValue(name, out IList<ValidationError> ruleErrorList))
-                            ruleErrorList.Add(newError);
-                        else
-                            validation.ErrorsByRuleName.Add(name, [newError]);
-                    }
+                    if (validation.ErrorsByRuleName.TryGetValue(name, out IList<ValidationError> ruleErrorList))
+                        ruleErrorList.Add(newError);
+                    else
+                        validation.ErrorsByRuleName.Add(name, [newError]);
                 }
             }
         }
 
-        private static void ValidateRuleActions(ICollection<RuleAction> ruleActions, RuleValidation validator)
+        private static void ValidateRuleActions(ICollection<IRuleAction> ruleActions, RuleValidation validator)
         {
             bool seenHalt = false;
             bool statementsAfterHalt = false;
-            foreach (RuleAction action in ruleActions)
+            foreach (IRuleAction action in ruleActions)
             {
                 action.Validate(validator);
                 if (seenHalt)
@@ -217,14 +216,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (this.thenActions != null)
             {
                 newRule.thenActions = [];
-                foreach (RuleAction thenAction in this.thenActions)
+                foreach (IRuleAction thenAction in this.thenActions)
                     newRule.thenActions.Add(thenAction.Clone());
             }
 
             if (this.elseActions != null)
             {
                 newRule.elseActions = [];
-                foreach (RuleAction elseAction in this.elseActions)
+                foreach (IRuleAction elseAction in this.elseActions)
                     newRule.elseActions.Add(elseAction.Clone());
             }
 
@@ -260,7 +259,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return true;
         }
 
-        private static bool ActionsEqual(IList<RuleAction> myActions, IList<RuleAction> otherActions)
+        private static bool ActionsEqual(IList<IRuleAction> myActions, IList<IRuleAction> otherActions)
         {
             if ((myActions == null) && (otherActions == null))
                 return true;
@@ -278,7 +277,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            return 1;
         }
 
         internal void OnRuntimeInitialized()

@@ -100,7 +100,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         #region GetSideEffects Tests
 
         [Fact]
-        public void GetSideEffects_ReturnsNull()
+        public void GetSideEffects_ReturnsEmptyList()
         {
             // Arrange
             var haltAction = new RuleHaltAction();
@@ -110,11 +110,11 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var sideEffects = haltAction.GetSideEffects(validation);
 
             // Assert
-            Assert.Null(sideEffects);
+            Assert.Empty(sideEffects);
         }
 
         [Fact]
-        public void GetSideEffects_WithNullValidation_ReturnsNull()
+        public void GetSideEffects_WithNullValidation_ReturnsEmptyList()
         {
             // Arrange
             var haltAction = new RuleHaltAction();
@@ -123,7 +123,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var sideEffects = haltAction.GetSideEffects(null);
 
             // Assert
-            Assert.Null(sideEffects);
+            Assert.Empty(sideEffects);
         }
 
         #endregion

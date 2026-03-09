@@ -1141,11 +1141,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         [Fact]
         public void ResolveProperty_WithValidProperty_ReturnsPropertyInfo()
         {
-            // Arrange
-            var validation = new RuleValidation(typeof(TestClass));
-
             // Act
-            var property = validation.ResolveProperty(
+            var property = RuleValidation.ResolveProperty(
                 typeof(TestClass),
                 "PublicProperty",
                 BindingFlags.Public | BindingFlags.Instance);
@@ -1158,11 +1155,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         [Fact]
         public void ResolveProperty_WithNonExistentProperty_ReturnsNull()
         {
-            // Arrange
-            var validation = new RuleValidation(typeof(TestClass));
-
             // Act
-            var property = validation.ResolveProperty(
+            var property = RuleValidation.ResolveProperty(
                 typeof(TestClass),
                 "NonExistentProperty",
                 BindingFlags.Public | BindingFlags.Instance);
@@ -1598,11 +1592,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         [Fact]
         public void ResolveProperty_WithInternalProperty_WhenAllowed_ReturnsProperty()
         {
-            // Arrange
-            var validation = new RuleValidation(typeof(TestClass));
-
             // Act
-            var property = validation.ResolveProperty(
+            var property = RuleValidation.ResolveProperty(
                 typeof(TestClass),
                 "InternalProperty",
                 BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -1615,11 +1606,8 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
         [Fact]
         public void ResolveProperty_WithNonExistentPropertyOnInterface_ReturnsNull()
         {
-            // Arrange
-            var validation = new RuleValidation(typeof(ITestInterface));
-
             // Act
-            var property = validation.ResolveProperty(
+            var property = RuleValidation.ResolveProperty(
                 typeof(ITestInterface),
                 "NonExistent",
                 BindingFlags.Public | BindingFlags.Instance);

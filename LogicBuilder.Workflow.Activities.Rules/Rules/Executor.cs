@@ -360,7 +360,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 bool result = currentRuleState.Rule.Condition.Evaluate(ruleExecution);
                 tracer?.RuleResult(currentRuleState.Rule.Name, result);
 
-                ICollection<RuleAction> actions = (result) ?
+                ICollection<IRuleAction> actions = (result) ?
                     currentRuleState.Rule.thenActions :
                     currentRuleState.Rule.elseActions;
                 ICollection<int> activeRules = result ?
@@ -392,10 +392,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             // no more rules to execute, so we are done
         }
 
-        private static void ExecuteActions(RuleExecution ruleExecution, ICollection<RuleAction> actions)
+        private static void ExecuteActions(RuleExecution ruleExecution, ICollection<IRuleAction> actions)
         {
             // evaluate the actions
-            foreach (RuleAction action in actions)
+            foreach (IRuleAction action in actions)
             {
                 action.Execute(ruleExecution);
 
@@ -629,12 +629,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return rsi;
         }
 
-        private static ICollection<string> GetActionSideEffects(RuleChainingBehavior behavior, IList<RuleAction> actions, RuleValidation validation)
+        private static ICollection<string> GetActionSideEffects(RuleChainingBehavior behavior, IList<IRuleAction> actions, RuleValidation validation)
         {
             // Man, I wish there were a Set<T> class...
             Dictionary<string, object> symbols = [];
 
-            foreach (RuleAction action in actions.Where
+            foreach (IRuleAction action in actions.Where
                         (
                             a => behavior == RuleChainingBehavior.Full
                                 || (behavior == RuleChainingBehavior.UpdateOnly && a is RuleUpdateAction)

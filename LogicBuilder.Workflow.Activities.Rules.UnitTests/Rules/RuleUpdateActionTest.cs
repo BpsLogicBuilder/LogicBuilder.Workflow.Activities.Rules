@@ -270,7 +270,7 @@ namespace LogicBuilder.Workflow.Activities.Rules.UnitTests.Rules
             var action = new RuleUpdateAction("this/IntField");
 
             // Act
-            RuleAction clonedAction = action.Clone();
+            IRuleAction clonedAction = action.Clone();
 
             // Assert
             Assert.NotNull(clonedAction);
