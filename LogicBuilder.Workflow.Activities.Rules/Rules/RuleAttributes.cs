@@ -70,21 +70,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
             else
             {
                 // When target is "Parameter", the path must start with the name of a parameter.
-                bool found = false;
-                for (int p = 0; p < (parameters?.Length ?? 0); ++p)
+                ParameterInfo parameter = parameters?.FirstOrDefault(p => p.Name == firstPart);
+                if (parameter != null)
                 {
-                    ParameterInfo param = parameters[p];
-                    if (param.Name == firstPart)
-                    {
-                        found = true;
-
-                        // The context type is the parameter type.
-                        contextType = param.ParameterType;
-                        break;
-                    }
+                    // The context type is the parameter type.
+                    contextType = parameter.ParameterType;
                 }
 
-                if (!found)
+                if (parameter == null)
                 {
                     message = string.Format(CultureInfo.CurrentCulture, Messages.InvalidRuleAttributeParameter, firstPart, member.Name);
                     error = new ValidationError(message, ErrorNumbers.Error_InvalidRuleAttributeParameter);
