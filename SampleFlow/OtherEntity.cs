@@ -15,7 +15,7 @@
         public string SecondValue { get; set; }
         public string ThirdValue { get; set; }
         public int FourthValue { get; set; }
-        public int[] TheParams;
+        public int[] TheParams { get; set; }
     }
 
     public class YetAnotherEntity
