@@ -7,17 +7,17 @@ using System;
 
 namespace LogicBuilder.Workflow.Activities.Rules
 {
-    internal abstract class RuleCodeDomStatement
+    internal interface IRuleCodeDomStatement
     {
-        internal abstract bool Validate(RuleValidation validation);
-        internal abstract void Execute(RuleExecution execution);
-        internal abstract void AnalyzeUsage(RuleAnalysis analysis);
-        internal abstract void Decompile(StringBuilder decompilation);
-        internal abstract bool Match(CodeStatement expression);
-        internal abstract CodeStatement Clone();
+        bool Validate(RuleValidation validation);
+        void Execute(RuleExecution execution);
+        void AnalyzeUsage(RuleAnalysis analysis);
+        void Decompile(StringBuilder decompilation);
+        bool Match(CodeStatement expression);
+        CodeStatement Clone();
     }
 
-    internal class ExpressionStatement : RuleCodeDomStatement
+    internal class ExpressionStatement : IRuleCodeDomStatement
     {
         private readonly CodeExpressionStatement exprStatement;
 
@@ -26,12 +26,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
             this.exprStatement = exprStatement;
         }
 
-        internal static RuleCodeDomStatement Create(CodeStatement statement)
+        internal static IRuleCodeDomStatement Create(CodeStatement statement)
         {
             return new ExpressionStatement((CodeExpressionStatement)statement);
         }
 
-        internal override bool Validate(RuleValidation validation)
+        public bool Validate(RuleValidation validation)
         {
             bool success = false;
 
@@ -56,17 +56,17 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return success;
         }
 
-        internal override void AnalyzeUsage(RuleAnalysis analysis)
+        public void AnalyzeUsage(RuleAnalysis analysis)
         {
             RuleExpressionWalker.AnalyzeUsage(analysis, exprStatement.Expression, false, false, null);
         }
 
-        internal override void Execute(RuleExecution execution)
+        public void Execute(RuleExecution execution)
         {
             RuleExpressionWalker.Evaluate(execution, exprStatement.Expression);
         }
 
-        internal override void Decompile(StringBuilder decompilation)
+        public void Decompile(StringBuilder decompilation)
         {
             if (exprStatement.Expression == null)
             {
@@ -78,13 +78,13 @@ namespace LogicBuilder.Workflow.Activities.Rules
             RuleExpressionWalker.Decompile(decompilation, exprStatement.Expression, null);
         }
 
-        internal override bool Match(CodeStatement comperand)
+        public bool Match(CodeStatement expression)
         {
-            return ((comperand is CodeExpressionStatement comperandStatement)
+            return ((expression is CodeExpressionStatement comperandStatement)
                 && RuleExpressionWalker.Match(exprStatement.Expression, comperandStatement.Expression));
         }
 
-        internal override CodeStatement Clone()
+        public CodeStatement Clone()
         {
             CodeExpressionStatement newStatement = new()
             {
@@ -94,7 +94,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         }
     }
 
-    internal class AssignmentStatement : RuleCodeDomStatement
+    internal class AssignmentStatement : IRuleCodeDomStatement
     {
         private readonly CodeAssignStatement assignStatement;
 
@@ -103,12 +103,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
             this.assignStatement = assignStatement;
         }
 
-        internal static RuleCodeDomStatement Create(CodeStatement statement)
+        internal static IRuleCodeDomStatement Create(CodeStatement statement)
         {
             return new AssignmentStatement((CodeAssignStatement)statement);
         }
 
-        internal override bool Validate(RuleValidation validation)
+        public bool Validate(RuleValidation validation)
         {
             bool success = false;
             string message;
@@ -138,48 +138,48 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 rhsExprInfo = RuleExpressionWalker.Validate(validation, assignStatement.Right, false);
             }
 
-            if (lhsExprInfo != null && rhsExprInfo != null)
-            {
-                Type expressionType = rhsExprInfo.ExpressionType;
-                Type assignmentType = lhsExprInfo.ExpressionType;
+            if (lhsExprInfo == null || rhsExprInfo == null)
+                return success;
 
-                if (assignmentType == typeof(NullLiteral))
+            Type expressionType = rhsExprInfo.ExpressionType;
+            Type assignmentType = lhsExprInfo.ExpressionType;
+
+            if (assignmentType == typeof(NullLiteral))
+            {
+                // Can't assign to a null literal.
+                ValidationError error = new(Messages.NullAssignLeft, ErrorNumbers.Error_LeftOperandInvalidType);
+                error.UserData[RuleUserDataKeys.ErrorObject] = assignStatement;
+                validation.Errors.Add(error);
+                success = false;
+            }
+            else if (assignmentType == expressionType)
+            {
+                // Easy case, they're both the same type.
+                success = true;
+            }
+            else
+            {
+                // The types aren't the same, but it still might be a legal assignment.
+                if (!RuleValidation.TypesAreAssignable(expressionType, assignmentType, assignStatement.Right, out ValidationError error))
                 {
-                    // Can't assign to a null literal.
-                    ValidationError error = new(Messages.NullAssignLeft, ErrorNumbers.Error_LeftOperandInvalidType);
+                    if (error == null)
+                    {
+                        message = string.Format(CultureInfo.CurrentCulture, Messages.AssignNotAllowed, RuleDecompiler.DecompileType(expressionType), RuleDecompiler.DecompileType(assignmentType));
+                        error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
+                    }
                     error.UserData[RuleUserDataKeys.ErrorObject] = assignStatement;
                     validation.Errors.Add(error);
-                    success = false;
-                }
-                else if (assignmentType == expressionType)
-                {
-                    // Easy case, they're both the same type.
-                    success = true;
                 }
                 else
                 {
-                    // The types aren't the same, but it still might be a legal assignment.
-                    if (!RuleValidation.TypesAreAssignable(expressionType, assignmentType, assignStatement.Right, out ValidationError error))
-                    {
-                        if (error == null)
-                        {
-                            message = string.Format(CultureInfo.CurrentCulture, Messages.AssignNotAllowed, RuleDecompiler.DecompileType(expressionType), RuleDecompiler.DecompileType(assignmentType));
-                            error = new ValidationError(message, ErrorNumbers.Error_OperandTypesIncompatible);
-                        }
-                        error.UserData[RuleUserDataKeys.ErrorObject] = assignStatement;
-                        validation.Errors.Add(error);
-                    }
-                    else
-                    {
-                        success = true;
-                    }
+                    success = true;
                 }
             }
 
             return success;
         }
 
-        internal override void AnalyzeUsage(RuleAnalysis analysis)
+        public void AnalyzeUsage(RuleAnalysis analysis)
         {
             // The left side of the assignment is modified.
             RuleExpressionWalker.AnalyzeUsage(analysis, assignStatement.Left, false, true, null);
@@ -187,7 +187,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             RuleExpressionWalker.AnalyzeUsage(analysis, assignStatement.Right, true, false, null);
         }
 
-        internal override void Execute(RuleExecution execution)
+        public void Execute(RuleExecution execution)
         {
             Type leftType = execution.Validation.ExpressionInfo(assignStatement.Left).ExpressionType;
             Type rightType = execution.Validation.ExpressionInfo(assignStatement.Right).ExpressionType;
@@ -197,7 +197,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             leftResult.Value = Executor.AdjustType(rightType, rightResult.Value, leftType);
         }
 
-        internal override void Decompile(StringBuilder decompilation)
+        public void Decompile(StringBuilder decompilation)
         {
             if (assignStatement.Right == null)
             {
@@ -217,14 +217,14 @@ namespace LogicBuilder.Workflow.Activities.Rules
             RuleExpressionWalker.Decompile(decompilation, assignStatement.Right, null);
         }
 
-        internal override bool Match(CodeStatement comperand)
+        public bool Match(CodeStatement expression)
         {
-            return ((comperand is CodeAssignStatement comperandStatement)
+            return ((expression is CodeAssignStatement comperandStatement)
                 && RuleExpressionWalker.Match(assignStatement.Left, comperandStatement.Left)
                 && RuleExpressionWalker.Match(assignStatement.Right, comperandStatement.Right));
         }
 
-        internal override CodeStatement Clone()
+        public CodeStatement Clone()
         {
             CodeAssignStatement newStatement = new()
             {

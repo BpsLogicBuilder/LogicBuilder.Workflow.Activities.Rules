@@ -129,42 +129,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
             engine.Execute(ruleExecution);
         }
 
-        //internal void Execute(Activity activity, ActivityExecutionContext executionContext)
-        //{
-        //    // this can be called from multiple threads if multiple workflows are 
-        //    // running at the same time (only a single workflow is single-threaded)
-        //    // we want to only lock around the validation and preprocessing, so that
-        //    // execution can run in parallel.
-
-        //    if (activity == null)
-        //        throw new ArgumentNullException("activity");
-
-        //    Type activityType = activity.GetType();
-        //    RuleEngine engine = null;
-        //    lock (syncLock)
-        //    {
-        //        // do we have something useable cached?
-        //        if ((cachedEngine == null) || (cachedValidation == null) || (cachedValidation.ThisType != activityType))
-        //        {
-        //            // no cache (or its invalid)
-        //            RuleValidation validation = new RuleValidation(activityType, null);
-        //            engine = new RuleEngine(this, validation, executionContext);
-        //            cachedValidation = validation;
-        //            cachedEngine = engine;
-        //        }
-        //        else
-        //        {
-        //            // this will happen if the ruleset has already been processed
-        //            // we can simply use the previously processed engine
-        //            engine = cachedEngine;
-        //        }
-        //    }
-
-        //    // when we get here, we have a local RuleEngine all ready to go
-        //    // we are outside the lock, so these can run in parallel
-        //    engine.Execute(activity, executionContext);
-        //}
-
         public RuleSet Clone()
         {
             RuleSet newRuleSet = (RuleSet)this.MemberwiseClone();
@@ -200,7 +164,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            return 1;
         }
 
         internal void OnRuntimeInitialized()

@@ -12,7 +12,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
     [Serializable]
     public sealed class RuleConditionCollection : KeyedCollection<string, RuleCondition>//, IWorkflowChangeDiff
     {
-        private bool _runtimeInitialized;
         [NonSerialized]
         private readonly object _runtimeInitializationLock = new();
 
@@ -32,20 +31,20 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             lock (_runtimeInitializationLock)
             {
-                if (_runtimeInitialized)
+                if (RuntimeMode)
                     return;
 
                 foreach (RuleCondition condition in this)
                 {
                     condition.OnRuntimeInitialized();
                 }
-                _runtimeInitialized = true;
+                RuntimeMode = true;
             }
         }
 
         protected override void InsertItem(int index, RuleCondition item)
         {
-            if (this._runtimeInitialized)
+            if (this.RuntimeMode)
                 throw new InvalidOperationException(SR.GetString(SR.Error_CanNotChangeAtRuntime));
 
             if (!string.IsNullOrEmpty(item.Name) && this.Contains(item.Name))
@@ -59,7 +58,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         protected override void RemoveItem(int index)
         {
-            if (this._runtimeInitialized)
+            if (this.RuntimeMode)
                 throw new InvalidOperationException(SR.GetString(SR.Error_CanNotChangeAtRuntime));
 
             base.RemoveItem(index);
@@ -67,21 +66,17 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         protected override void SetItem(int index, RuleCondition item)
         {
-            if (this._runtimeInitialized)
+            if (this.RuntimeMode)
                 throw new InvalidOperationException(SR.GetString(SR.Error_CanNotChangeAtRuntime));
 
             base.SetItem(index, item);
         }
 
-        internal bool RuntimeMode
-        {
-            set { this._runtimeInitialized = value; }
-            get { return this._runtimeInitialized; }
-        }
+        internal bool RuntimeMode { get; set; }
 
         new public void Add(RuleCondition item)
         {
-            if (this._runtimeInitialized)
+            if (this.RuntimeMode)
                 throw new InvalidOperationException(SR.GetString(SR.Error_CanNotChangeAtRuntime));
 
             if (null == item)

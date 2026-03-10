@@ -77,6 +77,10 @@ namespace LogicBuilder.Workflow.Activities.Rules
             decompilation.Append("\"");
             for (int i = 0; i < strValue.Length; ++i)
             {
+                // skip the second character of a surrogate pair.
+                if (i > 0 && char.IsHighSurrogate(strValue[i-1]) && (i < strValue.Length) && (char.IsLowSurrogate(strValue[i])))
+                    continue;
+
                 char c = strValue[i];
 
                 // is this character a surrogate pair?
@@ -84,8 +88,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 {
                     // yes, so leave the two characters unchanged
                     decompilation.Append(c);
-                    ++i;
-                    decompilation.Append(strValue[i]);
+                    decompilation.Append(strValue[i + 1]);
                 }
                 else
                     AppendCharacter(decompilation, c, '"');
@@ -421,12 +424,12 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return map;
         }
 
-        private static Operation GetPostfixPrecedence(CodeExpression expression)
+        private static Operation GetPostfixPrecedence(CodeExpression expression)//NOSONAR is a delegate with the expected signature
         {
             return Operation.Postfix;
         }
 
-        private static Operation GetCastPrecedence(CodeExpression expression)
+        private static Operation GetCastPrecedence(CodeExpression expression)//NOSONAR is a delegate with the expected signature
         {
             return Operation.Unary;
         }

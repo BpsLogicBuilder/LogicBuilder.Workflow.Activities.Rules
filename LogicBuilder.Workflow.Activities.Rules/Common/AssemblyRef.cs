@@ -5,7 +5,7 @@
 *********************************************************************/
 namespace LogicBuilder.Workflow.Activities.Common
 {
-    public class AssemblyRef
+    public static class AssemblyRef
     {
         public const string ActivitiesAssemblyRef = "LogicBuilder.Workflow.Activities.Rules, Version=2.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535";
         public const string DialogAssemblyRef = "LogicBuilder.Workflow.Activities.Rules.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535";

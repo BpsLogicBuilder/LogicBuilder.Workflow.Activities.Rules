@@ -8,7 +8,11 @@ namespace LogicBuilder.Workflow.Activities
 {
     internal static class WorkflowActivityTrace
     {
-        static readonly TraceSource rules;
+        private const string TraceSourceName = "LogicBuilder.Workflow.Activities.Rules";
+        static readonly TraceSource rules = new(TraceSourceName)
+        {
+            Switch = new SourceSwitch(TraceSourceName, SourceLevels.Off.ToString())
+        };
 
         internal static TraceSource Rules
         {
@@ -37,11 +41,6 @@ namespace LogicBuilder.Workflow.Activities
         /// </summary>
         static WorkflowActivityTrace()
         {
-            rules = new TraceSource("LogicBuilder.Workflow.Activities.Rules")
-            {
-                Switch = new SourceSwitch("LogicBuilder.Workflow.Activities.Rules", SourceLevels.Off.ToString())
-            };
-
             foreach (TraceListener listener in Trace.Listeners)
             {
                 if (listener is not DefaultTraceListener)
