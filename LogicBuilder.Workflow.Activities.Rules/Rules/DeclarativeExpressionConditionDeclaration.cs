@@ -14,7 +14,6 @@ using System;
 namespace LogicBuilder.Workflow.Activities.Rules
 {
     #region RuleCondition base class
-    [Serializable]
     public abstract class RuleCondition
     {
         public abstract bool Validate(RuleValidation validation);
@@ -29,7 +28,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
     #endregion
 
     #region RuleExpressionCondition Class
-    [Serializable]
     public sealed class RuleExpressionCondition : RuleCondition
     {
         #region Properties

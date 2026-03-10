@@ -44,7 +44,7 @@ jobs:
         run: dotnet test --no-build --verbosity normal --configuration Release /p:CollectCoverage=true /p:Threshold=80 /p:ThresholdType=line /p:ThresholdStat=Average /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/ /p:ExcludeByAttribute="GeneratedCodeAttribute" /p:Exclude="[SampleFlow]*"
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -73,7 +73,7 @@ jobs:
           NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: NuGet login
-        uses: NuGet/login@v1
+        uses: NuGet/login@d22cc5f58ff5b88bf9bd452535b4335137e24544
         id: nuget_login
         with:
           user: ${{ secrets.NUGET_USER }}
@@ -88,10 +88,11 @@ jobs:
         shell: pwsh
         run: |
           dotnet pack ${{ env.PROJECT_PATH }} --configuration Release -o ./nupkg --no-build
-          dotnet nuget push ${{ env.NUGET_PACKAGE_PATH }} --skip-duplicate --api-key ${{ secrets.GITHUB_TOKEN }}
+          dotnet nuget push ${{ env.NUGET_PACKAGE_PATH }} --skip-duplicate --api-key ${{ env.GITHUB_TOKEN }}
           dotnet nuget push ${{ env.NUGET_PACKAGE_PATH }}--skip-duplicate --source ${{ env.NUGET_URL }} --api-key ${{ env.NUGET_API_KEY }}
         env:
           NUGET_URL: 'https://api.nuget.org/v3/index.json'
           NUGET_API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
           NUGET_PACKAGE_PATH: "${{ format('./nupkg/{0}.*.nupkg', env.PROJECT_NAME) }}"
           PROJECT_PATH: "${{ format('./{0}/{0}.csproj', env.PROJECT_NAME) }}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
