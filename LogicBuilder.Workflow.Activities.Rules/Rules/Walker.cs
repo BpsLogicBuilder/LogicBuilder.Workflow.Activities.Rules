@@ -14,51 +14,50 @@ using System;
 namespace LogicBuilder.Workflow.Activities.Rules
 {
     #region RuleExpressionWalker
+    [ExcludeFromCodeCoverage]
+    class CustomExpressionWrapper : IRuleExpressionInternal
+    {
+        private readonly IRuleExpression ruleExpr;
+
+        internal CustomExpressionWrapper(IRuleExpression ruleExpr)
+        {
+            this.ruleExpr = ruleExpr;
+        }
+
+        public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
+        {
+            ruleExpr.AnalyzeUsage(analysis, isRead, isWritten, qualifier);
+        }
+
+        public CodeExpression Clone(CodeExpression expression)
+        {
+            return ruleExpr.Clone();
+        }
+
+        public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
+        {
+            ruleExpr.Decompile(stringBuilder, parentExpression);
+        }
+
+        public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
+        {
+            return ruleExpr.Evaluate(execution);
+        }
+
+        public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
+        {
+            return ruleExpr.Match(rightExpression);
+        }
+
+        public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
+        {
+            return ruleExpr.Validate(validation, isWritten);
+        }
+    }
 
     public static class RuleExpressionWalker
     {
         #region IRuleExpression wrapper factories for CodeDom
-
-        [ExcludeFromCodeCoverage]
-        class CustomExpressionWrapper : IRuleExpressionInternal
-        {
-            private readonly IRuleExpression ruleExpr;
-
-            internal CustomExpressionWrapper(IRuleExpression ruleExpr)
-            {
-                this.ruleExpr = ruleExpr;
-            }
-
-            public void AnalyzeUsage(CodeExpression expression, RuleAnalysis analysis, bool isRead, bool isWritten, RulePathQualifier qualifier)
-            {
-                ruleExpr.AnalyzeUsage(analysis, isRead, isWritten, qualifier);
-            }
-
-            public CodeExpression Clone(CodeExpression expression)
-            {
-                return ruleExpr.Clone();
-            }
-
-            public void Decompile(CodeExpression expression, StringBuilder stringBuilder, CodeExpression parentExpression)
-            {
-                ruleExpr.Decompile(stringBuilder, parentExpression);
-            }
-
-            public IRuleExpressionResult Evaluate(CodeExpression expression, RuleExecution execution)
-            {
-                return ruleExpr.Evaluate(execution);
-            }
-
-            public bool Match(CodeExpression leftExpression, CodeExpression rightExpression)
-            {
-                return ruleExpr.Match(rightExpression);
-            }
-
-            public RuleExpressionInfo Validate(CodeExpression expression, RuleValidation validation, bool isWritten)
-            {
-                return ruleExpr.Validate(validation, isWritten);
-            }
-        }
 
         class TypeWrapperTuple
         {
@@ -218,13 +217,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         #region RuleCodeDomStatement wrapper factories for CodeDom
 
-        private delegate RuleCodeDomStatement WrapperCreator(CodeStatement statement);
-
-        private static RuleCodeDomStatement GetStatement(CodeStatement statement)
+        private static IRuleCodeDomStatement GetStatement(CodeStatement statement)
         {
             Type statementType = statement.GetType();
 
-            RuleCodeDomStatement wrapper;
+            IRuleCodeDomStatement wrapper;
             if (statementType == typeof(CodeExpressionStatement))
             {
                 wrapper = ExpressionStatement.Create(statement);
@@ -248,25 +245,25 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         public static bool Validate(RuleValidation validation, CodeStatement statement)
         {
-            RuleCodeDomStatement ruleStmt = GetStatement(statement);
+            IRuleCodeDomStatement ruleStmt = GetStatement(statement);
             return ruleStmt.Validate(validation);
         }
 
         internal static void Execute(RuleExecution execution, CodeStatement statement)
         {
-            RuleCodeDomStatement ruleStmt = GetStatement(statement);
+            IRuleCodeDomStatement ruleStmt = GetStatement(statement);
             ruleStmt.Execute(execution);
         }
 
         internal static void AnalyzeUsage(RuleAnalysis analysis, CodeStatement statement)
         {
-            RuleCodeDomStatement ruleStmt = GetStatement(statement);
+            IRuleCodeDomStatement ruleStmt = GetStatement(statement);
             ruleStmt.AnalyzeUsage(analysis);
         }
 
         internal static void Decompile(StringBuilder stringBuilder, CodeStatement statement)
         {
-            RuleCodeDomStatement ruleStmt = GetStatement(statement);
+            IRuleCodeDomStatement ruleStmt = GetStatement(statement);
             ruleStmt.Decompile(stringBuilder);
         }
 
@@ -283,7 +280,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
             if (firstStatement.GetType() != secondStatement.GetType())
                 return false;
 
-            RuleCodeDomStatement ruleStmt = GetStatement(firstStatement);
+            IRuleCodeDomStatement ruleStmt = GetStatement(firstStatement);
             return ruleStmt.Match(secondStatement);
         }
 
@@ -291,7 +288,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             if (statement == null)
                 return null;
-            RuleCodeDomStatement ruleStmt = GetStatement(statement);
+            IRuleCodeDomStatement ruleStmt = GetStatement(statement);
             return ruleStmt.Clone();
         }
     }

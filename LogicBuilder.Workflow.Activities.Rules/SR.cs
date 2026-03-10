@@ -4,6 +4,8 @@ using System.Globalization;
 using System.Reflection;
 using System.Resources;
 
+namespace LogicBuilder.Workflow.Activities;
+
 [AttributeUsage(AttributeTargets.All)]
 internal sealed class SRDescriptionAttribute : DescriptionAttribute
 {

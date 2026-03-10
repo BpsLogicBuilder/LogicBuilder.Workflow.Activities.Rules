@@ -10,7 +10,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
     {
         #region members and constructors
 
-        private bool _runtimeInitialized;
         [NonSerialized]
         private readonly object syncLock = new();
 
@@ -29,7 +28,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         protected override void InsertItem(int index, RuleSet item)
         {
-            if (this._runtimeInitialized)
+            if (this.RuntimeMode)
                 throw new InvalidOperationException(SR.GetString(SR.Error_CanNotChangeAtRuntime));
 
             if (!string.IsNullOrEmpty(item.Name) && this.Contains(item.Name))
@@ -43,7 +42,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         protected override void RemoveItem(int index)
         {
-            if (this._runtimeInitialized)
+            if (this.RuntimeMode)
                 throw new InvalidOperationException(SR.GetString(SR.Error_CanNotChangeAtRuntime));
 
             base.RemoveItem(index);
@@ -51,7 +50,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         protected override void SetItem(int index, RuleSet item)
         {
-            if (this._runtimeInitialized)
+            if (this.RuntimeMode)
                 throw new InvalidOperationException(SR.GetString(SR.Error_CanNotChangeAtRuntime));
 
             base.SetItem(index, item);
@@ -59,7 +58,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
 
         new public void Add(RuleSet item)
         {
-            if (this._runtimeInitialized)
+            if (this.RuntimeMode)
                 throw new InvalidOperationException(SR.GetString(SR.Error_CanNotChangeAtRuntime));
 
             if (null == item)
@@ -84,22 +83,18 @@ namespace LogicBuilder.Workflow.Activities.Rules
         {
             lock (this.syncLock)
             {
-                if (this._runtimeInitialized)
+                if (this.RuntimeMode)
                     return;
 
                 foreach (RuleSet ruleSet in this)
                 {
                     ruleSet.OnRuntimeInitialized();
                 }
-                _runtimeInitialized = true;
+                RuntimeMode = true;
             }
         }
 
-        internal bool RuntimeMode
-        {
-            set { this._runtimeInitialized = value; }
-            get { return this._runtimeInitialized; }
-        }
+        internal bool RuntimeMode { get; set; }
 
         internal string GenerateRuleSetName()
         {
@@ -115,47 +110,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
             return newName;
         }
 
-        #endregion
-
-        #region IWorkflowChangeDiff Members
-
-        //public IList<WorkflowChangeAction> Diff(object originalDefinition, object changedDefinition)
-        //{
-        //    List<WorkflowChangeAction> listChanges = new List<WorkflowChangeAction>();
-
-        //    RuleSetCollection originalRuleSets = (RuleSetCollection)originalDefinition;
-        //    RuleSetCollection changedRuleSets = (RuleSetCollection)changedDefinition;
-
-        //    if (null != changedRuleSets)
-        //    {
-        //        foreach (RuleSet changedRuleSet in changedRuleSets)
-        //        {
-        //            if ((originalRuleSets != null) && (originalRuleSets.Contains(changedRuleSet.Name)))
-        //            {
-        //                RuleSet originalRuleSet = originalRuleSets[changedRuleSet.Name];
-        //                if (!originalRuleSet.Equals(changedRuleSet))
-        //                {
-        //                    listChanges.Add(new UpdatedRuleSetAction(originalRuleSet, changedRuleSet));
-        //                }
-        //            }
-        //            else
-        //            {
-        //                listChanges.Add(new AddedRuleSetAction(changedRuleSet));
-        //            }
-        //        }
-        //    }
-        //    if (null != originalRuleSets)
-        //    {
-        //        foreach (RuleSet originalRuleSet in originalRuleSets)
-        //        {
-        //            if ((changedRuleSets == null) || (!changedRuleSets.Contains(originalRuleSet.Name)))
-        //            {
-        //                listChanges.Add(new RemovedRuleSetAction(originalRuleSet));
-        //            }
-        //        }
-        //    }
-        //    return listChanges;
-        //}
         #endregion
     }
     #endregion

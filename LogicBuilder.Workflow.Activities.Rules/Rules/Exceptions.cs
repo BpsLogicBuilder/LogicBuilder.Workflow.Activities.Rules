@@ -15,7 +15,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// Represents the base class for all rule engine exception classes
     /// </summary>
     [Serializable]
-    public class RuleException : Exception, ISerializable
+    public class RuleException : Exception
     {
         /// <summary>
         /// Initializes a new instance of the RuleException class
@@ -61,7 +61,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// Represents the the exception thrown when an error is encountered during evaluation
     /// </summary>
     [Serializable]
-    public class RuleEvaluationException : RuleException, ISerializable
+    public class RuleEvaluationException : RuleException
     {
         /// <summary>
         /// Initializes a new instance of the RuleRuntimeException class
@@ -107,38 +107,22 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// Represents the exception thrown when types are incompatible
     /// </summary>
     [Serializable]
-    public class RuleEvaluationIncompatibleTypesException : RuleException, ISerializable
+    public class RuleEvaluationIncompatibleTypesException : RuleException
     {
-        private Type m_leftType;
-        private CodeBinaryOperatorType m_op;
-        private Type m_rightType;
-
         /// <summary>
         /// Type on the left of the operator
         /// </summary>
-        public Type Left
-        {
-            get { return m_leftType; }
-            set { m_leftType = value; }
-        }
+        public Type Left { get; set; }
 
         /// <summary>
         /// Arithmetic operation that failed
         /// </summary>
-        public CodeBinaryOperatorType Operator
-        {
-            get { return m_op; }
-            set { m_op = value; }
-        }
+        public CodeBinaryOperatorType Operator { get; set; }
 
         /// <summary>
         /// Type on the right of the operator
         /// </summary>
-        public Type Right
-        {
-            get { return m_rightType; }
-            set { m_rightType = value; }
-        }
+        public Type Right { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the RuleEvaluationIncompatibleTypesException class
@@ -181,9 +165,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
             Type right)
             : base(message)
         {
-            m_leftType = left;
-            m_op = op;
-            m_rightType = right;
+            Left = left;
+            Operator = op;
+            Right = right;
         }
 
         /// <summary>
@@ -202,9 +186,9 @@ namespace LogicBuilder.Workflow.Activities.Rules
             Exception ex)
             : base(message, ex)
         {
-            m_leftType = left;
-            m_op = op;
-            m_rightType = right;
+            Left = left;
+            Operator = op;
+            Right = right;
         }
 
         /// <summary>
@@ -219,11 +203,11 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 throw new ArgumentNullException("serializeInfo");
             string qualifiedTypeString = serializeInfo.GetString("left");
             if (qualifiedTypeString != "null")
-                m_leftType = Type.GetType(qualifiedTypeString);
-            m_op = (CodeBinaryOperatorType)serializeInfo.GetValue("op", typeof(CodeBinaryOperatorType));
+                Left = Type.GetType(qualifiedTypeString);
+            Operator = (CodeBinaryOperatorType)serializeInfo.GetValue("op", typeof(CodeBinaryOperatorType));
             qualifiedTypeString = serializeInfo.GetString("right");
             if (qualifiedTypeString != "null")
-                m_rightType = Type.GetType(qualifiedTypeString);
+                Right = Type.GetType(qualifiedTypeString);
         }
     }
     #endregion
@@ -233,7 +217,7 @@ namespace LogicBuilder.Workflow.Activities.Rules
     /// Represents the exception thrown when a ruleset can not be validated
     /// </summary>
     [Serializable]
-    public class RuleSetValidationException : RuleException, ISerializable
+    public class RuleSetValidationException : RuleException
     {
         private readonly ValidationErrorCollection m_errors;
 
@@ -297,19 +281,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 throw new ArgumentNullException("serializeInfo");
             m_errors = (ValidationErrorCollection)serializeInfo.GetValue("errors", typeof(ValidationErrorCollection));
         }
-
-        ///// <summary>
-        ///// Implements the ISerializable interface
-        ///// </summary>
-        ///// <param name="info">Reference to the object that holds the data needed to serialize/deserialize the exception</param>
-        ///// <param name="context">Provides the means for serialiing the exception data</param>
-        //public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        //{
-        //    if (info == null)
-        //        throw new ArgumentNullException("info");
-        //    base.GetObjectData(info, context);
-        //    info.AddValue("errors", m_errors);
-        //}
     }
     #endregion
 }

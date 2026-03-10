@@ -39,25 +39,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
             }
         }
 
-        //internal static object OnGetRuleConditions(DependencyObject dependencyObject)
-        //{
-        //    if (dependencyObject == null)
-        //        throw new ArgumentNullException("dependencyObject");
-
-        //    RuleDefinitions rules = dependencyObject.GetValueBase(RuleDefinitions.RuleDefinitionsProperty) as RuleDefinitions;
-        //    if (rules != null)
-        //        return rules;
-
-        //    Activity rootActivity = dependencyObject as Activity;
-        //    if (rootActivity.Parent == null)
-        //    {
-        //        rules = ConditionHelper.GetRuleDefinitionsFromManifest(rootActivity.GetType());
-        //        if (rules != null)
-        //            dependencyObject.SetValue(RuleDefinitions.RuleDefinitionsProperty, rules);
-        //    }
-        //    return rules;
-        //}
-
         internal void OnRuntimeInitialized()
         {
             lock (syncLock)
@@ -69,31 +50,6 @@ namespace LogicBuilder.Workflow.Activities.Rules
                 runtimeInitialized = true;
             }
         }
-
-        #region IWorkflowChangeDiff Members
-
-        //public IList<WorkflowChangeAction> Diff(object originalDefinition, object changedDefinition)
-        //{
-        //    RuleDefinitions originalRules = originalDefinition as RuleDefinitions;
-        //    RuleDefinitions changedRules = changedDefinition as RuleDefinitions;
-        //    if ((originalRules == null) || (changedRules == null))
-        //        return new List<WorkflowChangeAction>();
-
-        //    IList<WorkflowChangeAction> cdiff = Conditions.Diff(originalRules.Conditions, changedRules.Conditions);
-        //    IList<WorkflowChangeAction> rdiff = RuleSets.Diff(originalRules.RuleSets, changedRules.RuleSets);
-
-        //    // quick optimization -- if no condition changes, simply return the ruleset changes
-        //    if (cdiff.Count == 0)
-        //        return rdiff;
-
-        //    // merge ruleset changes into condition changes
-        //    for (int i = 0; i < rdiff.Count; ++i)
-        //    {
-        //        cdiff.Add(rdiff[i]);
-        //    }
-        //    return cdiff;
-        //}
-        #endregion
 
         internal RuleDefinitions Clone()
         {
